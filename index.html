@@ -1,14 +1,505 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Evgeniy Moroz — Colorist</title>
-  <meta name="description" content="Evgeniy Moroz — колорист рекламы, музыкальных клипов и фешн-роликов. Кинематографичный цвет." />
+  <meta name="description" content="Evgeniy Moroz — colorist for commercials, music videos and fashion films. Cinematic color." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+  /* ============================================================
+     Evgeniy Moroz — Colorist
+     Dark cinematic minimalism with grey accent
+     ============================================================ */
+
+  :root {
+    --bg:        #0a0a0b;
+    --bg-soft:   #121214;
+    --panel:     #161618;
+    --line:      #26262a;
+    --grey:      #8a8a90;   /* accent */
+    --grey-soft: #5a5a60;
+    --text:      #e9e9ea;
+    --text-dim:  #9a9a9f;
+    --white:     #f6f6f7;
+    --maxw:      1280px;
+    --ease:      cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", system-ui, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection { background: var(--grey); color: #000; }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* film grain overlay */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- NAV ---------- */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px clamp(20px, 5vw, 56px);
+    background: linear-gradient(to bottom, rgba(10,10,11,0.85), rgba(10,10,11,0));
+    backdrop-filter: blur(6px);
+  }
+  .brand { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-name {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--white);
+    font-size: 0.98rem;
+  }
+  .brand-role {
+    font-size: 0.66rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--grey);
+    margin-top: 3px;
+  }
+  .nav-links { display: flex; gap: clamp(20px, 3vw, 40px); }
+  .nav-links a {
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    transition: color 0.3s var(--ease);
+    position: relative;
+  }
+  .nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -5px;
+    width: 0; height: 1px;
+    background: var(--grey);
+    transition: width 0.35s var(--ease);
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 0 clamp(20px, 5vw, 56px);
+    background:
+      radial-gradient(120% 80% at 50% 0%, #171719 0%, var(--bg) 60%),
+      var(--bg);
+  }
+  .hero-inner { max-width: 920px; margin: 0 auto; width: 100%; }
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--grey);
+    margin-bottom: 28px;
+  }
+  .hero-title {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 500;
+    font-size: clamp(2.1rem, 6vw, 4.6rem);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    color: var(--white);
+  }
+  .hero-sub {
+    margin-top: 28px;
+    max-width: 540px;
+    color: var(--text-dim);
+    font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+  }
+  .hero-actions { margin-top: 44px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 14px 30px;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: var(--white);
+    color: #000;
+    border: 1px solid var(--white);
+    transition: all 0.35s var(--ease);
+  }
+  .btn:hover { background: transparent; color: var(--white); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--line);
+  }
+  .btn-ghost:hover { border-color: var(--grey); color: var(--white); }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 34px; left: 50%;
+    transform: translateX(-50%);
+    width: 1px; height: 56px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .hero-scroll span {
+    position: absolute;
+    top: -40%; left: 0;
+    width: 100%; height: 40%;
+    background: var(--grey);
+    animation: scroll 2.2s var(--ease) infinite;
+  }
+  @keyframes scroll {
+    0% { top: -40%; } 100% { top: 100%; }
+  }
+
+  /* ---------- SECTIONS ---------- */
+  .section {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: clamp(80px, 12vh, 160px) clamp(20px, 5vw, 56px);
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 22px;
+  }
+  .section-index {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.8rem;
+    color: var(--grey-soft);
+    letter-spacing: 0.1em;
+  }
+  .section-title {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 500;
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .section-note {
+    margin-left: auto;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ---------- GALLERY ---------- */
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .gallery-status {
+    grid-column: 1 / -1;
+    padding: 40px 0;
+    text-align: center;
+    font-size: 0.76rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--grey-soft);
+  }
+  .project {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+  }
+  .project.in { opacity: 1; transform: none; }
+
+  .project img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(0.4) brightness(0.85) contrast(1.05);
+    transition: transform 0.9s var(--ease), filter 0.6s var(--ease);
+  }
+  .project:hover img {
+    transform: scale(1.05);
+    filter: grayscale(0) brightness(1) contrast(1.05);
+  }
+
+  /* grey placeholder while thumb loads */
+  .project .ph {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      repeating-linear-gradient(45deg, #161618 0 14px, #1b1b1e 14px 28px);
+    color: var(--grey-soft);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+  .project.has-img .ph { display: none; }
+
+  /* play icon */
+  .project .play {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 56px; height: 56px;
+    transform: translate(-50%, -50%) scale(0.85);
+    border: 1px solid rgba(246,246,247,0.7);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(10,10,11,0.35);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+    z-index: 2;
+  }
+  .project .play::after {
+    content: "";
+    margin-left: 3px;
+    border-style: solid;
+    border-width: 8px 0 8px 13px;
+    border-color: transparent transparent transparent var(--white);
+  }
+  .project:hover .play { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  .project .meta {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 18px;
+    background: linear-gradient(to top, rgba(8,8,9,0.94) 0%, rgba(8,8,9,0) 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 2;
+  }
+  .project .meta h3 {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 500;
+    font-size: 0.92rem;
+    color: var(--white);
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+  }
+  .project .meta span {
+    flex-shrink: 0;
+    font-size: 0.64rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--grey);
+  }
+
+  /* ---------- ABOUT ---------- */
+  .about-portrait {
+    margin-bottom: 56px;
+    display: grid;
+    grid-template-columns: minmax(0, 360px) 1fr;
+    gap: clamp(28px, 5vw, 64px);
+    align-items: end;
+  }
+  .about-portrait figure {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .about-portrait img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: grayscale(0.2) contrast(1.05);
+  }
+  .about-portrait .cap {
+    align-self: end;
+    padding-bottom: 6px;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .about-portrait .cap strong {
+    display: block;
+    color: var(--white);
+    font-weight: 500;
+  }
+  .about-portrait .cap .loc {
+    display: block;
+    margin-top: 14px;
+    font-family: "Inter", sans-serif;
+    font-size: 0.74rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--grey);
+  }
+  @media (max-width: 700px) {
+    .about-portrait { grid-template-columns: 1fr; gap: 24px; }
+    .about-portrait figure { max-width: 320px; }
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: clamp(32px, 6vw, 96px);
+  }
+  .about-lead p {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 400;
+    font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+    line-height: 1.3;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+  .about-body p { color: var(--text-dim); margin-bottom: 20px; max-width: 56ch; }
+  .about-tags {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 30px;
+  }
+  .about-tags li {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--grey);
+    border: 1px solid var(--line);
+    padding: 8px 16px;
+  }
+
+  /* ---------- CONTACT ---------- */
+  .contact-inner { text-align: center; padding: clamp(20px, 6vh, 60px) 0; }
+  .contact-lead {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    color: var(--white);
+    margin-bottom: 30px;
+  }
+  .contact-mail {
+    display: inline-block;
+    font-size: clamp(1.1rem, 3vw, 1.7rem);
+    color: var(--grey);
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+    transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+  }
+  .contact-mail:hover { color: var(--white); border-color: var(--grey); }
+  .contact-socials {
+    margin-top: 42px;
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+  }
+  .contact-socials a {
+    font-size: 0.76rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    transition: color 0.3s var(--ease);
+  }
+  .contact-socials a:hover { color: var(--white); }
+
+  /* ---------- FOOTER ---------- */
+  .footer {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 36px clamp(20px, 5vw, 56px);
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+  .footer a:hover { color: var(--white); }
+
+  /* ---------- LIGHTBOX ---------- */
+  .lightbox {
+    position: fixed; inset: 0;
+    z-index: 8000;
+    background: rgba(6,6,7,0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 5vh 5vw;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease);
+  }
+  .lightbox.open { opacity: 1; visibility: visible; }
+  .lightbox-media {
+    width: min(1100px, 100%);
+    aspect-ratio: 16 / 9;
+    max-height: 80vh;
+    background: #000;
+    border: 1px solid var(--line);
+  }
+  .lightbox-media iframe {
+    width: 100%; height: 100%; border: 0; display: block;
+  }
+  .lightbox-caption {
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--grey);
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 24px; right: 30px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 2.4rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.3s var(--ease);
+  }
+  .lightbox-close:hover { color: var(--white); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 860px) {
+    .nav-links { gap: 18px; }
+    .brand-role { display: none; }
+    .gallery { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .about-grid { grid-template-columns: 1fr; gap: 28px; }
+  }
+  @media (max-width: 520px) {
+    .nav { padding: 16px 20px; }
+    .nav-links a { font-size: 0.68rem; letter-spacing: 0.1em; }
+    .hero-actions { gap: 12px; }
+    .btn { padding: 12px 22px; }
+    .gallery { grid-template-columns: 1fr; }
+  }
+  </style>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -31,16 +522,16 @@
     <div class="hero-inner">
       <p class="eyebrow">Color Grading</p>
       <h1 class="hero-title">
-        Кинематографичный цвет<br />
-        для рекламы, клипов и&nbsp;fashion.
+        Cinematic color<br />
+        for commercials, music videos &amp;&nbsp;fashion.
       </h1>
       <p class="hero-sub">
-        Колорист, работающий с историей кадра — настроение, контраст и тон,
-        выстроенные под идею проекта.
+        A colorist who works with the story of the frame — mood, contrast and
+        tone, built around the idea of each project.
       </p>
       <div class="hero-actions">
-        <a href="#work" class="btn">Смотреть работы</a>
-        <a href="#contact" class="btn btn-ghost">Связаться</a>
+        <a href="#work" class="btn">View work</a>
+        <a href="#contact" class="btn btn-ghost">Get in touch</a>
       </div>
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span></div>
@@ -51,10 +542,10 @@
     <div class="section-head">
       <span class="section-index">01</span>
       <h2 class="section-title">Work</h2>
-      <p class="section-note">Vimeo · обновляется автоматически</p>
+      <p class="section-note">Vimeo · auto-updated</p>
     </div>
     <div class="gallery" id="gallery">
-      <div class="gallery-status" id="galleryStatus">Загрузка работ…</div>
+      <div class="gallery-status" id="galleryStatus">Loading work…</div>
     </div>
   </section>
 
@@ -66,7 +557,9 @@
     </div>
     <div class="about-portrait">
       <figure>
-        <img src="raw/2026-06-19%2020.09.40.jpg" alt="Evgeniy Moroz — colorist" loading="lazy" />
+        <img src="media/portrait/portrait.jpg" alt="Evgeniy Moroz — colorist"
+             loading="lazy"
+             onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='raw/2026-06-19%2020.09.40.jpg';}" />
       </figure>
       <div class="cap">
         <strong>Evgeniy Moroz</strong>
@@ -77,20 +570,20 @@
     <div class="about-grid">
       <div class="about-lead">
         <p>
-          Меня зовут Evgeniy Moroz. Я колорист — работаю с рекламой,
-          музыкальными клипами и фешн-роликами.
+          I'm Evgeniy Moroz, a colorist working across commercials, music
+          videos and fashion films.
         </p>
       </div>
       <div class="about-body">
         <p>
-          Цвет для меня — продолжение режиссуры. Я выстраиваю свет, контраст
-          и палитру так, чтобы кадр держал внимание и передавал нужное
-          настроение: от строгого минимализма до насыщенного кинематографа.
+          Color, for me, is an extension of direction. I shape light, contrast
+          and palette so a frame holds attention and carries the right mood —
+          from restrained minimalism to rich, cinematic looks.
         </p>
         <p>
-          Работаю в DaVinci Resolve, с материалом любого формата — от съёмки
-          на ARRI и RED до дронов и мобильных камер. Делаю как полный
-          grade под финал, так и lookdev и тест-эстетику на препродакшене.
+          I work in DaVinci Resolve with footage of any format — from ARRI and
+          RED to drones and mobile cameras. I handle full final grades as well
+          as look development and pre-production tests.
         </p>
         <ul class="about-tags">
           <li>Commercials</li>
@@ -110,7 +603,7 @@
       <h2 class="section-title">Contact</h2>
     </div>
     <div class="contact-inner">
-      <p class="contact-lead">Есть проект? Давайте обсудим цвет.</p>
+      <p class="contact-lead">Have a project? Let's talk color.</p>
       <a class="contact-mail" href="mailto:eugeniymoroz@gmail.com">eugeniymoroz@gmail.com</a>
       <div class="contact-socials">
         <a href="#" rel="noopener">Instagram</a>
@@ -122,16 +615,171 @@
 
   <footer class="footer">
     <span>© <span id="year"></span> Evgeniy Moroz</span>
-    <a href="#top">Наверх ↑</a>
+    <a href="#top">Back to top ↑</a>
   </footer>
 
   <!-- LIGHTBOX -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
-    <button class="lightbox-close" id="lightboxClose" aria-label="Закрыть">×</button>
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">×</button>
     <div class="lightbox-media" id="lightboxMedia"></div>
     <p class="lightbox-caption" id="lightboxCaption"></p>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+  /* ============================================================
+     Evgeniy Moroz — Colorist  ·  interactions
+     Work is pulled automatically from Vimeo
+     (vimeo.com/eugeniymoroz) via the public JSON API.
+     ============================================================ */
+
+  const VIMEO_USER = "eugeniymoroz";
+
+  /* Bundled snapshot of the feed in case the network is
+     unavailable (e.g. opening the file locally with no internet).
+     When online, the list refreshes automatically. */
+  const FALLBACK_VIDEOS = [
+    { id: 1187769539, title: "ZLATA", thumb: "https://i.vimeocdn.com/video/2151859661-531261a4d1e4e394a13013e2f28601b1ce249b04608636655c333c8b568e6fea-d_640?region=us" },
+    { id: 1166998172, title: "Maria Dritsa Feggaria", thumb: "https://i.vimeocdn.com/video/2124828249-cde02ebecb2bcceab6ce66e6f80cf3e2122fdeb8f13658a4fbd74c8ae38b70f1-d_640?region=us" },
+    { id: 1148295776, title: "SameLine", thumb: "https://i.vimeocdn.com/video/2098421175-63c5a285390a4a730fa641c8222f958464b3f1ff8ffcce3a0de9daa674cff247-d_640?region=us" },
+    { id: 1117852148, title: "ULTRA", thumb: "https://i.vimeocdn.com/video/2057877218-025f09ea0bf2404bc04ea98c5ae04fb2c38acb9b45d1d472e9fd418ca57f2549-d_640?region=us" },
+    { id: 1114346099, title: "Максим Бородін x Tayanna — Косатка", thumb: "https://i.vimeocdn.com/video/2053065831-7839a8811625bd6121bc939061547f58e6086537e8107ee9b9b7d8a703ed9a1a-d_640?region=us" },
+    { id: 1110574512, title: "Brykulets — Ліза", thumb: "https://i.vimeocdn.com/video/2048365504-c6a54e67b1a162a32f04fa261e76d44fc9006fc54cc483c38ab086fdf8c3812e-d_640?region=us" },
+    { id: 1110574463, title: "KLER — Хай світ пам'ятає", thumb: "https://i.vimeocdn.com/video/2048365211-71ef1a214da25a392bec9eb4ab346d649978c5c744d1492cb8a23beb2cc5b64e-d_640?region=us" },
+    { id: 1110061531, title: "PERIMETR", thumb: "https://i.vimeocdn.com/video/2047726348-2f45884b70b5998d63e8fd691738fd2ec3b5f0f89330b7d07e61b73e7a500ad8-d_640?region=us" },
+    { id: 1110061474, title: "PULPA", thumb: "https://i.vimeocdn.com/video/2047725089-e785aec017bd6fe84cbc0976f1c6b9eb4e29216588dc6dae58eed59e28354360-d_640?region=us" },
+    { id: 1106506768, title: "RED MAGIC ASTRA", thumb: "https://i.vimeocdn.com/video/2043265744-5a1878c13e96c117865b764a6578c16d849bbf0a523920f2d76c41e09cf66411-d_640?region=us" },
+    { id: 1106505367, title: "REDMAGIC 10S PRO", thumb: "https://i.vimeocdn.com/video/2043265218-2f1edbe1c73c739d3ae2c3113349f255a8aa5c684727b5c17481e785828de80e-d_640?region=us" },
+    { id: 1097613743, title: "Parfeniyuk — pro tebe", thumb: "https://i.vimeocdn.com/video/2032006730-837054ab8813c18042506b94573c623a724d857b0e363ce07476e2289afed60a-d_640?region=us" },
+    { id: 1090194819, title: "WAOUU", thumb: "https://i.vimeocdn.com/video/2022756038-37909d0abd781d9fa4d355093c7dfd5ed0c009c427490a6deb21d07fa15aa0bd-d_640?region=us" },
+    { id: 1089229474, title: "CHANEL", thumb: "https://i.vimeocdn.com/video/2021618669-4d4d1e63323b454321ab3b912a6db753df4b480df8b5d0d1d0a388d347443631-d_640?region=us" },
+    { id: 1087127740, title: "VDYKH VYDYKH", thumb: "https://i.vimeocdn.com/video/2019053136-ad77740ec8662fddbcaed41d6b73a507e0c2d04e03e147fa411d890c361f0a65-d_640?region=us" },
+    { id: 1084393161, title: "PARFENIUK x Максим Бородін — Болячe", thumb: "https://i.vimeocdn.com/video/2015798939-c6c2e935dc445fce9a4b20ee6edff0dd6b9793286fe1f62a17a6c77af54a38fa-d_640?region=us" },
+    { id: 1081331880, title: "KLER — На Вінілі", thumb: "https://i.vimeocdn.com/video/2012092800-46909d8451ba2112b08705f1306975f0292e1075de74ebfc079e3ec955bd939d-d_640?region=us" },
+    { id: 1076107610, title: "Chekson — Killer", thumb: "https://i.vimeocdn.com/video/2005829404-2b69903b0c97ee2236c7b300324d4af7a906527de29adb8d614010a4eaf6fe5c-d_640?region=us" },
+    { id: 1075395372, title: "GREAT — FLOAT", thumb: "https://i.vimeocdn.com/video/2004969297-963dfbcec62b65ba075fd3a814a788dbf4caca9a6f19c2e823bcbc24da9c0dd5-d_640?region=us" },
+    { id: 1065576718, title: "Hubba Bubba", thumb: "https://i.vimeocdn.com/video/1993114568-c03dcf906793d27a7ba368fd300b80a3a978c5e23ce693de0ffc95a8dfa7abc7-d_640?region=us" },
+  ];
+
+  const gallery = document.getElementById("gallery");
+  const galleryStatus = document.getElementById("galleryStatus");
+
+  /* ---- Render gallery from a list of videos ---- */
+  function renderGallery(videos) {
+    gallery.innerHTML = "";
+    videos.forEach((v) => {
+      const card = document.createElement("article");
+      card.className = "project";
+      card.innerHTML = `
+        <div class="ph">${escapeHtml(v.title)}</div>
+        <img alt="${escapeHtml(v.title)}" loading="lazy" />
+        <div class="play" aria-hidden="true"></div>
+        <div class="meta"><h3>${escapeHtml(v.title)}</h3></div>`;
+
+      const img = card.querySelector("img");
+      img.addEventListener("load", () => card.classList.add("has-img"));
+      img.addEventListener("error", () => card.classList.remove("has-img"));
+      if (v.thumb) img.src = v.thumb;
+
+      card.addEventListener("click", () => openVideo(v.id, v.title));
+      gallery.appendChild(card);
+    });
+    revealProjects();
+  }
+
+  /* ---- Live fetch from Vimeo Simple API via JSONP ---- */
+  function loadVimeo() {
+    const cb = "__vimeo_" + Date.now();
+    const timeout = setTimeout(() => cleanup(false), 6000);
+
+    window[cb] = (data) => {
+      clearTimeout(timeout);
+      if (Array.isArray(data) && data.length) {
+        const videos = data.map((d) => ({
+          id: d.id,
+          title: (d.title || "Untitled").replace(/\s+VIMEO\s*$/i, "").trim(),
+          thumb: d.thumbnail_large,
+        }));
+        renderGallery(videos);
+      }
+      cleanup(true);
+    };
+
+    function cleanup(ok) {
+      delete window[cb];
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+      if (!ok && !gallery.querySelector(".project")) {
+        renderGallery(FALLBACK_VIDEOS);
+      }
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://vimeo.com/api/v2/${VIMEO_USER}/videos.json?callback=${cb}`;
+    script.onerror = () => { clearTimeout(timeout); cleanup(false); };
+    document.head.appendChild(script);
+  }
+
+  /* Show fallback fast, then refresh live so something is always visible */
+  renderGallery(FALLBACK_VIDEOS);
+  loadVimeo();
+
+  /* ---- Scroll reveal ---- */
+  function revealProjects() {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll(".project:not(.in)").forEach((el, i) => {
+      el.style.transitionDelay = `${(i % 3) * 0.07}s`;
+      io.observe(el);
+    });
+  }
+
+  /* ---- Lightbox video ---- */
+  const lightbox = document.getElementById("lightbox");
+  const lightboxMedia = document.getElementById("lightboxMedia");
+  const lightboxCaption = document.getElementById("lightboxCaption");
+  const lightboxClose = document.getElementById("lightboxClose");
+
+  function openVideo(id, caption) {
+    lightboxMedia.innerHTML =
+      `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0&color=8a8a90"
+        allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    lightboxCaption.textContent = caption;
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightboxMedia.innerHTML = ""; // stop playback
+    document.body.style.overflow = "";
+  }
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeLightbox();
+  });
+
+  /* ---- Utils ---- */
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
