@@ -321,20 +321,53 @@
     to   { opacity: 1; transform: none; }
   }
 
+  /* horizontal reel: 3 rows, scroll right for more */
+  .gallery-wrap { position: relative; }
   .gallery {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, auto);
+    grid-auto-columns: min(360px, 80vw);
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    padding: 16px 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  .gallery::-webkit-scrollbar { display: none; }
+  .gallery .project { scroll-snap-align: start; }
   .gallery-status {
-    grid-column: 1 / -1;
-    padding: 30px 0;
-    text-align: center;
+    padding: 40px 4px;
     font-size: 0.74rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--grey-soft);
   }
+
+  /* scroll arrows */
+  .gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: rgba(10,10,11,0.7);
+    backdrop-filter: blur(6px);
+    color: var(--white);
+    font-size: 1.6rem; line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease), opacity 0.3s var(--ease);
+  }
+  .gallery-arrow.next { right: -6px; }
+  .gallery-arrow.prev { left: -6px; }
+  .gallery-arrow:hover { border-color: var(--grey); background: rgba(10,10,11,0.92); transform: translateY(-50%) scale(1.08); }
+  .gallery-arrow[hidden] { display: none; }
   .project {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -355,6 +388,22 @@
     object-fit: cover;
     display: block;
   }
+  /* hover-to-play preview inside the tile */
+  .project .preview {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    animation: previewIn 0.45s var(--ease) forwards;
+  }
+  .project .preview iframe {
+    width: 100%; height: 100%;
+    border: 0;
+    display: block;
+    pointer-events: none;
+  }
+  @keyframes previewIn { to { opacity: 1; } }
+  .project.previewing .play { opacity: 0; }
   .project .ph {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -615,10 +664,6 @@
     .nav-links { gap: 18px; }
     .brand-role { display: none; }
     .about-grid { grid-template-columns: 1fr; gap: 28px; }
-    .gallery { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (max-width: 620px) {
-    .gallery { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 520px) {
     .nav { padding: 16px 20px; }
@@ -693,13 +738,25 @@
 
     <div class="work-panels">
       <div class="work-cat is-active" data-cat="music">
-        <div class="gallery" data-album="12295317"><div class="gallery-status">Loading…</div></div>
+        <div class="gallery-wrap">
+          <button type="button" class="gallery-arrow prev" aria-label="Scroll left" hidden>‹</button>
+          <div class="gallery" data-album="12295317"><div class="gallery-status">Loading…</div></div>
+          <button type="button" class="gallery-arrow next" aria-label="Scroll right" hidden>›</button>
+        </div>
       </div>
       <div class="work-cat" data-cat="commercial">
-        <div class="gallery" data-album="12295351"><div class="gallery-status">Loading…</div></div>
+        <div class="gallery-wrap">
+          <button type="button" class="gallery-arrow prev" aria-label="Scroll left" hidden>‹</button>
+          <div class="gallery" data-album="12295351"><div class="gallery-status">Loading…</div></div>
+          <button type="button" class="gallery-arrow next" aria-label="Scroll right" hidden>›</button>
+        </div>
       </div>
       <div class="work-cat" data-cat="fashion">
-        <div class="gallery" data-album="12295355"><div class="gallery-status">Loading…</div></div>
+        <div class="gallery-wrap">
+          <button type="button" class="gallery-arrow prev" aria-label="Scroll left" hidden>‹</button>
+          <div class="gallery" data-album="12295355"><div class="gallery-status">Loading…</div></div>
+          <button type="button" class="gallery-arrow next" aria-label="Scroll right" hidden>›</button>
+        </div>
       </div>
     </div>
   </section>
@@ -783,28 +840,89 @@
      Evgeniy Moroz — Colorist  ·  interactions
      ============================================================ */
 
-  /* ---- Background reel: cycle these clips on a loop ---- */
-  const BG_CLIPS = [1166998172, 1087127740, 1090194819, 1110061474];
+  /* ---- Background reel ----
+     Uses EVERY video in the portfolio, picking a fragment from the
+     middle of each clip (never the start or the end). The playlist
+     is pulled live from Vimeo and shuffled. */
+  const VIMEO_USER = "eugeniymoroz";
   const bgFrame = document.getElementById("bgFrame");
-  let bgIdx = 0;
-  function bgSrc(id) {
-    return `https://player.vimeo.com/video/${id}?background=1&autoplay=1&loop=1&muted=1&dnt=1`;
+  const BG_SEG = 13;            // seconds shown per fragment
+  let bgPlaylist = [];          // [{ id, dur }]
+  let bgPos = 0;
+  let bgStarted = false;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
   }
-  function setBg(id) {
+
+  function bgStartTime(dur) {
+    // a point in the middle, leaving room so we never reach the end
+    if (!dur || dur <= BG_SEG + 4) return 0;
+    const lo = Math.floor(dur * 0.2);
+    let hi = Math.floor(dur * 0.85) - BG_SEG;
+    if (hi < lo) hi = lo;
+    return lo + Math.floor(Math.random() * (hi - lo + 1));
+  }
+
+  function bgShow(item) {
+    const t = bgStartTime(item.dur);
     bgFrame.innerHTML =
-      `<iframe src="${bgSrc(id)}" allow="autoplay; fullscreen" tabindex="-1" title=""></iframe>`;
+      `<iframe src="https://player.vimeo.com/video/${item.id}?background=1&autoplay=1&loop=1&muted=1&dnt=1#t=${t}s"
+        allow="autoplay; fullscreen" tabindex="-1" title=""></iframe>`;
   }
-  if (bgFrame) {
-    setBg(BG_CLIPS[0]);
+
+  function bgStart() {
+    if (bgStarted || !bgPlaylist.length || !bgFrame) return;
+    bgStarted = true;
+    bgShow(bgPlaylist[0]);
     setInterval(() => {
-      bgIdx = (bgIdx + 1) % BG_CLIPS.length;
-      bgFrame.style.opacity = "0";          // fade out
+      bgPos = (bgPos + 1) % bgPlaylist.length;
+      bgFrame.style.opacity = "0";                       // fade out
       setTimeout(() => {
-        setBg(BG_CLIPS[bgIdx]);             // swap clip
-        bgFrame.style.opacity = "1";        // fade in
+        bgShow(bgPlaylist[bgPos]);                       // next fragment
+        bgFrame.style.opacity = "1";                     // fade in
       }, 900);
-    }, 15000);                               // ~15s per clip
+    }, BG_SEG * 1000);
   }
+
+  function loadBgPlaylist() {
+    if (!bgFrame) return;
+    const MAX_PAGES = 20;
+    function page(p) {
+      const cb = "__bg_" + p + "_" + Date.now();
+      let script;
+      function cleanup() {
+        delete window[cb];
+        if (script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = (data) => {
+        cleanup();
+        if (Array.isArray(data) && data.length) {
+          bgPlaylist = bgPlaylist.concat(
+            shuffle(data.map((d) => ({ id: d.id, dur: d.duration || 0 })))
+          );
+          bgStart(); // start as soon as the first page is in
+          if (data.length >= 20 && p < MAX_PAGES) { page(p + 1); return; }
+        } else if (!bgStarted) {
+          bgPlaylist = [{ id: 1090194819, dur: 177 }]; // safe fallback
+          bgStart();
+        }
+      };
+      script = document.createElement("script");
+      script.src = `https://vimeo.com/api/v2/${VIMEO_USER}/videos.json?page=${p}&callback=${cb}`;
+      script.onerror = () => {
+        cleanup();
+        if (!bgStarted) { bgPlaylist = [{ id: 1090194819, dur: 177 }]; bgStart(); }
+      };
+      document.head.appendChild(script);
+    }
+    page(1);
+  }
+  loadBgPlaylist();
 
   /* ---- Hero "View work": reveal category sub-links ---- */
   const viewWorkBtn = document.getElementById("viewWorkBtn");
@@ -841,6 +959,35 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
+  /* ---- Hover-to-play preview (muted, from the middle) ---- */
+  let activePreview = null;
+  let hoverTimer = null;
+  function previewStart(dur) {
+    if (!dur || dur <= 10) return 0;
+    const lo = Math.floor(dur * 0.2);
+    const hi = Math.floor(dur * 0.7);
+    return lo + Math.floor(Math.random() * (hi - lo + 1));
+  }
+  function startPreview(card, id, dur) {
+    if (activePreview && activePreview !== card) stopPreview(activePreview);
+    if (card.querySelector(".preview")) return;
+    const t = previewStart(dur);
+    const div = document.createElement("div");
+    div.className = "preview";
+    div.innerHTML =
+      `<iframe src="https://player.vimeo.com/video/${id}?background=1&autoplay=1&loop=1&muted=1&dnt=1#t=${t}s"
+        allow="autoplay; fullscreen" tabindex="-1" title=""></iframe>`;
+    card.appendChild(div);
+    card.classList.add("previewing");
+    activePreview = card;
+  }
+  function stopPreview(card) {
+    const p = card.querySelector(".preview");
+    if (p) p.remove();
+    card.classList.remove("previewing");
+    if (activePreview === card) activePreview = null;
+  }
+
   function makeCard(v) {
     const card = document.createElement("article");
     card.className = "project";
@@ -854,6 +1001,14 @@
     img.addEventListener("error", () => card.classList.remove("has-img"));
     if (v.thumb) img.src = v.thumb;
     card.addEventListener("click", () => openVideo(v.id, v.title));
+    card.addEventListener("mouseenter", () => {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => startPreview(card, v.id, v.dur), 240);
+    });
+    card.addEventListener("mouseleave", () => {
+      clearTimeout(hoverTimer);
+      stopPreview(card);
+    });
     return card;
   }
 
@@ -881,6 +1036,7 @@
             id: d.id,
             title: (d.title || "Untitled").replace(/\s+VIMEO\s*$/i, "").trim(),
             thumb: d.thumbnail_large,
+            dur: d.duration || 0,
           })));
           if (data.length >= 20 && p < MAX_PAGES) { fetchPage(p + 1); return; }
         } else if (first) {
@@ -903,6 +1059,7 @@
 
   function activate(cat) {
     if (!SHOWCASE[cat]) return;
+    if (activePreview) stopPreview(activePreview);
     if (workTabs) {
       workTabs.querySelectorAll(".work-tab").forEach((t) =>
         t.classList.toggle("is-active", t.dataset.target === cat));
@@ -912,6 +1069,7 @@
     const active = panels.find((p) => p.dataset.cat === cat);
     const gal = active && active.querySelector(".gallery[data-album]");
     if (gal) loadAlbum(gal);
+    requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
   }
 
   if (workTabs) {
@@ -921,6 +1079,27 @@
     });
   }
   activate("music"); // default category
+
+  /* ---- Horizontal reel arrows ---- */
+  document.querySelectorAll(".gallery-wrap").forEach((wrap) => {
+    const gal = wrap.querySelector(".gallery");
+    const prev = wrap.querySelector(".gallery-arrow.prev");
+    const next = wrap.querySelector(".gallery-arrow.next");
+    if (!gal) return;
+    const step = () => Math.max(280, gal.clientWidth * 0.8);
+    if (next) next.addEventListener("click", () => gal.scrollBy({ left: step(), behavior: "smooth" }));
+    if (prev) prev.addEventListener("click", () => gal.scrollBy({ left: -step(), behavior: "smooth" }));
+    function update() {
+      const overflow = gal.scrollWidth - gal.clientWidth;
+      const hasOverflow = overflow > 8 && gal.clientWidth > 0;
+      if (prev) prev.hidden = !hasOverflow || gal.scrollLeft <= 8;
+      if (next) next.hidden = !hasOverflow || gal.scrollLeft >= overflow - 8;
+    }
+    gal.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    new MutationObserver(update).observe(gal, { childList: true });
+    update();
+  });
 
   /* ---- Soft reveal of blocks as they scroll into view ---- */
   const revealEls = document.querySelectorAll(".reveal");
