@@ -196,6 +196,37 @@
   }
   .btn-ghost:hover { border-color: var(--grey); color: var(--white); }
 
+  /* hero "View work" reveal menu */
+  .hero-menu {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  }
+  .hero-menu.is-open { opacity: 1; transform: none; pointer-events: auto; }
+  .hero-menu-link {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border: 1px solid var(--line);
+    padding: 11px 20px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease),
+                color 0.3s var(--ease), border-color 0.3s var(--ease);
+  }
+  .hero-menu.is-open .hero-menu-link { opacity: 1; transform: none; }
+  .hero-menu.is-open .hero-menu-link:nth-child(1) { transition-delay: 0.06s; }
+  .hero-menu.is-open .hero-menu-link:nth-child(2) { transition-delay: 0.14s; }
+  .hero-menu.is-open .hero-menu-link:nth-child(3) { transition-delay: 0.22s; }
+  .hero-menu-link:hover { color: var(--white); border-color: var(--grey); }
+
   .hero-scroll {
     position: absolute;
     bottom: 34px; left: 50%;
@@ -250,46 +281,157 @@
     color: var(--text-dim);
   }
 
-  /* ---------- WORK (showcase tabs) ---------- */
-  .work-tabs {
+  /* ---------- WORK (category grids) ---------- */
+  .work-cat { margin-bottom: 64px; scroll-margin-top: 90px; }
+  .work-cat:last-child { margin-bottom: 0; }
+  .work-cat-head {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 28px;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
   }
-  .work-tab {
+  .work-cat-head h3 {
     font-family: "Space Grotesk", sans-serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.16em;
+    font-weight: 500;
+    font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+    color: var(--white);
+    letter-spacing: 0.01em;
+  }
+  .work-cat-head a {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--text-dim);
-    background: transparent;
-    border: 1px solid var(--line);
-    padding: 11px 22px;
-    cursor: pointer;
-    transition: color 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+    color: var(--grey);
+    transition: color 0.3s var(--ease);
+    white-space: nowrap;
   }
-  .work-tab:hover { color: var(--white); border-color: var(--grey); }
-  .work-tab.is-active {
-    color: #000;
-    background: var(--white);
-    border-color: var(--white);
+  .work-cat-head a:hover { color: var(--white); }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
   }
-  .work-embed {
+  .gallery-status {
+    grid-column: 1 / -1;
+    padding: 30px 0;
+    text-align: center;
+    font-size: 0.74rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--grey-soft);
+  }
+  .project {
     position: relative;
-    width: 100%;
     aspect-ratio: 16 / 9;
-    min-height: 440px;
+    overflow: hidden;
     background: var(--panel);
     border: 1px solid var(--line);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
   }
-  .work-embed iframe {
-    position: absolute;
-    inset: 0;
+  .project.in { opacity: 1; transform: none; }
+  .project img {
     width: 100%; height: 100%;
-    border: 0;
+    object-fit: cover;
     display: block;
+    filter: grayscale(0.4) brightness(0.85) contrast(1.05);
+    transition: transform 0.9s var(--ease), filter 0.6s var(--ease);
   }
+  .project:hover img { transform: scale(1.05); filter: grayscale(0) brightness(1) contrast(1.05); }
+  .project .ph {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(45deg, #161618 0 14px, #1b1b1e 14px 28px);
+    color: var(--grey-soft);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 10px;
+  }
+  .project.has-img .ph { display: none; }
+  .project .play {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 46px; height: 46px;
+    transform: translate(-50%, -50%) scale(0.85);
+    border: 1px solid rgba(246,246,247,0.7);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(10,10,11,0.35);
+    opacity: 0;
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+    z-index: 2;
+  }
+  .project .play::after {
+    content: "";
+    margin-left: 2px;
+    border-style: solid;
+    border-width: 6px 0 6px 11px;
+    border-color: transparent transparent transparent var(--white);
+  }
+  .project:hover .play { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .project .meta {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 14px;
+    background: linear-gradient(to top, rgba(8,8,9,0.94) 0%, rgba(8,8,9,0) 100%);
+    z-index: 2;
+  }
+  .project .meta h3 {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 500;
+    font-size: 0.82rem;
+    color: var(--white);
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+  }
+
+  /* ---------- LIGHTBOX ---------- */
+  .lightbox {
+    position: fixed; inset: 0;
+    z-index: 8000;
+    background: rgba(6,6,7,0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 5vh 5vw;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease);
+  }
+  .lightbox.open { opacity: 1; visibility: visible; }
+  .lightbox-media {
+    width: min(1100px, 100%);
+    aspect-ratio: 16 / 9;
+    max-height: 80vh;
+    background: #000;
+    border: 1px solid var(--line);
+  }
+  .lightbox-media iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .lightbox-caption {
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--grey);
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 24px; right: 30px;
+    background: none; border: none;
+    color: var(--text-dim);
+    font-size: 2.4rem; line-height: 1;
+    cursor: pointer;
+    transition: color 0.3s var(--ease);
+  }
+  .lightbox-close:hover { color: var(--white); }
 
   /* ---------- ABOUT ---------- */
   .about-portrait {
@@ -420,14 +562,16 @@
     .nav-links { gap: 18px; }
     .brand-role { display: none; }
     .about-grid { grid-template-columns: 1fr; gap: 28px; }
+    .gallery { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 620px) {
+    .gallery { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 520px) {
     .nav { padding: 16px 20px; }
     .nav-links a { font-size: 0.68rem; letter-spacing: 0.1em; }
     .hero-actions { gap: 12px; }
     .btn { padding: 12px 22px; }
-    .work-tab { padding: 10px 16px; font-size: 0.72rem; letter-spacing: 0.1em; }
-    .work-embed { min-height: 300px; }
   }
   </style>
 </head>
@@ -466,9 +610,14 @@
         tone, built around the idea of each project.
       </p>
       <div class="hero-actions">
-        <a href="#work" class="btn">View work</a>
+        <button type="button" class="btn" id="viewWorkBtn" aria-expanded="false" aria-controls="heroMenu">View work</button>
         <a href="#contact" class="btn btn-ghost">Get in touch</a>
       </div>
+      <nav class="hero-menu" id="heroMenu" aria-hidden="true">
+        <a href="#work-music" class="hero-menu-link">Music Video</a>
+        <a href="#work-commercial" class="hero-menu-link">Commercial</a>
+        <a href="#work-fashion" class="hero-menu-link">Fashion</a>
+      </nav>
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span></div>
   </section>
@@ -478,19 +627,37 @@
     <div class="section-head">
       <span class="section-index">01</span>
       <h2 class="section-title">Work</h2>
-      <p class="section-note">Vimeo showcases</p>
+      <p class="section-note">Vimeo · auto-updated</p>
     </div>
-    <div class="work-tabs" id="workTabs">
-      <button class="work-tab is-active" data-showcase="12295317">Music Video</button>
-      <button class="work-tab" data-showcase="12295351">Commercial</button>
-      <button class="work-tab" data-showcase="12295355">Fashion</button>
+
+    <div class="work-cat" id="work-music">
+      <div class="work-cat-head">
+        <h3>Music Video</h3>
+        <a href="https://vimeo.com/showcase/12295317" target="_blank" rel="noopener">All on Vimeo →</a>
+      </div>
+      <div class="gallery" data-album="12295317">
+        <div class="gallery-status">Loading…</div>
+      </div>
     </div>
-    <div class="work-embed">
-      <iframe id="workFrame"
-              src="https://vimeo.com/showcase/12295317/embed"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowfullscreen
-              title="Work — Vimeo showcase"></iframe>
+
+    <div class="work-cat" id="work-commercial">
+      <div class="work-cat-head">
+        <h3>Commercial</h3>
+        <a href="https://vimeo.com/showcase/12295351" target="_blank" rel="noopener">All on Vimeo →</a>
+      </div>
+      <div class="gallery" data-album="12295351">
+        <div class="gallery-status">Loading…</div>
+      </div>
+    </div>
+
+    <div class="work-cat" id="work-fashion">
+      <div class="work-cat-head">
+        <h3>Fashion</h3>
+        <a href="https://vimeo.com/showcase/12295355" target="_blank" rel="noopener">All on Vimeo →</a>
+      </div>
+      <div class="gallery" data-album="12295355">
+        <div class="gallery-status">Loading…</div>
+      </div>
     </div>
   </section>
 
@@ -561,6 +728,13 @@
     <a href="#top">Back to top ↑</a>
   </footer>
 
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">×</button>
+    <div class="lightbox-media" id="lightboxMedia"></div>
+    <p class="lightbox-caption" id="lightboxCaption"></p>
+  </div>
+
   <script>
   /* ============================================================
      Evgeniy Moroz — Colorist  ·  interactions
@@ -589,21 +763,126 @@
     }, 15000);                               // ~15s per clip
   }
 
-  /* ---- Work: switch between Vimeo showcases ----
-     To add / change a category, edit the buttons in the Work
-     section (data-showcase="SHOWCASE_ID"). Videos themselves are
-     managed in the showcase on Vimeo — nothing else to update. */
-  const workTabs = document.getElementById("workTabs");
-  const workFrame = document.getElementById("workFrame");
-  if (workTabs && workFrame) {
-    workTabs.addEventListener("click", (e) => {
-      const btn = e.target.closest(".work-tab");
-      if (!btn || btn.classList.contains("is-active")) return;
-      workTabs.querySelectorAll(".work-tab").forEach((t) => t.classList.remove("is-active"));
-      btn.classList.add("is-active");
-      workFrame.src = `https://vimeo.com/showcase/${btn.dataset.showcase}/embed`;
+  /* ---- Hero "View work": reveal category sub-links ---- */
+  const viewWorkBtn = document.getElementById("viewWorkBtn");
+  const heroMenu = document.getElementById("heroMenu");
+  if (viewWorkBtn && heroMenu) {
+    viewWorkBtn.addEventListener("click", () => {
+      const open = heroMenu.classList.toggle("is-open");
+      viewWorkBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      heroMenu.setAttribute("aria-hidden", open ? "false" : "true");
+    });
+    heroMenu.querySelectorAll("a").forEach((a) =>
+      a.addEventListener("click", () => {
+        heroMenu.classList.remove("is-open");
+        viewWorkBtn.setAttribute("aria-expanded", "false");
+        heroMenu.setAttribute("aria-hidden", "true");
+      })
+    );
+  }
+
+  /* ---- Work grids: pull each category from its Vimeo showcase ----
+     Each .gallery[data-album="ID"] loads that showcase's videos via
+     the public album API (JSONP). Add a video to the showcase on
+     Vimeo and it appears here automatically. */
+  const PER_CATEGORY = 8;
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function renderGallery(container, videos) {
+    container.innerHTML = "";
+    videos.slice(0, PER_CATEGORY).forEach((v) => {
+      const card = document.createElement("article");
+      card.className = "project";
+      card.innerHTML = `
+        <div class="ph">${escapeHtml(v.title)}</div>
+        <img alt="${escapeHtml(v.title)}" loading="lazy" />
+        <div class="play" aria-hidden="true"></div>
+        <div class="meta"><h3>${escapeHtml(v.title)}</h3></div>`;
+      const img = card.querySelector("img");
+      img.addEventListener("load", () => card.classList.add("has-img"));
+      img.addEventListener("error", () => card.classList.remove("has-img"));
+      if (v.thumb) img.src = v.thumb;
+      card.addEventListener("click", () => openVideo(v.id, v.title));
+      container.appendChild(card);
+    });
+    revealProjects();
+  }
+
+  function loadAlbum(container) {
+    const album = container.dataset.album;
+    const cb = "__alb_" + album + "_" + Date.now();
+    let script;
+    function cleanup() {
+      delete window[cb];
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cb] = (data) => {
+      cleanup();
+      if (Array.isArray(data) && data.length) {
+        renderGallery(container, data.map((d) => ({
+          id: d.id,
+          title: (d.title || "Untitled").replace(/\s+VIMEO\s*$/i, "").trim(),
+          thumb: d.thumbnail_large,
+        })));
+      } else {
+        container.innerHTML = '<div class="gallery-status">No videos yet</div>';
+      }
+    };
+    script = document.createElement("script");
+    script.src = `https://vimeo.com/api/v2/album/${album}/videos.json?callback=${cb}`;
+    script.onerror = () => {
+      cleanup();
+      container.innerHTML = '<div class="gallery-status">Couldn’t load — see on Vimeo</div>';
+    };
+    document.head.appendChild(script);
+  }
+
+  document.querySelectorAll(".gallery[data-album]").forEach(loadAlbum);
+
+  /* ---- Scroll reveal for grid items ---- */
+  let revealIO;
+  function revealProjects() {
+    if (!revealIO) {
+      revealIO = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add("in"); revealIO.unobserve(e.target); }
+        });
+      }, { threshold: 0.12 });
+    }
+    document.querySelectorAll(".project:not(.in)").forEach((el, i) => {
+      el.style.transitionDelay = `${(i % 4) * 0.06}s`;
+      revealIO.observe(el);
     });
   }
+
+  /* ---- Lightbox video ---- */
+  const lightbox = document.getElementById("lightbox");
+  const lightboxMedia = document.getElementById("lightboxMedia");
+  const lightboxCaption = document.getElementById("lightboxCaption");
+  const lightboxClose = document.getElementById("lightboxClose");
+
+  function openVideo(id, caption) {
+    lightboxMedia.innerHTML =
+      `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0&color=8a8a90"
+        allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    lightboxCaption.textContent = caption;
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightboxMedia.innerHTML = "";
+    document.body.style.overflow = "";
+  }
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
 
   document.getElementById("year").textContent = new Date().getFullYear();
   </script>
