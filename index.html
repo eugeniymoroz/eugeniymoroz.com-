@@ -30,7 +30,7 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 
   body {
     background: var(--bg);
@@ -281,32 +281,45 @@
     color: var(--text-dim);
   }
 
-  /* ---------- WORK (category grids) ---------- */
-  .work-cat { margin-bottom: 64px; scroll-margin-top: 90px; }
-  .work-cat:last-child { margin-bottom: 0; }
-  .work-cat-head {
+  /* ---------- WORK (category tabs) ---------- */
+  .work-tabs {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 22px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 30px;
   }
-  .work-cat-head h3 {
+  .work-tab {
     font-family: "Space Grotesk", sans-serif;
-    font-weight: 500;
-    font-size: clamp(1.15rem, 2.4vw, 1.6rem);
-    color: var(--white);
-    letter-spacing: 0.01em;
+    font-size: 0.8rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--line);
+    padding: 11px 22px;
+    cursor: pointer;
+    transition: color 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
   }
-  .work-cat-head a {
+  .work-tab:hover { color: var(--white); border-color: var(--grey); }
+  .work-tab.is-active { color: #000; background: var(--white); border-color: var(--white); }
+  .work-showcase-link {
+    margin-left: auto;
     font-size: 0.72rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--grey);
-    transition: color 0.3s var(--ease);
     white-space: nowrap;
+    transition: color 0.3s var(--ease);
   }
-  .work-cat-head a:hover { color: var(--white); }
+  .work-showcase-link:hover { color: var(--white); }
+
+  .work-cat { display: none; }
+  .work-cat.is-active { display: block; animation: catIn 0.5s var(--ease); }
+  @keyframes catIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
 
   .gallery {
     display: grid;
@@ -329,19 +342,22 @@
     background: var(--panel);
     border: 1px solid var(--line);
     cursor: pointer;
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+    will-change: transform;
   }
-  .project.in { opacity: 1; transform: none; }
+  .project:hover {
+    transform: scale(1.07);
+    z-index: 5;
+    box-shadow: 0 20px 46px rgba(0,0,0,0.6);
+  }
   .project img {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
     filter: grayscale(0.4) brightness(0.85) contrast(1.05);
-    transition: transform 0.9s var(--ease), filter 0.6s var(--ease);
+    transition: filter 0.5s var(--ease);
   }
-  .project:hover img { transform: scale(1.05); filter: grayscale(0) brightness(1) contrast(1.05); }
+  .project:hover img { filter: grayscale(0) brightness(1) contrast(1.05); }
   .project .ph {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -557,6 +573,46 @@
   }
   .footer a:hover { color: var(--white); }
 
+  /* ---------- SMOOTH MICRO-INTERACTIONS ---------- */
+  /* gentle scale on every clickable word, dock-style */
+  .nav-links a, .work-tab, .work-showcase-link,
+  .contact-mail, .contact-socials a, .footer a, .brand {
+    display: inline-block;
+    transition: transform 0.3s var(--ease), color 0.3s var(--ease),
+                border-color 0.3s var(--ease), background 0.3s var(--ease);
+  }
+  .nav-links a:hover, .work-showcase-link:hover,
+  .contact-mail:hover, .contact-socials a:hover, .footer a:hover { transform: scale(1.08); }
+  .work-tab:hover { transform: scale(1.05); }
+  .brand:hover { transform: scale(1.04); }
+  .btn:hover { transform: translateY(-1px) scale(1.04); }
+  .hero-menu.is-open .hero-menu-link:hover {
+    transform: scale(1.08);
+    color: var(--white);
+    border-color: var(--grey);
+  }
+
+  /* soft reveal of blocks as they enter the viewport */
+  .reveal {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* soft entrance for the hero copy */
+  .hero-inner { animation: heroIn 1s var(--ease) both; }
+  @keyframes heroIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 860px) {
     .nav-links { gap: 18px; }
@@ -614,9 +670,9 @@
         <a href="#contact" class="btn btn-ghost">Get in touch</a>
       </div>
       <nav class="hero-menu" id="heroMenu" aria-hidden="true">
-        <a href="#work-music" class="hero-menu-link">Music Video</a>
-        <a href="#work-commercial" class="hero-menu-link">Commercial</a>
-        <a href="#work-fashion" class="hero-menu-link">Fashion</a>
+        <a href="#work" class="hero-menu-link" data-target="music">Music Video</a>
+        <a href="#work" class="hero-menu-link" data-target="commercial">Commercial</a>
+        <a href="#work" class="hero-menu-link" data-target="fashion">Fashion</a>
       </nav>
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span></div>
@@ -624,50 +680,40 @@
 
   <!-- WORK -->
   <section class="section" id="work">
-    <div class="section-head">
+    <div class="section-head reveal">
       <span class="section-index">01</span>
       <h2 class="section-title">Work</h2>
       <p class="section-note">Vimeo · auto-updated</p>
     </div>
 
-    <div class="work-cat" id="work-music">
-      <div class="work-cat-head">
-        <h3>Music Video</h3>
-        <a href="https://vimeo.com/showcase/12295317" target="_blank" rel="noopener">All on Vimeo →</a>
-      </div>
-      <div class="gallery" data-album="12295317">
-        <div class="gallery-status">Loading…</div>
-      </div>
+    <div class="work-tabs" id="workTabs">
+      <button type="button" class="work-tab is-active" data-target="music">Music Video</button>
+      <button type="button" class="work-tab" data-target="commercial">Commercial</button>
+      <button type="button" class="work-tab" data-target="fashion">Fashion</button>
+      <a class="work-showcase-link" id="workShowcaseLink"
+         href="https://vimeo.com/showcase/12295317" target="_blank" rel="noopener">All on Vimeo →</a>
     </div>
 
-    <div class="work-cat" id="work-commercial">
-      <div class="work-cat-head">
-        <h3>Commercial</h3>
-        <a href="https://vimeo.com/showcase/12295351" target="_blank" rel="noopener">All on Vimeo →</a>
+    <div class="work-panels">
+      <div class="work-cat is-active" data-cat="music">
+        <div class="gallery" data-album="12295317"><div class="gallery-status">Loading…</div></div>
       </div>
-      <div class="gallery" data-album="12295351">
-        <div class="gallery-status">Loading…</div>
+      <div class="work-cat" data-cat="commercial">
+        <div class="gallery" data-album="12295351"><div class="gallery-status">Loading…</div></div>
       </div>
-    </div>
-
-    <div class="work-cat" id="work-fashion">
-      <div class="work-cat-head">
-        <h3>Fashion</h3>
-        <a href="https://vimeo.com/showcase/12295355" target="_blank" rel="noopener">All on Vimeo →</a>
-      </div>
-      <div class="gallery" data-album="12295355">
-        <div class="gallery-status">Loading…</div>
+      <div class="work-cat" data-cat="fashion">
+        <div class="gallery" data-album="12295355"><div class="gallery-status">Loading…</div></div>
       </div>
     </div>
   </section>
 
   <!-- ABOUT -->
   <section class="section about" id="about">
-    <div class="section-head">
+    <div class="section-head reveal">
       <span class="section-index">02</span>
       <h2 class="section-title">About</h2>
     </div>
-    <div class="about-portrait">
+    <div class="about-portrait reveal">
       <figure>
         <img src="media/portrait/portrait.jpg" alt="Evgeniy Moroz — colorist" loading="lazy" />
       </figure>
@@ -677,7 +723,7 @@
         <span class="loc">Based in Kyiv, Ukraine</span>
       </div>
     </div>
-    <div class="about-grid">
+    <div class="about-grid reveal">
       <div class="about-lead">
         <p>
           I'm Evgeniy Moroz, a colorist working across commercials, music
@@ -708,11 +754,11 @@
 
   <!-- CONTACT -->
   <section class="section contact" id="contact">
-    <div class="section-head">
+    <div class="section-head reveal">
       <span class="section-index">03</span>
       <h2 class="section-title">Contact</h2>
     </div>
-    <div class="contact-inner">
+    <div class="contact-inner reveal">
       <p class="contact-lead">Have a project? Let's talk color.</p>
       <a class="contact-mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
       <div class="contact-socials">
@@ -772,8 +818,9 @@
       viewWorkBtn.setAttribute("aria-expanded", open ? "true" : "false");
       heroMenu.setAttribute("aria-hidden", open ? "false" : "true");
     });
-    heroMenu.querySelectorAll("a").forEach((a) =>
+    heroMenu.querySelectorAll(".hero-menu-link").forEach((a) =>
       a.addEventListener("click", () => {
+        if (a.dataset.target) activate(a.dataset.target);
         heroMenu.classList.remove("is-open");
         viewWorkBtn.setAttribute("aria-expanded", "false");
         heroMenu.setAttribute("aria-hidden", "true");
@@ -781,82 +828,114 @@
     );
   }
 
-  /* ---- Work grids: pull each category from its Vimeo showcase ----
-     Each .gallery[data-album="ID"] loads that showcase's videos via
-     the public album API (JSONP). Add a video to the showcase on
-     Vimeo and it appears here automatically. */
-  const PER_CATEGORY = 8;
+  /* ---- Work: category tabs backed by Vimeo showcases ----
+     Each category loads its showcase via the public album API
+     (JSONP); the active tab is shown fully. Add a video to a
+     showcase on Vimeo and it appears here automatically. To change
+     categories, edit the tabs + panels (data-target / data-cat /
+     data-album) and the SHOWCASE map below. */
+  const SHOWCASE = { music: 12295317, commercial: 12295351, fashion: 12295355 };
+  const workTabs = document.getElementById("workTabs");
+  const workShowcaseLink = document.getElementById("workShowcaseLink");
+  const panels = Array.from(document.querySelectorAll(".work-cat"));
 
   function escapeHtml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  function renderGallery(container, videos) {
-    container.innerHTML = "";
-    videos.slice(0, PER_CATEGORY).forEach((v) => {
-      const card = document.createElement("article");
-      card.className = "project";
-      card.innerHTML = `
-        <div class="ph">${escapeHtml(v.title)}</div>
-        <img alt="${escapeHtml(v.title)}" loading="lazy" />
-        <div class="play" aria-hidden="true"></div>
-        <div class="meta"><h3>${escapeHtml(v.title)}</h3></div>`;
-      const img = card.querySelector("img");
-      img.addEventListener("load", () => card.classList.add("has-img"));
-      img.addEventListener("error", () => card.classList.remove("has-img"));
-      if (v.thumb) img.src = v.thumb;
-      card.addEventListener("click", () => openVideo(v.id, v.title));
-      container.appendChild(card);
-    });
-    revealProjects();
+  function makeCard(v) {
+    const card = document.createElement("article");
+    card.className = "project";
+    card.innerHTML = `
+      <div class="ph">${escapeHtml(v.title)}</div>
+      <img alt="${escapeHtml(v.title)}" loading="lazy" />
+      <div class="play" aria-hidden="true"></div>
+      <div class="meta"><h3>${escapeHtml(v.title)}</h3></div>`;
+    const img = card.querySelector("img");
+    img.addEventListener("load", () => card.classList.add("has-img"));
+    img.addEventListener("error", () => card.classList.remove("has-img"));
+    if (v.thumb) img.src = v.thumb;
+    card.addEventListener("click", () => openVideo(v.id, v.title));
+    return card;
   }
 
+  /* Load the FULL showcase: the Simple API returns 20 per page,
+     so we walk pages until one comes back short, appending as we go. */
   function loadAlbum(container) {
+    if (container.dataset.loaded) return;
+    container.dataset.loaded = "1";
     const album = container.dataset.album;
-    const cb = "__alb_" + album + "_" + Date.now();
-    let script;
-    function cleanup() {
-      delete window[cb];
-      if (script && script.parentNode) script.parentNode.removeChild(script);
-    }
-    window[cb] = (data) => {
-      cleanup();
-      if (Array.isArray(data) && data.length) {
-        renderGallery(container, data.map((d) => ({
-          id: d.id,
-          title: (d.title || "Untitled").replace(/\s+VIMEO\s*$/i, "").trim(),
-          thumb: d.thumbnail_large,
-        })));
-      } else {
-        container.innerHTML = '<div class="gallery-status">No videos yet</div>';
+    const MAX_PAGES = 20; // safety cap (~400 videos)
+    let first = true;
+
+    function fetchPage(p) {
+      const cb = "__alb_" + album + "_" + p + "_" + Date.now();
+      let script;
+      function cleanup() {
+        delete window[cb];
+        if (script && script.parentNode) script.parentNode.removeChild(script);
       }
-    };
-    script = document.createElement("script");
-    script.src = `https://vimeo.com/api/v2/album/${album}/videos.json?callback=${cb}`;
-    script.onerror = () => {
-      cleanup();
-      container.innerHTML = '<div class="gallery-status">Couldn’t load — see on Vimeo</div>';
-    };
-    document.head.appendChild(script);
+      window[cb] = (data) => {
+        cleanup();
+        if (Array.isArray(data) && data.length) {
+          if (first) { container.innerHTML = ""; first = false; }
+          data.forEach((d) => container.appendChild(makeCard({
+            id: d.id,
+            title: (d.title || "Untitled").replace(/\s+VIMEO\s*$/i, "").trim(),
+            thumb: d.thumbnail_large,
+          })));
+          if (data.length >= 20 && p < MAX_PAGES) { fetchPage(p + 1); return; }
+        } else if (first) {
+          container.innerHTML = '<div class="gallery-status">No videos yet</div>';
+        }
+      };
+      script = document.createElement("script");
+      script.src = `https://vimeo.com/api/v2/album/${album}/videos.json?page=${p}&callback=${cb}`;
+      script.onerror = () => {
+        cleanup();
+        if (first) {
+          container.dataset.loaded = "";
+          container.innerHTML = '<div class="gallery-status">Couldn’t load — see on Vimeo</div>';
+        }
+      };
+      document.head.appendChild(script);
+    }
+    fetchPage(1);
   }
 
-  document.querySelectorAll(".gallery[data-album]").forEach(loadAlbum);
-
-  /* ---- Scroll reveal for grid items ---- */
-  let revealIO;
-  function revealProjects() {
-    if (!revealIO) {
-      revealIO = new IntersectionObserver((entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) { e.target.classList.add("in"); revealIO.unobserve(e.target); }
-        });
-      }, { threshold: 0.12 });
+  function activate(cat) {
+    if (!SHOWCASE[cat]) return;
+    if (workTabs) {
+      workTabs.querySelectorAll(".work-tab").forEach((t) =>
+        t.classList.toggle("is-active", t.dataset.target === cat));
     }
-    document.querySelectorAll(".project:not(.in)").forEach((el, i) => {
-      el.style.transitionDelay = `${(i % 4) * 0.06}s`;
-      revealIO.observe(el);
+    panels.forEach((p) => p.classList.toggle("is-active", p.dataset.cat === cat));
+    if (workShowcaseLink) workShowcaseLink.href = `https://vimeo.com/showcase/${SHOWCASE[cat]}`;
+    const active = panels.find((p) => p.dataset.cat === cat);
+    const gal = active && active.querySelector(".gallery[data-album]");
+    if (gal) loadAlbum(gal);
+  }
+
+  if (workTabs) {
+    workTabs.addEventListener("click", (e) => {
+      const btn = e.target.closest(".work-tab");
+      if (btn) activate(btn.dataset.target);
     });
+  }
+  activate("music"); // default category
+
+  /* ---- Soft reveal of blocks as they scroll into view ---- */
+  const revealEls = document.querySelectorAll(".reveal");
+  if (revealEls.length && "IntersectionObserver" in window) {
+    const ro = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add("in"); ro.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+    revealEls.forEach((el) => ro.observe(el));
+  } else {
+    revealEls.forEach((el) => el.classList.add("in"));
   }
 
   /* ---- Lightbox video ---- */
