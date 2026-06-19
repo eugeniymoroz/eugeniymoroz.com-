@@ -56,19 +56,37 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* full-page monogram background */
+  /* full-page background reel (cycling clips) */
   .site-bg {
     position: fixed;
     inset: 0;
     z-index: -2;
     pointer-events: none;
-    background: #000 url("media/logos/background.png") center center / cover no-repeat;
+    overflow: hidden;
+    background: #000;
+  }
+  .site-bg-frame {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    transition: opacity 0.9s var(--ease);
+  }
+  .site-bg-frame iframe {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 100vw;
+    height: 56.25vw;        /* 16:9 */
+    min-height: 100%;
+    min-width: 177.78vh;    /* cover both axes */
+    transform: translate(-50%, -50%);
+    border: 0;
+    pointer-events: none;
   }
   .site-bg::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(rgba(10,10,11,0.74), rgba(10,10,11,0.9));
+    background: linear-gradient(rgba(10,10,11,0.8), rgba(10,10,11,0.9));
   }
 
   /* ---------- NAV ---------- */
@@ -133,32 +151,7 @@
     align-items: center;
     overflow: hidden;
     padding: 0 clamp(20px, 5vw, 56px);
-  }
-  /* WAOUU background reel */
-  .hero-video {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-  }
-  .hero-video iframe {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 100vw;
-    height: 56.25vw;        /* 16:9 */
-    min-height: 100%;
-    min-width: 177.78vh;    /* cover both axes */
-    transform: translate(-50%, -50%);
-    border: 0;
-    pointer-events: none;
-  }
-  .hero-video::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(120% 90% at 50% 0%, rgba(10,10,11,0.35) 0%, rgba(10,10,11,0.82) 70%),
-      linear-gradient(to bottom, rgba(10,10,11,0.55), rgba(10,10,11,0.7));
+    background: radial-gradient(120% 90% at 50% 8%, rgba(10,10,11,0) 0%, rgba(10,10,11,0.5) 78%);
   }
   .hero-inner { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; width: 100%; }
   .eyebrow {
@@ -548,7 +541,9 @@
   </style>
 </head>
 <body>
-  <div class="site-bg" aria-hidden="true"></div>
+  <div class="site-bg" aria-hidden="true">
+    <div class="site-bg-frame" id="bgFrame"></div>
+  </div>
   <div class="grain" aria-hidden="true"></div>
 
   <!-- NAV -->
@@ -569,10 +564,6 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-video" aria-hidden="true">
-      <iframe src="https://player.vimeo.com/video/1090194819?background=1&autoplay=1&loop=1&muted=1&dnt=1"
-              allow="autoplay; fullscreen" tabindex="-1" title="WAOUU — background reel"></iframe>
-    </div>
     <div class="hero-inner">
       <p class="eyebrow">Color Grading</p>
       <h1 class="hero-title">
@@ -656,11 +647,11 @@
     </div>
     <div class="contact-inner">
       <p class="contact-lead">Have a project? Let's talk color.</p>
-      <a class="contact-mail" href="mailto:eugeniymoroz@gmail.com">eugeniymoroz@gmail.com</a>
+      <a class="contact-mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
       <div class="contact-socials">
-        <a href="#" rel="noopener">Instagram</a>
-        <a href="#" rel="noopener">Telegram</a>
-        <a href="#" rel="noopener">Showreel</a>
+        <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://t.me/eugenimoroz" target="_blank" rel="noopener">Telegram</a>
+        <a href="https://vimeo.com/eugeniymoroz" target="_blank" rel="noopener">Showreel</a>
       </div>
     </div>
   </section>
@@ -711,6 +702,29 @@
     { id: 1075395372, title: "GREAT — FLOAT", thumb: "https://i.vimeocdn.com/video/2004969297-963dfbcec62b65ba075fd3a814a788dbf4caca9a6f19c2e823bcbc24da9c0dd5-d_640?region=us" },
     { id: 1065576718, title: "Hubba Bubba", thumb: "https://i.vimeocdn.com/video/1993114568-c03dcf906793d27a7ba368fd300b80a3a978c5e23ce693de0ffc95a8dfa7abc7-d_640?region=us" },
   ];
+
+  /* ---- Background reel: cycle these clips on a loop ---- */
+  const BG_CLIPS = [1166998172, 1087127740, 1090194819, 1110061474];
+  const bgFrame = document.getElementById("bgFrame");
+  let bgIdx = 0;
+  function bgSrc(id) {
+    return `https://player.vimeo.com/video/${id}?background=1&autoplay=1&loop=1&muted=1&dnt=1`;
+  }
+  function setBg(id) {
+    bgFrame.innerHTML =
+      `<iframe src="${bgSrc(id)}" allow="autoplay; fullscreen" tabindex="-1" title=""></iframe>`;
+  }
+  if (bgFrame) {
+    setBg(BG_CLIPS[0]);
+    setInterval(() => {
+      bgIdx = (bgIdx + 1) % BG_CLIPS.length;
+      bgFrame.style.opacity = "0";          // fade out
+      setTimeout(() => {
+        setBg(BG_CLIPS[bgIdx]);             // swap clip
+        bgFrame.style.opacity = "1";        // fade in
+      }, 900);
+    }, 15000);                               // ~15s per clip
+  }
 
   const gallery = document.getElementById("gallery");
   const galleryStatus = document.getElementById("galleryStatus");
