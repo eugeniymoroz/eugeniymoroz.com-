@@ -96,7 +96,7 @@
     z-index: 1000;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 22px clamp(20px, 5vw, 56px);
     background: linear-gradient(to bottom, rgba(10,10,11,0.85), rgba(10,10,11,0));
     backdrop-filter: blur(6px);
@@ -737,8 +737,10 @@
     align-items: center;
     gap: 18px;
     padding: 14px 20px;
-    background: rgba(12,12,14,0.82);
-    backdrop-filter: blur(10px);
+    background: rgba(12,12,14,0.25);
+    backdrop-filter: blur(14px);
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.35);
   }
   .contact-flyout a { display: inline-flex; transition: transform 0.3s var(--ease); }
   .contact-flyout a img {
@@ -837,13 +839,6 @@
 
   <!-- NAV -->
   <header class="nav" id="top">
-    <a href="#top" class="brand">
-      <img class="brand-logo" src="media/logos/my-logo-em.png" alt="EM — Evgeniy Moroz" />
-      <span class="brand-text">
-        <span class="brand-name">Evgeniy Moroz</span>
-        <span class="brand-role">Colorist</span>
-      </span>
-    </a>
     <nav class="nav-links">
       <a href="#work">Portfolio</a>
       <a href="#about">About</a>
