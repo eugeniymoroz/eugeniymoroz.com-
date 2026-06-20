@@ -153,29 +153,33 @@
     padding: 0 clamp(20px, 5vw, 56px);
     background: radial-gradient(120% 90% at 50% 8%, rgba(10,10,11,0) 0%, rgba(10,10,11,0.5) 78%);
   }
-  .hero-inner { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; width: 100%; }
-  .eyebrow {
-    font-size: 0.72rem;
-    letter-spacing: 0.42em;
-    text-transform: uppercase;
-    color: var(--grey);
-    margin-bottom: 28px;
+  .hero-inner {
+    position: relative; z-index: 1;
+    max-width: 1000px; margin: 0 auto; width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
-  .hero-title {
+  .hero-name {
     font-family: "Space Grotesk", sans-serif;
-    font-weight: 500;
-    font-size: clamp(2.1rem, 6vw, 4.6rem);
-    line-height: 1.06;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    font-size: clamp(2rem, 11.5vw, 10rem);
+    line-height: 1;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    white-space: nowrap;          /* keep name + surname on one line */
     color: var(--white);
   }
-  .hero-sub {
-    margin-top: 28px;
-    max-width: 540px;
-    color: var(--text-dim);
-    font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+  .hero-role {
+    margin-top: 18px;
+    font-size: clamp(0.82rem, 1.6vw, 1.1rem);
+    letter-spacing: 0.46em;
+    padding-left: 0.46em;        /* offset trailing letter-spacing so it's truly centered */
+    text-transform: uppercase;
+    color: var(--grey);
   }
-  .hero-actions { margin-top: 44px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .hero-nav { margin-top: 52px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
   .btn {
     display: inline-flex;
     align-items: center;
@@ -196,36 +200,69 @@
   }
   .btn-ghost:hover { border-color: var(--grey); color: var(--white); }
 
-  /* hero "View work" reveal menu */
-  .hero-menu {
-    margin-top: 22px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    opacity: 0;
-    transform: translateY(-6px);
-    pointer-events: none;
-    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
-  }
-  .hero-menu.is-open { opacity: 1; transform: none; pointer-events: auto; }
-  .hero-menu-link {
+  /* hero nav buttons + Portfolio hover submenu */
+  .hero-link {
+    display: inline-block;
     font-family: "Space Grotesk", sans-serif;
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--text-dim);
+    color: var(--text);
     border: 1px solid var(--line);
-    padding: 11px 20px;
+    padding: 13px 26px;
+    cursor: pointer;
+    transition: transform 0.3s var(--ease), color 0.3s var(--ease),
+                border-color 0.3s var(--ease), background 0.3s var(--ease);
+  }
+  .hero-link:hover { color: var(--white); border-color: var(--grey); transform: scale(1.12); }
+
+  .hero-portfolio { position: relative; }
+  .hero-submenu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    padding-top: 12px;             /* hover bridge to the buttons */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease),
+    transform: translateX(-50%) translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+    z-index: 20;
+  }
+  .hero-portfolio:hover .hero-submenu,
+  .hero-portfolio:focus-within .hero-submenu {
+    opacity: 1;
+    transform: translateX(-50%);
+    pointer-events: auto;
+  }
+  .hero-submenu a {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--text-dim);
+    background: rgba(10,10,11,0.72);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--line);
+    padding: 11px 18px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease),
                 color 0.3s var(--ease), border-color 0.3s var(--ease);
   }
-  .hero-menu.is-open .hero-menu-link { opacity: 1; transform: none; }
-  .hero-menu.is-open .hero-menu-link:nth-child(1) { transition-delay: 0.06s; }
-  .hero-menu.is-open .hero-menu-link:nth-child(2) { transition-delay: 0.14s; }
-  .hero-menu.is-open .hero-menu-link:nth-child(3) { transition-delay: 0.22s; }
-  .hero-menu-link:hover { color: var(--white); border-color: var(--grey); }
+  .hero-portfolio:hover .hero-submenu a,
+  .hero-portfolio:focus-within .hero-submenu a { opacity: 1; transform: none; }
+  .hero-submenu a:nth-child(1) { transition-delay: 0.04s; }
+  .hero-submenu a:nth-child(2) { transition-delay: 0.10s; }
+  .hero-submenu a:nth-child(3) { transition-delay: 0.16s; }
+  .hero-portfolio:hover .hero-submenu a:hover,
+  .hero-portfolio:focus-within .hero-submenu a:hover {
+    color: var(--white); border-color: var(--grey); transform: scale(1.12);
+  }
 
   .hero-scroll {
     position: absolute;
@@ -366,7 +403,7 @@
   }
   .gallery-arrow.next { right: -6px; }
   .gallery-arrow.prev { left: -6px; }
-  .gallery-arrow:hover { border-color: var(--grey); background: rgba(10,10,11,0.92); transform: translateY(-50%) scale(1.08); }
+  .gallery-arrow:hover { border-color: var(--grey); background: rgba(10,10,11,0.92); transform: translateY(-50%) scale(1.12); }
   .gallery-arrow[hidden] { display: none; }
   .project {
     position: relative;
@@ -379,9 +416,9 @@
     will-change: transform;
   }
   .project:hover {
-    transform: scale(1.07);
+    transform: scale(1.10);
     z-index: 5;
-    box-shadow: 0 20px 46px rgba(0,0,0,0.6);
+    box-shadow: 0 22px 50px rgba(0,0,0,0.62);
   }
   .project img {
     width: 100%; height: 100%;
@@ -501,8 +538,10 @@
     display: grid;
     grid-template-columns: minmax(0, 290px) 1fr;
     gap: clamp(28px, 5vw, 64px);
-    align-items: center;
+    align-items: start;
   }
+  .about-text { align-self: center; }
+  .about-text .about-body { margin-top: 28px; }
   .about-portrait figure {
     position: relative;
     aspect-ratio: 1 / 1;        /* match the photo — nothing gets cropped */
@@ -561,7 +600,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 30px;
+    margin-top: 22px;
   }
   .about-tags li {
     font-size: 0.72rem;
@@ -628,15 +667,10 @@
                 border-color 0.3s var(--ease), background 0.3s var(--ease);
   }
   .nav-links a:hover, .work-showcase-link:hover,
-  .contact-mail:hover, .contact-socials a:hover, .footer a:hover { transform: scale(1.08); }
-  .work-tab:hover { transform: scale(1.05); }
-  .brand:hover { transform: scale(1.04); }
-  .btn:hover { transform: translateY(-1px) scale(1.04); }
-  .hero-menu.is-open .hero-menu-link:hover {
-    transform: scale(1.08);
-    color: var(--white);
-    border-color: var(--grey);
-  }
+  .contact-mail:hover, .contact-socials a:hover, .footer a:hover { transform: scale(1.12); }
+  .work-tab:hover { transform: scale(1.08); }
+  .brand:hover { transform: scale(1.06); }
+  .btn:hover { transform: translateY(-1px) scale(1.06); }
 
   /* soft reveal of blocks as they enter the viewport */
   .reveal {
@@ -668,8 +702,8 @@
   @media (max-width: 520px) {
     .nav { padding: 16px 20px; }
     .nav-links a { font-size: 0.68rem; letter-spacing: 0.1em; }
-    .hero-actions { gap: 12px; }
-    .btn { padding: 12px 22px; }
+    .hero-nav { gap: 10px; }
+    .hero-link { padding: 12px 18px; letter-spacing: 0.14em; }
   }
   </style>
 </head>
@@ -689,7 +723,7 @@
       </span>
     </a>
     <nav class="nav-links">
-      <a href="#work">Work</a>
+      <a href="#work">Portfolio</a>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
     </nav>
@@ -698,23 +732,19 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-inner">
-      <p class="eyebrow">Color Grading</p>
-      <h1 class="hero-title">
-        Cinematic color<br />
-        for commercials, music videos &amp;&nbsp;fashion.
-      </h1>
-      <p class="hero-sub">
-        A colorist who works with the story of the frame — mood, contrast and
-        tone, built around the idea of each project.
-      </p>
-      <div class="hero-actions">
-        <button type="button" class="btn" id="viewWorkBtn" aria-expanded="false" aria-controls="heroMenu">View work</button>
-        <a href="#contact" class="btn btn-ghost">Get in touch</a>
-      </div>
-      <nav class="hero-menu" id="heroMenu" aria-hidden="true">
-        <a href="#work" class="hero-menu-link" data-target="music">Music Video</a>
-        <a href="#work" class="hero-menu-link" data-target="commercial">Commercial</a>
-        <a href="#work" class="hero-menu-link" data-target="fashion">Fashion</a>
+      <h1 class="hero-name">Evgeniy Moroz</h1>
+      <p class="hero-role">Colorist</p>
+      <nav class="hero-nav">
+        <a href="#about" class="hero-link">About</a>
+        <div class="hero-portfolio">
+          <a href="#work" class="hero-link">Portfolio</a>
+          <div class="hero-submenu" id="heroSubmenu">
+            <a href="#work" data-target="music">Music Video</a>
+            <a href="#work" data-target="commercial">Commercial</a>
+            <a href="#work" data-target="fashion">Fashion</a>
+          </div>
+        </div>
+        <a href="#contact" class="hero-link">Contact</a>
       </nav>
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span></div>
@@ -724,7 +754,7 @@
   <section class="section" id="work">
     <div class="section-head reveal">
       <span class="section-index">01</span>
-      <h2 class="section-title">Work</h2>
+      <h2 class="section-title">Portfolio</h2>
       <p class="section-note">Vimeo · auto-updated</p>
     </div>
 
@@ -768,40 +798,28 @@
       <h2 class="section-title">About</h2>
     </div>
     <div class="about-portrait reveal">
-      <figure>
-        <img src="media/portrait/portrait.jpg" alt="Evgeniy Moroz — colorist" loading="lazy" />
-      </figure>
-      <div class="cap">
-        <strong>Evgeniy Moroz</strong>
-        Colorist
-        <span class="loc">Based in Kyiv, Ukraine</span>
-      </div>
-    </div>
-    <div class="about-grid reveal">
-      <div class="about-lead">
-        <p>
-          I'm Evgeniy Moroz, a colorist working across commercials, music
-          videos and fashion films.
-        </p>
-      </div>
-      <div class="about-body">
-        <p>
-          Color, for me, is an extension of direction. I shape light, contrast
-          and palette so a frame holds attention and carries the right mood —
-          from restrained minimalism to rich, cinematic looks.
-        </p>
-        <p>
-          I work in DaVinci Resolve with footage of any format — from ARRI and
-          RED to drones and mobile cameras. I handle full final grades as well
-          as look development and pre-production tests.
-        </p>
+      <div class="about-photo">
+        <figure>
+          <img src="media/portrait/portrait.jpg" alt="Evgeniy Moroz — colorist" loading="lazy" />
+        </figure>
         <ul class="about-tags">
           <li>Commercials</li>
           <li>Music Videos</li>
           <li>Fashion</li>
           <li>DaVinci Resolve</li>
-          <li>Look Development</li>
+          <li>HDR</li>
+          <li>ACES</li>
         </ul>
+      </div>
+      <div class="about-text">
+        <div class="cap">
+          <strong>Evgeniy Moroz</strong>
+          Colorist
+        </div>
+        <div class="about-body">
+          <p>Evgeniy is a freelance colorist based in Kyiv, Ukraine, with 7+ years of experience in music video, commercial and fashion.</p>
+          <p>Own grading suite, available worldwide for remote sessions.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -924,21 +942,12 @@
   }
   loadBgPlaylist();
 
-  /* ---- Hero "View work": reveal category sub-links ---- */
-  const viewWorkBtn = document.getElementById("viewWorkBtn");
-  const heroMenu = document.getElementById("heroMenu");
-  if (viewWorkBtn && heroMenu) {
-    viewWorkBtn.addEventListener("click", () => {
-      const open = heroMenu.classList.toggle("is-open");
-      viewWorkBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      heroMenu.setAttribute("aria-hidden", open ? "false" : "true");
-    });
-    heroMenu.querySelectorAll(".hero-menu-link").forEach((a) =>
+  /* ---- Hero Portfolio submenu: open the chosen category ---- */
+  const heroSubmenu = document.getElementById("heroSubmenu");
+  if (heroSubmenu) {
+    heroSubmenu.querySelectorAll("[data-target]").forEach((a) =>
       a.addEventListener("click", () => {
         if (a.dataset.target) activate(a.dataset.target);
-        heroMenu.classList.remove("is-open");
-        viewWorkBtn.setAttribute("aria-expanded", "false");
-        heroMenu.setAttribute("aria-hidden", "true");
       })
     );
   }
