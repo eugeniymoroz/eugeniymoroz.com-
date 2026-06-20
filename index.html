@@ -588,6 +588,16 @@
       scroll-snap-type: none;
     }
     .gallery-arrow { display: none; }
+    /* mobile: social strip becomes a centered row near the bottom */
+    .side-social {
+      position: static;
+      transform: none;
+      flex-direction: row;
+      justify-content: center;
+      gap: 28px;
+      margin: 8px auto 44px;
+    }
+    .side-social a img { width: 30px; height: 30px; opacity: 0.85; }
   }
 
   .about-grid {
@@ -621,7 +631,13 @@
   }
 
   /* ---------- CONTACT ---------- */
-  .contact-inner { text-align: center; padding: clamp(20px, 6vh, 60px) 0; }
+  .contact-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: clamp(20px, 6vh, 60px) 0;
+  }
   .contact-lead {
     font-family: "Space Grotesk", sans-serif;
     font-size: clamp(1.4rem, 3vw, 2.2rem);
@@ -638,20 +654,47 @@
     transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
   }
   .contact-mail:hover { color: var(--white); border-color: var(--grey); }
-  .contact-socials {
-    margin-top: 42px;
+  /* enlarged email icon in the center of Contact */
+  .contact-email {
+    display: inline-flex;
+    margin: 8px 0 26px;
+    transition: transform 0.3s var(--ease);
+  }
+  .contact-email img {
+    width: clamp(64px, 9vw, 88px);
+    height: clamp(64px, 9vw, 88px);
+    object-fit: contain;
+    display: block;
+    filter: invert(1);          /* black icon → white on the dark bg */
+    opacity: 0.9;
+    transition: opacity 0.3s var(--ease);
+  }
+  .contact-email:hover { transform: scale(1.08); }
+  .contact-email:hover img { opacity: 1; }
+
+  /* fixed social strip pinned to the right edge */
+  .side-social {
+    position: fixed;
+    right: clamp(12px, 2vw, 28px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1500;
     display: flex;
-    gap: 30px;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
   }
-  .contact-socials a {
-    font-size: 0.76rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    transition: color 0.3s var(--ease);
+  .side-social a { display: inline-flex; transition: transform 0.3s var(--ease); }
+  .side-social a img {
+    width: 26px; height: 26px;
+    object-fit: contain;
+    display: block;
+    filter: invert(1);          /* black icons → white on the dark bg */
+    opacity: 0.72;
+    transition: opacity 0.3s var(--ease);
   }
-  .contact-socials a:hover { color: var(--white); }
+  .side-social a:hover { transform: scale(1.15); }
+  .side-social a:hover img { opacity: 1; }
 
   /* ---------- FOOTER ---------- */
   .footer {
@@ -670,13 +713,13 @@
   /* ---------- SMOOTH MICRO-INTERACTIONS ---------- */
   /* gentle scale on every clickable word, dock-style */
   .nav-links a, .work-tab, .work-showcase-link,
-  .contact-mail, .contact-socials a, .footer a, .brand {
+  .contact-mail, .footer a, .brand {
     display: inline-block;
     transition: transform 0.3s var(--ease), color 0.3s var(--ease),
                 border-color 0.3s var(--ease), background 0.3s var(--ease);
   }
   .nav-links a:hover, .work-showcase-link:hover,
-  .contact-mail:hover, .contact-socials a:hover, .footer a:hover { transform: scale(1.12); }
+  .contact-mail:hover, .footer a:hover { transform: scale(1.12); }
   .work-tab:hover { transform: scale(1.08); }
   .brand:hover { transform: scale(1.06); }
   .btn:hover { transform: translateY(-1px) scale(1.06); }
@@ -845,14 +888,28 @@
     </div>
     <div class="contact-inner reveal">
       <p class="contact-lead">Have a project? Let's talk color.</p>
+      <a class="contact-email" href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email">
+        <img src="media/logos/email.png" alt="Email" />
+      </a>
       <a class="contact-mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
-      <div class="contact-socials">
-        <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener">Instagram</a>
-        <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener">Telegram</a>
-        <a href="https://wa.me/380636320636" target="_blank" rel="noopener">WhatsApp</a>
-      </div>
     </div>
   </section>
+
+  <!-- SOCIAL STRIP (right edge) -->
+  <nav class="side-social" aria-label="Social links">
+    <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram">
+      <img src="media/logos/inst.png" alt="Instagram" />
+    </a>
+    <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram">
+      <img src="media/logos/telegram.png" alt="Telegram" />
+    </a>
+    <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp">
+      <img src="media/logos/whatsapp.png" alt="WhatsApp" />
+    </a>
+    <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn">
+      <img src="media/logos/linkedin.png" alt="LinkedIn" />
+    </a>
+  </nav>
 
   <footer class="footer">
     <span>© <span id="year"></span> Evgeniy Moroz</span>
