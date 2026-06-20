@@ -587,9 +587,9 @@
   .about-portrait .cap {
     align-self: center;
     font-family: "Space Grotesk", sans-serif;
-    font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+    font-size: clamp(2rem, 4vw, 3rem);
     color: var(--text-dim);
-    line-height: 1.35;
+    line-height: 1.3;
   }
   .about-portrait .cap strong {
     display: block;
@@ -631,21 +631,27 @@
     color: var(--white);
     letter-spacing: -0.01em;
   }
-  .about-body p { color: var(--text-dim); margin-bottom: 20px; max-width: 56ch; }
+  .about-body p {
+    color: var(--text-dim);
+    margin-bottom: 22px;
+    max-width: 56ch;
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    line-height: 1.5;
+  }
   .about-tags {
     list-style: none;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 22px;
+    margin-top: 24px;
   }
   .about-tags li {
-    font-size: 0.72rem;
+    font-size: 0.84rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--grey);
     border: 1px solid var(--line);
-    padding: 8px 16px;
+    padding: 10px 20px;
   }
 
   /* ---------- CONTACT ---------- */
