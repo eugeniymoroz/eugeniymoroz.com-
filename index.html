@@ -419,6 +419,9 @@
     z-index: 5;
     box-shadow: 0 22px 50px rgba(0,0,0,0.62);
   }
+  @media (hover: none) {
+    .project:hover { transform: none; box-shadow: none; }
+  }
   .project img {
     width: 100%; height: 100%;
     object-fit: cover;
@@ -578,6 +581,13 @@
   @media (max-width: 700px) {
     .about-portrait { grid-template-columns: 1fr; gap: 24px; }
     .about-portrait figure { max-width: 320px; }
+    /* mobile: natural vertical list, no inner-scroll clamp */
+    .gallery {
+      max-height: none !important;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+    .gallery-arrow { display: none; }
   }
 
   .about-grid {
@@ -1014,6 +1024,7 @@
     if (v.thumb) img.src = v.thumb;
     card.addEventListener("click", () => openVideo(v.id, v.title));
     card.addEventListener("mouseenter", () => {
+      if (!window.matchMedia("(hover: hover)").matches) return; // skip on touch
       clearTimeout(hoverTimer);
       hoverTimer = setTimeout(() => startPreview(card, v.id, v.dur), 240);
     });
@@ -1099,6 +1110,7 @@
     const next = wrap.querySelector(".gallery-arrow.next");
     if (!gal) return;
     function setHeight() {
+      if (window.innerWidth <= 700) { gal.style.maxHeight = ""; return; } // mobile: no clamp
       if (!gal.clientWidth) return;
       const cs = getComputedStyle(gal);
       const cols = cs.gridTemplateColumns.split(" ").filter(Boolean).length || 3;
