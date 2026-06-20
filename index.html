@@ -700,23 +700,25 @@
     transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
   }
   .contact-mail:hover { color: var(--white); border-color: var(--grey); }
-  /* enlarged email icon in the center of Contact */
-  .contact-email {
-    display: inline-flex;
-    margin: 8px 0 26px;
-    transition: transform 0.3s var(--ease);
+  /* contact icons row */
+  .contact-icons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    margin: 6px 0 30px;
   }
-  .contact-email img {
-    width: clamp(64px, 9vw, 88px);
-    height: clamp(64px, 9vw, 88px);
+  .contact-icons a { display: inline-flex; transition: transform 0.3s var(--ease); }
+  .contact-icons a img {
+    width: 32px; height: 32px;
     object-fit: contain;
     display: block;
-    filter: invert(1);          /* black icon → white on the dark bg */
-    opacity: 0.9;
+    filter: invert(1);          /* black icons → white on the dark bg */
+    opacity: 0.8;
     transition: opacity 0.3s var(--ease);
   }
-  .contact-email:hover { transform: scale(1.08); }
-  .contact-email:hover img { opacity: 1; }
+  .contact-icons a:hover { transform: scale(1.16); }
+  .contact-icons a:hover img { opacity: 1; }
 
   /* ---------- CONTACT FLYOUT (icons on hover) ---------- */
   .nav-contact { position: relative; }
@@ -886,27 +888,9 @@
       <h1 class="hero-name">Evgeniy Moroz</h1>
       <p class="hero-role">Colorist</p>
       <nav class="hero-nav">
-        <a href="#about" class="hero-link">About</a>
-        <div class="hero-portfolio">
-          <a href="#work" class="hero-link">Portfolio</a>
-          <div class="hero-submenu" id="heroSubmenu">
-            <a href="#work" data-target="music">Music Video</a>
-            <a href="#work" data-target="commercial">Commercial</a>
-            <a href="#work" data-target="fashion">Fashion</a>
-          </div>
-        </div>
-        <div class="hero-contact">
-          <span class="hero-link pop-trigger" tabindex="0">Contact</span>
-          <div class="contact-flyout">
-            <div class="pop-panel">
-              <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram"><img src="media/logos/inst.png" alt="Instagram" /></a>
-              <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="media/logos/linkedin.png" alt="LinkedIn" /></a>
-              <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram"><img src="media/logos/telegram.png" alt="Telegram" /></a>
-              <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp"><img src="media/logos/whatsapp.png" alt="WhatsApp" /></a>
-              <a href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email"><img src="media/logos/email.png" alt="Email" /></a>
-            </div>
-          </div>
-        </div>
+        <a href="#work" class="hero-link" data-target="music">Music Video</a>
+        <a href="#work" class="hero-link" data-target="commercial">Commercial</a>
+        <a href="#work" class="hero-link" data-target="fashion">Fashion</a>
       </nav>
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span></div>
@@ -986,6 +970,25 @@
           <p>Own grading suite, available worldwide for remote sessions.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section contact" id="contact">
+    <div class="section-head reveal">
+      <span class="section-index">03</span>
+      <h2 class="section-title">Contact</h2>
+    </div>
+    <div class="contact-inner reveal">
+      <p class="contact-lead">Have a project? Let's do color.</p>
+      <div class="contact-icons">
+        <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram"><img src="media/logos/inst.png" alt="Instagram" /></a>
+        <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="media/logos/linkedin.png" alt="LinkedIn" /></a>
+        <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram"><img src="media/logos/telegram.png" alt="Telegram" /></a>
+        <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp"><img src="media/logos/whatsapp.png" alt="WhatsApp" /></a>
+        <a href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email"><img src="media/logos/email.png" alt="Email" /></a>
+      </div>
+      <a class="contact-mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
     </div>
   </section>
 
@@ -1100,15 +1103,12 @@
   }
   loadBgPlaylist();
 
-  /* ---- Hero Portfolio submenu: open the chosen category ---- */
-  const heroSubmenu = document.getElementById("heroSubmenu");
-  if (heroSubmenu) {
-    heroSubmenu.querySelectorAll("[data-target]").forEach((a) =>
-      a.addEventListener("click", () => {
-        if (a.dataset.target) activate(a.dataset.target);
-      })
-    );
-  }
+  /* ---- Hero category buttons: open the chosen portfolio category ---- */
+  document.querySelectorAll(".hero-nav [data-target]").forEach((a) =>
+    a.addEventListener("click", () => {
+      if (a.dataset.target) activate(a.dataset.target);
+    })
+  );
 
   /* ---- Work: category tabs backed by Vimeo showcases ----
      Each category loads its showcase via the public album API
