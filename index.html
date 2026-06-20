@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Evgeniy Moroz — Colorist</title>
   <meta name="description" content="Evgeniy Moroz — colorist for commercials, music videos and fashion films. Cinematic color." />
+  <link rel="icon" type="image/png" href="media/logos/my-logo-em.png" />
+  <link rel="apple-touch-icon" href="media/logos/my-logo-em.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -402,6 +404,26 @@
   }
   .gallery::-webkit-scrollbar { display: none; }
   .gallery .project { scroll-snap-align: start; }
+  .project.is-hidden { display: none !important; }
+
+  /* "Load more" (mobile only, toggled by JS) */
+  .load-more {
+    display: none;
+    width: fit-content;
+    margin: 24px auto 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--line);
+    padding: 13px 30px;
+    cursor: pointer;
+    transition: color 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+  .load-more.show { display: block; }
+  .load-more:hover { color: var(--white); border-color: var(--grey); transform: scale(1.06); }
   .gallery-status {
     padding: 40px 4px;
     font-size: 0.74rem;
@@ -913,6 +935,7 @@
           <div class="gallery" data-album="12295317"><div class="gallery-status">Loading…</div></div>
           <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
+        <button type="button" class="load-more">Load more</button>
       </div>
       <div class="work-cat" data-cat="commercial">
         <div class="gallery-wrap">
@@ -920,6 +943,7 @@
           <div class="gallery" data-album="12295351"><div class="gallery-status">Loading…</div></div>
           <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
+        <button type="button" class="load-more">Load more</button>
       </div>
       <div class="work-cat" data-cat="fashion">
         <div class="gallery-wrap">
@@ -927,6 +951,7 @@
           <div class="gallery" data-album="12295355"><div class="gallery-status">Loading…</div></div>
           <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
+        <button type="button" class="load-more">Load more</button>
       </div>
     </div>
   </section>
@@ -1223,12 +1248,18 @@
   }
   activate("music"); // default category
 
-  /* ---- Vertical reel: clamp to 3 rows, scroll down for more ---- */
+  /* ---- Portfolio reel: desktop clamps to 3 rows + scroll;
+         mobile shows 3 tiles, then a "Load more" button. ---- */
+  const MOBILE_START = 3;
+  const MOBILE_STEP = 6;
   document.querySelectorAll(".gallery-wrap").forEach((wrap) => {
     const gal = wrap.querySelector(".gallery");
     const prev = wrap.querySelector(".gallery-arrow.prev");
     const next = wrap.querySelector(".gallery-arrow.next");
+    const moreBtn = wrap.parentElement.querySelector(".load-more");
     if (!gal) return;
+    let limit = MOBILE_START;
+
     function setHeight() {
       if (window.innerWidth <= 700) { gal.style.maxHeight = ""; return; } // mobile: no clamp
       if (!gal.clientWidth) return;
@@ -1241,13 +1272,24 @@
       const tileH = colW * 9 / 16;
       gal.style.maxHeight = Math.round(tileH * 3 + gap * 2 + padY) + "px";
     }
+    function applyLimit() {
+      const cards = gal.querySelectorAll(".project");
+      if (window.innerWidth > 700) {                    // desktop: show all
+        cards.forEach((c) => c.classList.remove("is-hidden"));
+        if (moreBtn) moreBtn.classList.remove("show");
+        return;
+      }
+      cards.forEach((c, i) => c.classList.toggle("is-hidden", i >= limit));
+      if (moreBtn) moreBtn.classList.toggle("show", cards.length > limit);
+    }
     function update() {
       const overflow = gal.scrollHeight - gal.clientHeight;
       const has = overflow > 8 && gal.clientHeight > 0;
       if (prev) prev.hidden = !has || gal.scrollTop <= 8;
       if (next) next.hidden = !has || gal.scrollTop >= overflow - 8;
     }
-    function layout() { setHeight(); update(); }
+    function layout() { setHeight(); applyLimit(); update(); }
+    if (moreBtn) moreBtn.addEventListener("click", () => { limit += MOBILE_STEP; applyLimit(); });
     const step = () => Math.max(200, gal.clientHeight * 0.9);
     if (next) next.addEventListener("click", () => gal.scrollBy({ top: step(), behavior: "smooth" }));
     if (prev) prev.addEventListener("click", () => gal.scrollBy({ top: -step(), behavior: "smooth" }));
