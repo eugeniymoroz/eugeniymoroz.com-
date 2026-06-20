@@ -588,16 +588,6 @@
       scroll-snap-type: none;
     }
     .gallery-arrow { display: none; }
-    /* mobile: social strip becomes a centered row near the bottom */
-    .side-social {
-      position: static;
-      transform: none;
-      flex-direction: row;
-      justify-content: center;
-      gap: 28px;
-      margin: 8px auto 44px;
-    }
-    .side-social a img { width: 30px; height: 30px; opacity: 0.85; }
   }
 
   .about-grid {
@@ -672,29 +662,71 @@
   .contact-email:hover { transform: scale(1.08); }
   .contact-email:hover img { opacity: 1; }
 
-  /* fixed social strip pinned to the right edge */
-  .side-social {
-    position: fixed;
-    right: clamp(12px, 2vw, 28px);
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1500;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
+  /* ---------- CONTACT FLYOUT (icons on hover) ---------- */
+  .nav-contact { position: relative; }
+  .pop-trigger { cursor: pointer; outline: none; }
+  /* top-nav trigger matches the other nav links */
+  .nav-contact .pop-trigger {
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: inline-block;
+    transition: color 0.3s var(--ease), transform 0.3s var(--ease);
   }
-  .side-social a { display: inline-flex; transition: transform 0.3s var(--ease); }
-  .side-social a img {
-    width: 26px; height: 26px;
+  .nav-contact:hover .pop-trigger,
+  .nav-contact:focus-within .pop-trigger { color: var(--white); transform: scale(1.12); }
+
+  .contact-flyout {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    padding-top: 16px;            /* hover bridge */
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+    z-index: 1200;
+  }
+  .nav-contact:hover .contact-flyout,
+  .nav-contact:focus-within .contact-flyout,
+  .hero-contact:hover .contact-flyout,
+  .hero-contact:focus-within .contact-flyout {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .nav-contact:hover .contact-flyout,
+  .nav-contact:focus-within .contact-flyout { transform: none; }
+
+  .contact-flyout .pop-panel {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 20px;
+    background: rgba(12,12,14,0.82);
+    backdrop-filter: blur(10px);
+  }
+  .contact-flyout a { display: inline-flex; transition: transform 0.3s var(--ease); }
+  .contact-flyout a img {
+    width: 24px; height: 24px;
     object-fit: contain;
     display: block;
-    filter: invert(1);          /* black icons → white on the dark bg */
-    opacity: 0.72;
+    filter: invert(1);           /* black icons → white on the dark bg */
+    opacity: 0.8;
     transition: opacity 0.3s var(--ease);
   }
-  .side-social a:hover { transform: scale(1.15); }
-  .side-social a:hover img { opacity: 1; }
+  .contact-flyout a:hover { transform: scale(1.18); }
+  .contact-flyout a:hover img { opacity: 1; }
+
+  /* hero version: centered under the Contact button */
+  .hero-contact { position: relative; }
+  .hero-contact .contact-flyout {
+    right: auto;
+    left: 50%;
+    transform: translate(-50%, -6px);
+  }
+  .hero-contact:hover .contact-flyout,
+  .hero-contact:focus-within .contact-flyout { transform: translateX(-50%); }
 
   /* ---------- FOOTER ---------- */
   .footer {
@@ -781,7 +813,18 @@
     <nav class="nav-links">
       <a href="#work">Portfolio</a>
       <a href="#about">About</a>
-      <a href="#contact">Contact</a>
+      <div class="nav-contact">
+        <span class="pop-trigger" tabindex="0">Contact</span>
+        <div class="contact-flyout">
+          <div class="pop-panel">
+            <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram"><img src="media/logos/inst.png" alt="Instagram" /></a>
+            <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="media/logos/linkedin.png" alt="LinkedIn" /></a>
+            <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram"><img src="media/logos/telegram.png" alt="Telegram" /></a>
+            <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp"><img src="media/logos/whatsapp.png" alt="WhatsApp" /></a>
+            <a href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email"><img src="media/logos/email.png" alt="Email" /></a>
+          </div>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -800,7 +843,18 @@
             <a href="#work" data-target="fashion">Fashion</a>
           </div>
         </div>
-        <a href="#contact" class="hero-link">Contact</a>
+        <div class="hero-contact">
+          <span class="hero-link pop-trigger" tabindex="0">Contact</span>
+          <div class="contact-flyout">
+            <div class="pop-panel">
+              <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram"><img src="media/logos/inst.png" alt="Instagram" /></a>
+              <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="media/logos/linkedin.png" alt="LinkedIn" /></a>
+              <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram"><img src="media/logos/telegram.png" alt="Telegram" /></a>
+              <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp"><img src="media/logos/whatsapp.png" alt="WhatsApp" /></a>
+              <a href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email"><img src="media/logos/email.png" alt="Email" /></a>
+            </div>
+          </div>
+        </div>
       </nav>
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span></div>
@@ -880,40 +934,6 @@
     </div>
   </section>
 
-  <!-- CONTACT -->
-  <section class="section contact" id="contact">
-    <div class="section-head reveal">
-      <span class="section-index">03</span>
-      <h2 class="section-title">Contact</h2>
-    </div>
-    <div class="contact-inner reveal">
-      <p class="contact-lead">Have a project? Let's talk color.</p>
-      <a class="contact-email" href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email">
-        <img src="media/logos/email.png" alt="Email" />
-      </a>
-      <a class="contact-mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
-    </div>
-  </section>
-
-  <!-- SOCIAL STRIP (right edge) -->
-  <nav class="side-social" aria-label="Social links">
-    <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram">
-      <img src="media/logos/inst.png" alt="Instagram" />
-    </a>
-    <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn">
-      <img src="media/logos/linkedin.png" alt="LinkedIn" />
-    </a>
-    <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram">
-      <img src="media/logos/telegram.png" alt="Telegram" />
-    </a>
-    <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp">
-      <img src="media/logos/whatsapp.png" alt="WhatsApp" />
-    </a>
-    <a href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email">
-      <img src="media/logos/email.png" alt="Email" />
-    </a>
-  </nav>
-
   <footer class="footer">
     <span>© <span id="year"></span> Evgeniy Moroz</span>
     <a href="#top">Back to top ↑</a>
@@ -982,6 +1002,7 @@
 
   function loadBgPlaylist() {
     if (!bgFrame) return;
+    if (window.innerWidth <= 700) return; // skip heavy bg video on phones
     const MAX_PAGES = 20;
     function page(p) {
       const cb = "__bg_" + p + "_" + Date.now();
@@ -1075,7 +1096,7 @@
     card.className = "project";
     card.innerHTML = `
       <div class="ph">${escapeHtml(v.title)}</div>
-      <img alt="${escapeHtml(v.title)}" loading="lazy" />
+      <img alt="${escapeHtml(v.title)}" loading="lazy" decoding="async" />
       <div class="play" aria-hidden="true"></div>
       <div class="meta"><h3>${escapeHtml(v.title)}</h3></div>`;
     const img = card.querySelector("img");
