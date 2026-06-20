@@ -360,17 +360,16 @@
 
   /* horizontal reel: 3 rows, scroll right for more */
   .gallery-wrap { position: relative; }
+  /* vertical reel: 3 rows visible, scroll down for more */
   .gallery {
     display: grid;
-    grid-auto-flow: column;
-    grid-template-rows: repeat(3, auto);
-    grid-auto-columns: min(360px, 80vw);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     scroll-behavior: smooth;
-    scroll-snap-type: x proximity;
-    padding: 16px 2px;
+    scroll-snap-type: y proximity;
+    padding: 8px 2px;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -387,8 +386,8 @@
   /* scroll arrows */
   .gallery-arrow {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 6;
     width: 46px; height: 46px;
     border-radius: 50%;
@@ -401,9 +400,9 @@
     display: flex; align-items: center; justify-content: center;
     transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease), opacity 0.3s var(--ease);
   }
-  .gallery-arrow.next { right: -6px; }
-  .gallery-arrow.prev { left: -6px; }
-  .gallery-arrow:hover { border-color: var(--grey); background: rgba(10,10,11,0.92); transform: translateY(-50%) scale(1.12); }
+  .gallery-arrow.prev { top: 10px; }
+  .gallery-arrow.next { bottom: 10px; }
+  .gallery-arrow:hover { border-color: var(--grey); background: rgba(10,10,11,0.92); transform: translateX(-50%) scale(1.12); }
   .gallery-arrow[hidden] { display: none; }
   .project {
     position: relative;
@@ -698,6 +697,10 @@
     .nav-links { gap: 18px; }
     .brand-role { display: none; }
     .about-grid { grid-template-columns: 1fr; gap: 28px; }
+    .gallery { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .gallery { grid-template-columns: 1fr; }
   }
   @media (max-width: 520px) {
     .nav { padding: 16px 20px; }
@@ -769,23 +772,23 @@
     <div class="work-panels">
       <div class="work-cat is-active" data-cat="music">
         <div class="gallery-wrap">
-          <button type="button" class="gallery-arrow prev" aria-label="Scroll left" hidden>‹</button>
+          <button type="button" class="gallery-arrow prev" aria-label="Scroll up" hidden>↑</button>
           <div class="gallery" data-album="12295317"><div class="gallery-status">Loading…</div></div>
-          <button type="button" class="gallery-arrow next" aria-label="Scroll right" hidden>›</button>
+          <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
       </div>
       <div class="work-cat" data-cat="commercial">
         <div class="gallery-wrap">
-          <button type="button" class="gallery-arrow prev" aria-label="Scroll left" hidden>‹</button>
+          <button type="button" class="gallery-arrow prev" aria-label="Scroll up" hidden>↑</button>
           <div class="gallery" data-album="12295351"><div class="gallery-status">Loading…</div></div>
-          <button type="button" class="gallery-arrow next" aria-label="Scroll right" hidden>›</button>
+          <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
       </div>
       <div class="work-cat" data-cat="fashion">
         <div class="gallery-wrap">
-          <button type="button" class="gallery-arrow prev" aria-label="Scroll left" hidden>‹</button>
+          <button type="button" class="gallery-arrow prev" aria-label="Scroll up" hidden>↑</button>
           <div class="gallery" data-album="12295355"><div class="gallery-status">Loading…</div></div>
-          <button type="button" class="gallery-arrow next" aria-label="Scroll right" hidden>›</button>
+          <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
       </div>
     </div>
@@ -1089,25 +1092,37 @@
   }
   activate("music"); // default category
 
-  /* ---- Horizontal reel arrows ---- */
+  /* ---- Vertical reel: clamp to 3 rows, scroll down for more ---- */
   document.querySelectorAll(".gallery-wrap").forEach((wrap) => {
     const gal = wrap.querySelector(".gallery");
     const prev = wrap.querySelector(".gallery-arrow.prev");
     const next = wrap.querySelector(".gallery-arrow.next");
     if (!gal) return;
-    const step = () => Math.max(280, gal.clientWidth * 0.8);
-    if (next) next.addEventListener("click", () => gal.scrollBy({ left: step(), behavior: "smooth" }));
-    if (prev) prev.addEventListener("click", () => gal.scrollBy({ left: -step(), behavior: "smooth" }));
-    function update() {
-      const overflow = gal.scrollWidth - gal.clientWidth;
-      const hasOverflow = overflow > 8 && gal.clientWidth > 0;
-      if (prev) prev.hidden = !hasOverflow || gal.scrollLeft <= 8;
-      if (next) next.hidden = !hasOverflow || gal.scrollLeft >= overflow - 8;
+    function setHeight() {
+      if (!gal.clientWidth) return;
+      const cs = getComputedStyle(gal);
+      const cols = cs.gridTemplateColumns.split(" ").filter(Boolean).length || 3;
+      const gap = parseFloat(cs.rowGap) || 16;
+      const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      const colW = (gal.clientWidth - padX - (cols - 1) * gap) / cols;
+      const tileH = colW * 9 / 16;
+      gal.style.maxHeight = Math.round(tileH * 3 + gap * 2 + padY) + "px";
     }
+    function update() {
+      const overflow = gal.scrollHeight - gal.clientHeight;
+      const has = overflow > 8 && gal.clientHeight > 0;
+      if (prev) prev.hidden = !has || gal.scrollTop <= 8;
+      if (next) next.hidden = !has || gal.scrollTop >= overflow - 8;
+    }
+    function layout() { setHeight(); update(); }
+    const step = () => Math.max(200, gal.clientHeight * 0.9);
+    if (next) next.addEventListener("click", () => gal.scrollBy({ top: step(), behavior: "smooth" }));
+    if (prev) prev.addEventListener("click", () => gal.scrollBy({ top: -step(), behavior: "smooth" }));
     gal.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    new MutationObserver(update).observe(gal, { childList: true });
-    update();
+    window.addEventListener("resize", layout);
+    new MutationObserver(layout).observe(gal, { childList: true });
+    layout();
   });
 
   /* ---- Soft reveal of blocks as they scroll into view ---- */
