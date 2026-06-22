@@ -9,6 +9,9 @@
   <link rel="apple-touch-icon" href="media/logos/my-logo-em.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://player.vimeo.com" />
+  <link rel="preconnect" href="https://i.vimeocdn.com" />
+  <link rel="preconnect" href="https://f.vimeocdn.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
   /* ============================================================
@@ -80,7 +83,7 @@
     height: 56.25vw;        /* 16:9 */
     min-height: 100%;
     min-width: 177.78vh;    /* cover both axes */
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(1.35);  /* fill screen even for 4:3 clips */
     border: 0;
     pointer-events: none;
   }
@@ -171,7 +174,7 @@
     height: 56.25vw;
     min-height: 100%;
     min-width: 177.78vh;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(1.35);  /* fill screen even for 4:3 clips */
     border: 0;
     pointer-events: none;
   }
@@ -1020,6 +1023,24 @@
   let bgPos = 0;
   let bgStarted = false;
 
+  /* Pool of known works — used to pick a random poster + first clip
+     instantly (before the full list loads over the network). */
+  const SEED_POOL = [
+    { id: 1202919554, dur: 227, thumb: "https://i.vimeocdn.com/video/2170789309-7c70b4f24adbc719c274abd6e7e2b45a8aa42100cb810f9d012354ab99d6a7dc-d_640?region=us" },
+    { id: 1187769539, dur: 182, thumb: "https://i.vimeocdn.com/video/2151859661-531261a4d1e4e394a13013e2f28601b1ce249b04608636655c333c8b568e6fea-d_640?region=us" },
+    { id: 1166998172, dur: 186, thumb: "https://i.vimeocdn.com/video/2124828249-cde02ebecb2bcceab6ce66e6f80cf3e2122fdeb8f13658a4fbd74c8ae38b70f1-d_640?region=us" },
+    { id: 1114346099, dur: 179, thumb: "https://i.vimeocdn.com/video/2053065831-7839a8811625bd6121bc939061547f58e6086537e8107ee9b9b7d8a703ed9a1a-d_640?region=us" },
+    { id: 1110574463, dur: 220, thumb: "https://i.vimeocdn.com/video/2048365211-71ef1a214da25a392bec9eb4ab346d649978c5c744d1492cb8a23beb2cc5b64e-d_640?region=us" },
+    { id: 1097613743, dur: 168, thumb: "https://i.vimeocdn.com/video/2032006730-837054ab8813c18042506b94573c623a724d857b0e363ce07476e2289afed60a-d_640?region=us" },
+    { id: 1090194819, dur: 177, thumb: "https://i.vimeocdn.com/video/2022756038-37909d0abd781d9fa4d355093c7dfd5ed0c009c427490a6deb21d07fa15aa0bd-d_640?region=us" },
+    { id: 1087127740, dur: 376, thumb: "https://i.vimeocdn.com/video/2019053136-ad77740ec8662fddbcaed41d6b73a507e0c2d04e03e147fa411d890c361f0a65-d_640?region=us" },
+    { id: 1081331880, dur: 213, thumb: "https://i.vimeocdn.com/video/2012092800-46909d8451ba2112b08705f1306975f0292e1075de74ebfc079e3ec955bd939d-d_640?region=us" },
+    { id: 1076107610, dur: 232, thumb: "https://i.vimeocdn.com/video/2005829404-2b69903b0c97ee2236c7b300324d4af7a906527de29adb8d614010a4eaf6fe5c-d_640?region=us" },
+    { id: 1075395372, dur: 233, thumb: "https://i.vimeocdn.com/video/2004969297-963dfbcec62b65ba075fd3a814a788dbf4caca9a6f19c2e823bcbc24da9c0dd5-d_640?region=us" },
+    { id: 1065576718, dur: 171, thumb: "https://i.vimeocdn.com/video/1993114568-c03dcf906793d27a7ba368fd300b80a3a978c5e23ce693de0ffc95a8dfa7abc7-d_640?region=us" },
+  ];
+  function pickSeed() { return SEED_POOL[Math.floor(Math.random() * SEED_POOL.length)]; }
+
   function shuffle(a) {
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -1037,8 +1058,16 @@
     return lo + Math.floor(Math.random() * (hi - lo + 1));
   }
 
-  function bgShow(item) {
-    const t = bgStartTime(item.dur);
+  const siteBgEl = document.querySelector(".site-bg");
+  function setBgPoster(thumb) {
+    if (!siteBgEl || !thumb) return;
+    siteBgEl.style.backgroundImage = `url('${thumb}')`;
+    siteBgEl.style.backgroundSize = "cover";
+    siteBgEl.style.backgroundPosition = "center";
+  }
+
+  function bgShow(item, forcedStart) {
+    const t = (forcedStart != null) ? forcedStart : bgStartTime(item.dur);
     bgFrame.innerHTML =
       `<iframe src="https://player.vimeo.com/video/${item.id}?background=1&autoplay=1&loop=1&muted=1&dnt=1#t=${t}s"
         allow="autoplay; fullscreen" tabindex="-1" title=""></iframe>`;
@@ -1047,12 +1076,15 @@
   function bgStart() {
     if (bgStarted || !bgPlaylist.length || !bgFrame) return;
     bgStarted = true;
-    bgShow(bgPlaylist[0]);
+    setBgPoster(bgPlaylist[0].thumb);                    // poster = the first clip
+    bgShow(bgPlaylist[0], 0);   // first clip from the very start = appears fastest
     setInterval(() => {
       bgPos = (bgPos + 1) % bgPlaylist.length;
+      const item = bgPlaylist[bgPos];
+      setBgPoster(item.thumb);                           // freeze-frame matches the clip about to load
       bgFrame.style.opacity = "0";                       // fade out
       setTimeout(() => {
-        bgShow(bgPlaylist[bgPos]);                       // next fragment
+        bgShow(item);                                    // next fragment
         bgFrame.style.opacity = "1";                     // fade in
       }, 900);
     }, BG_SEG * 1000);
@@ -1062,9 +1094,20 @@
      behind the hero (first screen) only. */
   const heroBg = document.getElementById("heroBg");
   if (heroBg && window.innerWidth <= 700) {
-    heroBg.innerHTML =
-      `<iframe src="https://player.vimeo.com/video/1090194819?background=1&autoplay=1&loop=1&muted=1&dnt=1"
-        allow="autoplay; fullscreen" tabindex="-1" title=""></iframe>`;
+    // random work: poster (first frame) shows instantly, video fades in over it
+    const seed = pickSeed();
+    heroBg.style.backgroundImage = `url('${seed.thumb}')`;
+    heroBg.style.backgroundSize = "cover";
+    heroBg.style.backgroundPosition = "center";
+    const ifr = document.createElement("iframe");
+    ifr.src = `https://player.vimeo.com/video/${seed.id}?background=1&autoplay=1&loop=1&muted=1&dnt=1`;
+    ifr.allow = "autoplay; fullscreen";
+    ifr.tabIndex = -1;
+    ifr.title = "";
+    ifr.style.opacity = "0";
+    ifr.style.transition = "opacity 0.8s ease";
+    ifr.addEventListener("load", () => setTimeout(() => { ifr.style.opacity = "1"; }, 700));
+    heroBg.appendChild(ifr);
   }
 
   function loadBgPlaylist() {
@@ -1082,12 +1125,12 @@
         cleanup();
         if (Array.isArray(data) && data.length) {
           bgPlaylist = bgPlaylist.concat(
-            shuffle(data.map((d) => ({ id: d.id, dur: d.duration || 0 })))
+            shuffle(data.map((d) => ({ id: d.id, dur: d.duration || 0, thumb: d.thumbnail_large })))
           );
           bgStart(); // start as soon as the first page is in
           if (data.length >= 20 && p < MAX_PAGES) { page(p + 1); return; }
         } else if (!bgStarted) {
-          bgPlaylist = [{ id: 1090194819, dur: 177 }]; // safe fallback
+          bgPlaylist = [{ id: 1090194819, dur: 177, thumb: "https://i.vimeocdn.com/video/2022756038-37909d0abd781d9fa4d355093c7dfd5ed0c009c427490a6deb21d07fa15aa0bd-d_640?region=us" }]; // safe fallback
           bgStart();
         }
       };
@@ -1095,11 +1138,23 @@
       script.src = `https://vimeo.com/api/v2/${VIMEO_USER}/videos.json?page=${p}&callback=${cb}`;
       script.onerror = () => {
         cleanup();
-        if (!bgStarted) { bgPlaylist = [{ id: 1090194819, dur: 177 }]; bgStart(); }
+        if (!bgStarted) { bgPlaylist = [{ id: 1090194819, dur: 177, thumb: "https://i.vimeocdn.com/video/2022756038-37909d0abd781d9fa4d355093c7dfd5ed0c009c427490a6deb21d07fa15aa0bd-d_640?region=us" }]; bgStart(); }
       };
       document.head.appendChild(script);
     }
     page(1);
+  }
+  // start instantly with a seed clip, then load the full shuffled list
+  if (bgFrame && window.innerWidth > 700) {
+    const seed = pickSeed();
+    bgPlaylist = [{ id: seed.id, dur: seed.dur, thumb: seed.thumb }];
+    bgStart();   // sets the matching poster itself
+    // keep the reel hidden over the poster until the first video is ready
+    const firstIfr = bgFrame.querySelector("iframe");
+    if (firstIfr) {
+      bgFrame.style.opacity = "0";
+      firstIfr.addEventListener("load", () => setTimeout(() => { bgFrame.style.opacity = "1"; }, 700));
+    }
   }
   loadBgPlaylist();
 
