@@ -174,7 +174,7 @@
     height: 56.25vw;
     min-height: 100%;
     min-width: 177.78vh;
-    transform: translate(-50%, -50%) scale(1.35);  /* fill screen even for 4:3 clips */
+    transform: translate(-50%, -50%);
     border: 0;
     pointer-events: none;
   }
@@ -1090,8 +1090,8 @@
     }, BG_SEG * 1000);
   }
 
-  /* On phones: skip the full-page reel, but play a single WAOUU clip
-     behind the hero (first screen) only. */
+  /* On phones: skip the full-page reel, but play one random work
+     behind the hero (first screen) only — no zoom, poster matches it. */
   const heroBg = document.getElementById("heroBg");
   if (heroBg && window.innerWidth <= 700) {
     // random work: poster (first frame) shows instantly, video fades in over it
