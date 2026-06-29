@@ -75,6 +75,13 @@
   .ledger .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
   .earned{font-family:var(--display);font-weight:600;font-size:clamp(40px,8vw,64px);color:var(--white);
     line-height:1;letter-spacing:-0.02em;margin:12px 0 0;font-variant-numeric:tabular-nums}
+  .fx{margin-top:12px;font-size:13px;letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
+  /* inline editing of name / amount right in the card */
+  .row-name.editable,.amount.editable{cursor:text}
+  .row-name.editable:hover,.amount.editable:hover{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--grey)}
+  .inline-input{font:inherit;background:var(--bg);border:1px solid var(--grey);border-radius:4px;color:var(--ink);padding:2px 6px;max-width:100%}
+  .row-name .inline-input{font-family:var(--display);font-weight:600;font-size:18px;min-width:150px}
+  .amount .inline-input{font-family:var(--display);font-size:19px;width:120px;text-align:right}
   .rule{height:1px;background:var(--line);margin:24px 0 18px}
   .subfigs{display:flex;gap:34px;flex-wrap:wrap}
   .subfig .k{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;letter-spacing:.02em}
