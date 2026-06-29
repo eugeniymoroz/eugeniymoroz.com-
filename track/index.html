@@ -651,7 +651,7 @@
       list.innerHTML = '<div class="empty"><h3>No projects yet</h3>'+
         '<p>Add your first one to start tracking earnings and stats.</p>'+
         '<button class="btn btn-primary" id="emptyAdd">+ New project</button></div>';
-      document.getElementById("emptyAdd").onclick = quickAdd;
+      document.getElementById("emptyAdd").onclick = addProject;
       foot.textContent = "";
       return;
     }
@@ -694,6 +694,10 @@
   }
 
   function renderAll(){ renderStats(); renderList(); }
+
+  /* ---------- add: modal on phones, inline on desktop ---------- */
+  function isMobile(){ try{ return window.matchMedia("(max-width:600px)").matches; }catch(e){ return window.innerWidth<=600; } }
+  function addProject(){ if(isMobile()){ openAdd(); } else { quickAdd(); } }
 
   /* ---------- quick add (no modal) + inline editing in the card ---------- */
   function quickAdd(){
@@ -819,7 +823,7 @@
   }
 
   function bind(){
-    document.getElementById("addBtn").onclick = quickAdd;
+    document.getElementById("addBtn").onclick = addProject;
     document.getElementById("cancelBtn").onclick = function(){ hideOverlay("formOverlay"); };
     document.getElementById("saveBtn").onclick = saveForm;
     document.getElementById("currency").onchange = function(e){ state.currency=e.target.value; renderAll(); save(); };
