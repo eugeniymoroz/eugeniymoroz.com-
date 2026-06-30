@@ -126,7 +126,7 @@
 
   /* ---------- LIST ---------- */
   .list{display:flex;flex-direction:column;gap:10px}
-  .row{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;
+  .row{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 18px;
     display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;transition:border-color .2s var(--ease),transform .2s var(--ease)}
   .row:hover{border-color:#3a3a40}
   .row-main{min-width:0}
@@ -161,34 +161,43 @@
   .inline-select:hover{border-color:var(--grey);color:var(--ink)}
   .inline-select:focus{outline:none;border-color:var(--grey)}
   /* stage stepper: planned / in progress / completed as separate fields with dates */
-  .stages{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .stage{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
-    border:1px solid var(--line);background:transparent;border-radius:8px;
-    padding:6px 12px;cursor:pointer;min-width:92px;
-    transition:border-color .15s var(--ease),background .15s var(--ease)}
-  .stage:hover{border-color:var(--grey)}
-  .stage-name{font-family:var(--display);font-size:11px;font-weight:500;letter-spacing:.08em;
+  .stages{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+  .stage{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+    border:none;background:transparent;border-radius:6px;
+    padding:4px 9px;cursor:pointer;transition:background .15s var(--ease)}
+  .stage:hover{background:rgba(255,255,255,.04)}
+  .stage-name{font-family:var(--display);font-size:10.5px;font-weight:500;letter-spacing:.08em;
     text-transform:uppercase;color:var(--muted);transition:color .15s var(--ease)}
-  .stage-date{font-size:10px;letter-spacing:.04em;color:#5a5a60;min-height:12px;font-variant-numeric:tabular-nums}
-  .stage.is-future{opacity:.45}
+  .stage-date{font-size:9.5px;letter-spacing:.03em;color:#5a5a60;min-height:11px;font-variant-numeric:tabular-nums}
+  .stage.is-future{opacity:.4}
   .stage.is-past .stage-name{color:var(--grey)}            /* passed stage → site grey */
-  .stage.is-active.s-planned{border-color:#d8b25a;background:rgba(216,178,90,.12)}
+  .stage.is-active.s-planned{background:rgba(216,178,90,.13)}
   .stage.is-active.s-planned .stage-name{color:#d8b25a}
-  .stage.is-active.s-progress{border-color:#4cbd92;background:rgba(76,189,146,.12)}
+  .stage.is-active.s-progress{background:rgba(76,189,146,.13)}
   .stage.is-active.s-progress .stage-name{color:#4cbd92}
-  .stage.is-active.s-done{border-color:#6f9fe0;background:rgba(111,159,224,.12)}
+  .stage.is-active.s-done{background:rgba(111,159,224,.13)}
   .stage.is-active.s-done .stage-name{color:#6f9fe0}
   /* pay badge + date (right corner) */
   .pay-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
   .pay-date{font-size:10px;letter-spacing:.04em;color:#5a5a60;min-height:12px;font-variant-numeric:tabular-nums}
-  /* session day & time */
-  .session{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
-    padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02)}
-  .session-lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-  .session-when{font-family:var(--display);font-weight:500;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums}
-  .session-mode{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:99px}
-  .session-mode.on{background:rgba(76,189,146,.14);color:#4cbd92}
-  .session-mode.off{background:rgba(151,162,179,.16);color:#97a2b3}
+  /* session — minimal, editable inline: dot + mode toggle + datetime */
+  .session{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .session-mode-btn,.session.s-none{-webkit-appearance:none;appearance:none;background:transparent;
+    border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:0;font:inherit}
+  .session-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--line)}
+  .session-mode{font-family:var(--display);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .session.s-none{opacity:.5;transition:opacity .15s var(--ease)}
+  .session.s-none:hover{opacity:.95}
+  .session.s-on .session-dot{background:#b79af0;box-shadow:0 0 9px rgba(168,128,228,.75)}   /* online → purple */
+  .session.s-on .session-mode{color:#b79af0}
+  .session.s-off .session-dot{background:#e3a455;box-shadow:0 0 9px rgba(224,150,70,.75)}   /* offline → orange */
+  .session.s-off .session-mode{color:#e3a455}
+  .session-dt{-webkit-appearance:none;appearance:none;background:transparent;border:none;
+    color:var(--muted);font:inherit;font-size:11px;font-variant-numeric:tabular-nums;
+    cursor:pointer;padding:2px 5px;border-radius:6px;transition:background .15s var(--ease),color .15s var(--ease)}
+  .session-dt:hover{background:rgba(255,255,255,.05);color:var(--ink)}
+  .session-dt:focus{outline:none;background:rgba(255,255,255,.07);color:var(--ink)}
+  .session-dt::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer;opacity:.7}
   .due{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
   .due.over{color:var(--red)}
   .row-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
@@ -460,6 +469,7 @@
       <div class="field">
         <label for="fSessionMode">Session type</label>
         <select id="fSessionMode">
+          <option value="">No session</option>
           <option value="online">Online</option>
           <option value="offline">Offline</option>
         </select>
@@ -523,6 +533,7 @@
     return SYM[state.currency] + " " + s;
   }
   function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function nowLocalInput(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
   function projName(p){ return p.project || p.name || ""; }
 
   /* ---------- month helpers ---------- */
@@ -754,13 +765,19 @@
     return dt.toLocaleString("en-US",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false});
   }
   function sessionMarkup(p){
-    if(!p.sessionAt) return "";
-    var off = p.sessionMode==="offline";
-    return '<div class="session">'+
-      '<span class="session-lbl">Session</span>'+
-      '<span class="session-when">'+esc(fmtSessionDateTime(p.sessionAt))+'</span>'+
-      '<span class="session-mode '+(off?"off":"on")+'">'+(off?"Offline":"Online")+'</span>'+
-    '</div>';
+    var mode = p.sessionMode==="offline" ? "offline" : (p.sessionMode==="online" ? "online" : "none");
+    if(mode==="none"){
+      return '<button class="session s-none" data-act="session-mode" title="Set a session day">'+
+        '<span class="session-dot"></span><span class="session-mode">Session</span></button>';
+    }
+    var cls = mode==="offline" ? "s-off" : "s-on";
+    return '<span class="session '+cls+'">'+
+      '<button class="session-mode-btn" data-act="session-mode" title="Online / Offline / off">'+
+        '<span class="session-dot"></span>'+
+        '<span class="session-mode">'+(mode==="offline"?"Offline":"Online")+'</span>'+
+      '</button>'+
+      '<input class="session-dt" type="datetime-local" data-act="session-dt" value="'+esc(p.sessionAt||"")+'">'+
+    '</span>';
   }
 
   function crewMarkup(p){
@@ -803,10 +820,9 @@
       '<div class="row" data-id="'+p.id+'">'+
         '<div class="row-main">'+
           '<div class="row-head">'+
-            '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+ typeBadge+
+            '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+ typeBadge + sessionMarkup(p)+
           '</div>'+
           crewMarkup(p)+
-          sessionMarkup(p)+
           stagesMarkup(p)+
           (dueMarkup(p) ? '<div class="row-meta">'+dueMarkup(p)+'</div>' : '')+
         '</div>'+
@@ -836,7 +852,7 @@
   function quickAdd(){
     var p = { id:uid(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
       paid:false, amount:0, director:"", dop:"", producer:"", due:"", notes:"",
-      plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"online" };
+      plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"" };
     state.projects.push(p);
     if(ui.month){ ui.month=null; updateMonthLabel(); }   // ensure the new card is visible
     renderAll(); save(); cloudUpsert(p);
@@ -878,7 +894,7 @@
     setVal("fName",""); setVal("fType","commercial"); setVal("fStatus","planned");
     setVal("fDirector",""); setVal("fDop",""); setVal("fProducer","");
     setVal("fAmount",""); setVal("fDue",""); setVal("fNotes","");
-    setVal("fSession",""); setVal("fSessionMode","online");
+    setVal("fSession",""); setVal("fSessionMode","");
     document.getElementById("fPaid").checked=false;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
     setTimeout(function(){ document.getElementById("fName").focus(); },30);
@@ -889,7 +905,7 @@
     setVal("fName",projName(p)); setVal("fType",p.type||"commercial"); setVal("fStatus",p.status||"planned");
     setVal("fDirector",p.director||""); setVal("fDop",p.dop||""); setVal("fProducer",p.producer||"");
     setVal("fAmount",(p.amount!=null?p.amount:"")); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
-    setVal("fSession",p.sessionAt||""); setVal("fSessionMode",p.sessionMode||"online");
+    setVal("fSession",p.sessionAt||""); setVal("fSessionMode",p.sessionMode||"");
     document.getElementById("fPaid").checked=!!p.paid;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
     setTimeout(function(){ document.getElementById("fName").focus(); },30);
@@ -921,7 +937,7 @@
       paid:document.getElementById("fPaid").checked,
       notes:document.getElementById("fNotes").value.trim(),
       sessionAt:document.getElementById("fSession").value||"",
-      sessionMode:document.getElementById("fSessionMode").value||"online"
+      sessionMode:document.getElementById("fSessionMode").value||""
     };
 
     var target = null;
@@ -1009,6 +1025,12 @@
       if(act==="editname"){ inlineEdit(actBtn, p, "project", {placeholder:"Project title"}); return; }
       if(act==="editamount"){ inlineEdit(actBtn, p, "amount", {number:true}); return; }
       if(act==="stage"){ p.status = actBtn.dataset.stage; stampStage(p); renderAll(); save(); cloudUpsert(p); return; }
+      if(act==="session-mode"){
+        p.sessionMode = p.sessionMode==="online" ? "offline" : (p.sessionMode==="offline" ? "" : "online");
+        if(p.sessionMode && !p.sessionAt) p.sessionAt = nowLocalInput();
+        renderAll(); save(); cloudUpsert(p); return;
+      }
+      if(act==="session-dt"){ return; }
       if(act==="pay"){ p.paid=!p.paid; if(p.paid){ if(!p.paidAt) p.paidAt=todayStr(); } else { p.paidAt=""; } renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
       else if(act==="del"){
@@ -1019,10 +1041,12 @@
     });
 
     document.getElementById("list").addEventListener("change", function(e){
-      var sel = e.target.closest("select[data-field]"); if(!sel) return;
       var row = e.target.closest(".row"); if(!row) return;
       var p = state.projects.find(function(x){return x.id===row.dataset.id;});
       if(!p) return;
+      var dt = e.target.closest('input[data-act="session-dt"]');
+      if(dt){ p.sessionAt = dt.value; save(); cloudUpsert(p); return; }
+      var sel = e.target.closest("select[data-field]"); if(!sel) return;
       p[sel.dataset.field] = sel.value;
       renderAll(); save(); cloudUpsert(p);
     });
