@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     color-scheme:dark;
@@ -258,6 +259,23 @@
 </head>
 <body>
 
+<!-- AUTH GATE (Supabase) -->
+<div class="gate" id="gate" style="display:none">
+  <form class="gate-card" id="gateForm" autocomplete="on">
+    <div class="gate-brand">Evgeniy Moroz</div>
+    <div class="gate-sub">Projects</div>
+    <div class="gate-field">
+      <input id="gateEmail" type="email" placeholder="Email" autocomplete="email" required>
+    </div>
+    <div class="gate-field">
+      <input id="gatePass" type="password" placeholder="Password" autocomplete="current-password" required>
+    </div>
+    <button class="gate-btn" type="submit" id="gateSignIn">Sign in</button>
+    <button class="gate-btn" type="button" id="gateSignUp" style="background:transparent;color:var(--ink);margin-top:8px">Create account</button>
+    <div class="gate-err" id="gateErr"></div>
+  </form>
+</div>
+
 <div class="wrap">
 
   <div class="topbar">
@@ -347,6 +365,7 @@
     <span class="spacer"></span>
     <button class="linkbtn" id="exportBtn">Save backup</button>
     <button class="linkbtn" id="importBtn">Load backup</button>
+    <button class="linkbtn" id="signOutBtn">Sign out</button>
     <input type="file" id="importFile" accept="application/json" style="display:none">
   </div>
 
@@ -532,6 +551,44 @@
     }catch(e){ /* no saved data yet */ }
   }
 
+  /* ---------- Supabase cloud sync ---------- */
+  var SB_URL = "https://yiplmsffgfksxduaxchr.supabase.co";
+  var SB_KEY = "sb_publishable_q6Z5rkBMVPzKvPYNg7aaWw_dBgqcQaG";
+  var sb = (window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null);
+  var session = null;
+
+  function rowFromP(p){
+    return { id:p.id, project:p.project||"", type:p.type||"commercial", status:p.status||"planned",
+      director:p.director||"", dop:p.dop||"", producer:p.producer||"", amount:Number(p.amount)||0,
+      due:p.due||"", paid:!!p.paid, notes:p.notes||"" };
+  }
+  function cloudUpsert(p){
+    if(!sb || !session) return;
+    sb.from("projects").upsert(rowFromP(p)).then(function(res){ if(res.error) console.error("upsert", res.error); flagSaved(); });
+  }
+  function cloudDelete(id){
+    if(!sb || !session) return;
+    sb.from("projects").delete().eq("id", id).then(function(res){ if(res.error) console.error("delete", res.error); flagSaved(); });
+  }
+  function loadFromCloud(){
+    if(!sb || !session) return;
+    sb.from("projects").select("*").order("created_at",{ascending:false}).then(function(res){
+      if(res.error){ console.error("load", res.error); return; }
+      var rows = res.data || [];
+      if(rows.length===0 && state.projects.length>0){
+        // first run: migrate existing local projects to the cloud, keep showing them
+        state.projects.forEach(cloudUpsert);
+        return;
+      }
+      state.projects = rows.map(function(r){
+        return { id:r.id, project:r.project, type:r.type, status:r.status,
+          director:r.director, dop:r.dop, producer:r.producer, amount:Number(r.amount)||0,
+          due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime() };
+      });
+      save(); renderAll();
+    });
+  }
+
   function stats(){
     var src = state.projects.filter(inMonth);
     var earned=0, awaiting=0, pipeline=0, total=0, active=0, done=0;
@@ -705,7 +762,7 @@
       paid:false, amount:0, director:"", dop:"", producer:"", due:"", notes:"" };
     state.projects.push(p);
     if(ui.month){ ui.month=null; updateMonthLabel(); }   // ensure the new card is visible
-    renderAll(); save();
+    renderAll(); save(); cloudUpsert(p);
     var row = document.querySelector('.row[data-id="'+p.id+'"]');
     if(row){
       row.scrollIntoView({behavior:"smooth", block:"center"});
@@ -729,7 +786,7 @@
       if(done) return; done = true;
       if(field==="amount"){ p.amount = parseFloat(inp.value)||0; }
       else { p[field] = inp.value.trim(); }
-      save(); renderAll();
+      save(); cloudUpsert(p); renderAll();
     }
     inp.addEventListener("keydown", function(e){
       if(e.key==="Enter"){ e.preventDefault(); commit(); }
@@ -786,14 +843,16 @@
       notes:document.getElementById("fNotes").value.trim()
     };
 
+    var target = null;
     if(editingId){
       var p = state.projects.find(function(x){return x.id===editingId;});
-      if(p){ Object.assign(p, payload); delete p.name; delete p.client; }
+      if(p){ Object.assign(p, payload); delete p.name; delete p.client; target = p; }
     } else {
       payload.id = uid(); payload.createdAt = Date.now();
-      state.projects.push(payload);
+      state.projects.push(payload); target = payload;
     }
     hideOverlay("formOverlay"); renderAll(); save();
+    if(target) cloudUpsert(target);
   }
 
   function showOverlay(id){ document.getElementById(id).classList.add("show"); }
@@ -816,6 +875,7 @@
           state.projects = parsed.projects;
           if(parsed.currency){ state.currency = parsed.currency; document.getElementById("currency").value = state.currency; }
           renderAll(); save();
+          state.projects.forEach(cloudUpsert);
         } else { alert("This file doesn't look like a backup."); }
       }catch(e){ alert("Couldn't read the file."); }
     };
@@ -862,7 +922,7 @@
       var act = actBtn.dataset.act;
       if(act==="editname"){ inlineEdit(actBtn, p, "project", {placeholder:"Project title"}); return; }
       if(act==="editamount"){ inlineEdit(actBtn, p, "amount", {number:true}); return; }
-      if(act==="pay"){ p.paid=!p.paid; renderAll(); save(); }
+      if(act==="pay"){ p.paid=!p.paid; renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
       else if(act==="del"){
         pendingDelete = p.id;
@@ -877,14 +937,15 @@
       var p = state.projects.find(function(x){return x.id===row.dataset.id;});
       if(!p) return;
       p[sel.dataset.field] = sel.value;
-      renderAll(); save();
+      renderAll(); save(); cloudUpsert(p);
     });
 
     document.getElementById("confirmCancel").onclick = function(){ pendingDelete=null; hideOverlay("confirmOverlay"); };
     document.getElementById("confirmOk").onclick = function(){
       if(pendingDelete){
-        state.projects = state.projects.filter(function(x){return x.id!==pendingDelete;});
-        pendingDelete=null; renderAll(); save();
+        var delId = pendingDelete;
+        state.projects = state.projects.filter(function(x){return x.id!==delId;});
+        pendingDelete=null; renderAll(); save(); cloudDelete(delId);
       }
       hideOverlay("confirmOverlay");
     };
@@ -892,6 +953,9 @@
     document.getElementById("exportBtn").onclick = exportData;
     document.getElementById("importBtn").onclick = function(){ document.getElementById("importFile").click(); };
     document.getElementById("importFile").onchange = function(e){ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
+    document.getElementById("signOutBtn").onclick = function(){
+      if(sb){ sb.auth.signOut().then(function(){ location.reload(); }); } else { location.reload(); }
+    };
 
     [].forEach.call(document.querySelectorAll(".overlay"), function(ov){
       ov.addEventListener("click", function(e){ if(e.target===ov){ ov.classList.remove("show"); pendingDelete=null; } });
@@ -908,15 +972,53 @@
     if(started) return;
     started = true;
     bind();
-    load();
+    load();                 // instant paint from local cache
     document.getElementById("currency").value = state.currency;
     updateMonthLabel();
     renderAll();
     loadFx();
+    loadFromCloud();        // authoritative refresh from Supabase
   }
 
-  /* start immediately — no login */
-  startTracker();
+  /* ---------- auth gate (Supabase) ---------- */
+  var gate = document.getElementById("gate");
+  function gateError(m){ var e=document.getElementById("gateErr"); e.textContent=m||""; e.classList.toggle("show", !!m); }
+  function showGate(msg){
+    gate.style.display = "flex";
+    gateError(msg);
+    setTimeout(function(){ var el=document.getElementById("gateEmail"); if(el) el.focus(); }, 60);
+  }
+  function openApp(){ gate.style.display="none"; startTracker(); }
+
+  if(!sb){
+    showGate("Could not load Supabase — check your connection and reload.");
+  } else {
+    document.getElementById("gateForm").addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var email=document.getElementById("gateEmail").value.trim();
+      var pass=document.getElementById("gatePass").value;
+      gateError("");
+      sb.auth.signInWithPassword({email:email, password:pass}).then(function(res){
+        if(res.error){ gateError(res.error.message); return; }
+        session = res.data.session; openApp();
+      });
+    });
+    document.getElementById("gateSignUp").addEventListener("click", function(){
+      var email=document.getElementById("gateEmail").value.trim();
+      var pass=document.getElementById("gatePass").value;
+      if(!email || !pass){ gateError("Enter email and password"); return; }
+      gateError("");
+      sb.auth.signUp({email:email, password:pass}).then(function(res){
+        if(res.error){ gateError(res.error.message); return; }
+        if(res.data.session){ session=res.data.session; openApp(); }
+        else { gateError("Account created — confirm via the email we sent, then sign in."); }
+      });
+    });
+    sb.auth.getSession().then(function(res){
+      if(res.data && res.data.session){ session=res.data.session; openApp(); }
+      else { showGate(); }
+    });
+  }
 })();
 </script>
 </body>
