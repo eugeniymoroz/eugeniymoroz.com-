@@ -181,6 +181,14 @@
   /* pay badge + date (right corner) */
   .pay-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
   .pay-date{font-size:10px;letter-spacing:.04em;color:#5a5a60;min-height:12px;font-variant-numeric:tabular-nums}
+  /* session day & time */
+  .session{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
+    padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02)}
+  .session-lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .session-when{font-family:var(--display);font-weight:500;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .session-mode{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:99px}
+  .session-mode.on{background:rgba(76,189,146,.14);color:#4cbd92}
+  .session-mode.off{background:rgba(151,162,179,.16);color:#97a2b3}
   .due{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
   .due.over{color:var(--red)}
   .row-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
@@ -444,6 +452,19 @@
         <input id="fDue" type="date">
       </div>
     </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="fSession">Session day &amp; time</label>
+        <input id="fSession" type="datetime-local">
+      </div>
+      <div class="field">
+        <label for="fSessionMode">Session type</label>
+        <select id="fSessionMode">
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </select>
+      </div>
+    </div>
     <div class="field">
       <label class="check" for="fPaid"><input id="fPaid" type="checkbox"><span>Paid</span></label>
     </div>
@@ -580,7 +601,7 @@
       director:p.director||"", dop:p.dop||"", producer:p.producer||"", amount:Number(p.amount)||0,
       due:p.due||"", paid:!!p.paid, notes:p.notes||"",
       planned_at:p.plannedAt||null, progress_at:p.progressAt||null, done_at:p.doneAt||null,
-      paid_at:p.paidAt||null };
+      paid_at:p.paidAt||null, session_at:p.sessionAt||null, session_mode:p.sessionMode||null };
   }
   function cloudUpsert(p){
     if(!sb || !session) return;
@@ -594,17 +615,12 @@
     if(!sb || !session) return;
     sb.from("projects").select("*").order("created_at",{ascending:false}).then(function(res){
       if(res.error){ console.error("load", res.error); return; }
-      var rows = res.data || [];
-      if(rows.length===0 && state.projects.length>0){
-        // first run: migrate existing local projects to the cloud, keep showing them
-        state.projects.forEach(cloudUpsert);
-        return;
-      }
-      state.projects = rows.map(function(r){
+      state.projects = (res.data||[]).map(function(r){
         return { id:r.id, project:r.project, type:r.type, status:r.status,
           director:r.director, dop:r.dop, producer:r.producer, amount:Number(r.amount)||0,
           due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime(),
-          plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"" };
+          plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"",
+          sessionAt:r.session_at||"", sessionMode:r.session_mode||"" };
       });
       save(); renderAll();
     });
@@ -731,6 +747,22 @@
     if(p.status==="done" && !p.doneAt) p.doneAt = today;
   }
 
+  function fmtSessionDateTime(s){
+    if(!s) return "";
+    var dt = new Date(s);
+    if(isNaN(dt.getTime())) return s;
+    return dt.toLocaleString("en-US",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false});
+  }
+  function sessionMarkup(p){
+    if(!p.sessionAt) return "";
+    var off = p.sessionMode==="offline";
+    return '<div class="session">'+
+      '<span class="session-lbl">Session</span>'+
+      '<span class="session-when">'+esc(fmtSessionDateTime(p.sessionAt))+'</span>'+
+      '<span class="session-mode '+(off?"off":"on")+'">'+(off?"Offline":"Online")+'</span>'+
+    '</div>';
+  }
+
   function crewMarkup(p){
     var parts=[];
     if(p.director) parts.push('<span><span class="role">Dir</span> <b>'+esc(p.director)+'</b></span>');
@@ -774,6 +806,7 @@
             '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+ typeBadge+
           '</div>'+
           crewMarkup(p)+
+          sessionMarkup(p)+
           stagesMarkup(p)+
           (dueMarkup(p) ? '<div class="row-meta">'+dueMarkup(p)+'</div>' : '')+
         '</div>'+
@@ -803,7 +836,7 @@
   function quickAdd(){
     var p = { id:uid(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
       paid:false, amount:0, director:"", dop:"", producer:"", due:"", notes:"",
-      plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"" };
+      plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"online" };
     state.projects.push(p);
     if(ui.month){ ui.month=null; updateMonthLabel(); }   // ensure the new card is visible
     renderAll(); save(); cloudUpsert(p);
@@ -845,6 +878,7 @@
     setVal("fName",""); setVal("fType","commercial"); setVal("fStatus","planned");
     setVal("fDirector",""); setVal("fDop",""); setVal("fProducer","");
     setVal("fAmount",""); setVal("fDue",""); setVal("fNotes","");
+    setVal("fSession",""); setVal("fSessionMode","online");
     document.getElementById("fPaid").checked=false;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
     setTimeout(function(){ document.getElementById("fName").focus(); },30);
@@ -855,6 +889,7 @@
     setVal("fName",projName(p)); setVal("fType",p.type||"commercial"); setVal("fStatus",p.status||"planned");
     setVal("fDirector",p.director||""); setVal("fDop",p.dop||""); setVal("fProducer",p.producer||"");
     setVal("fAmount",(p.amount!=null?p.amount:"")); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
+    setVal("fSession",p.sessionAt||""); setVal("fSessionMode",p.sessionMode||"online");
     document.getElementById("fPaid").checked=!!p.paid;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
     setTimeout(function(){ document.getElementById("fName").focus(); },30);
@@ -884,7 +919,9 @@
       status:document.getElementById("fStatus").value,
       due:document.getElementById("fDue").value||"",
       paid:document.getElementById("fPaid").checked,
-      notes:document.getElementById("fNotes").value.trim()
+      notes:document.getElementById("fNotes").value.trim(),
+      sessionAt:document.getElementById("fSession").value||"",
+      sessionMode:document.getElementById("fSessionMode").value||"online"
     };
 
     var target = null;
@@ -932,7 +969,10 @@
     document.getElementById("addBtn").onclick = addProject;
     document.getElementById("cancelBtn").onclick = function(){ hideOverlay("formOverlay"); };
     document.getElementById("saveBtn").onclick = saveForm;
-    document.getElementById("currency").onchange = function(e){ state.currency=e.target.value; renderAll(); save(); };
+    document.getElementById("currency").onchange = function(e){
+      state.currency=e.target.value; renderAll(); save();
+      if(sb && session){ sb.auth.updateUser({data:{currency:state.currency}}); }
+    };
     document.getElementById("sort").onchange = function(e){ ui.sort=e.target.value; renderList(); };
     document.getElementById("typeFilter").onchange = function(e){ ui.type=e.target.value; renderList(); };
 
@@ -1020,6 +1060,9 @@
     started = true;
     bind();
     load();                 // instant paint from local cache
+    if(session && session.user && session.user.user_metadata && session.user.user_metadata.currency){
+      state.currency = session.user.user_metadata.currency;   // synced currency choice
+    }
     document.getElementById("currency").value = state.currency;
     updateMonthLabel();
     renderAll();
