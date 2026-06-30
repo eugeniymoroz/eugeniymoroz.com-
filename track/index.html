@@ -160,9 +160,27 @@
     transition:border-color .15s var(--ease),color .15s var(--ease)}
   .inline-select:hover{border-color:var(--grey);color:var(--ink)}
   .inline-select:focus{outline:none;border-color:var(--grey)}
-  .status-select.s-planned{color:#d8b25a;background-color:rgba(216,178,90,.13);border-color:transparent}
-  .status-select.s-progress{color:#4cbd92;background-color:rgba(76,189,146,.13);border-color:transparent}
-  .status-select.s-done{color:#6f9fe0;background-color:rgba(111,159,224,.13);border-color:transparent}
+  /* stage stepper: planned / in progress / completed as separate fields with dates */
+  .stages{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .stage{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+    border:1px solid var(--line);background:transparent;border-radius:8px;
+    padding:6px 12px;cursor:pointer;min-width:92px;
+    transition:border-color .15s var(--ease),background .15s var(--ease)}
+  .stage:hover{border-color:var(--grey)}
+  .stage-name{font-family:var(--display);font-size:11px;font-weight:500;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);transition:color .15s var(--ease)}
+  .stage-date{font-size:10px;letter-spacing:.04em;color:#5a5a60;min-height:12px;font-variant-numeric:tabular-nums}
+  .stage.is-future{opacity:.45}
+  .stage.is-past .stage-name{color:var(--grey)}            /* passed stage → site grey */
+  .stage.is-active.s-planned{border-color:#d8b25a;background:rgba(216,178,90,.12)}
+  .stage.is-active.s-planned .stage-name{color:#d8b25a}
+  .stage.is-active.s-progress{border-color:#4cbd92;background:rgba(76,189,146,.12)}
+  .stage.is-active.s-progress .stage-name{color:#4cbd92}
+  .stage.is-active.s-done{border-color:#6f9fe0;background:rgba(111,159,224,.12)}
+  .stage.is-active.s-done .stage-name{color:#6f9fe0}
+  /* pay badge + date (right corner) */
+  .pay-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+  .pay-date{font-size:10px;letter-spacing:.04em;color:#5a5a60;min-height:12px;font-variant-numeric:tabular-nums}
   .due{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
   .due.over{color:var(--red)}
   .row-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
@@ -560,7 +578,9 @@
   function rowFromP(p){
     return { id:p.id, project:p.project||"", type:p.type||"commercial", status:p.status||"planned",
       director:p.director||"", dop:p.dop||"", producer:p.producer||"", amount:Number(p.amount)||0,
-      due:p.due||"", paid:!!p.paid, notes:p.notes||"" };
+      due:p.due||"", paid:!!p.paid, notes:p.notes||"",
+      planned_at:p.plannedAt||null, progress_at:p.progressAt||null, done_at:p.doneAt||null,
+      paid_at:p.paidAt||null };
   }
   function cloudUpsert(p){
     if(!sb || !session) return;
@@ -583,7 +603,8 @@
       state.projects = rows.map(function(r){
         return { id:r.id, project:r.project, type:r.type, status:r.status,
           director:r.director, dop:r.dop, producer:r.producer, amount:Number(r.amount)||0,
-          due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime() };
+          due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime(),
+          plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"" };
       });
       save(); renderAll();
     });
@@ -682,12 +703,32 @@
         return '<option value="'+t+'"'+(t===p.type?" selected":"")+'>'+esc(TYPE_LABEL[t])+'</option>';
       }).join("")+'</select>';
   }
-  function statusSelect(p){
-    var cls = {planned:"s-planned",in_progress:"s-progress",done:"s-done"}[p.status]||"";
-    return '<select class="inline-select status-select '+cls+'" data-field="status" title="Status">'+
-      ["planned","in_progress","done"].map(function(s){
-        return '<option value="'+s+'"'+(s===p.status?" selected":"")+'>'+STAGE_LABEL[s]+'</option>';
-      }).join("")+'</select>';
+  function fmtShortDate(d){
+    if(!d) return "";
+    var dt = new Date(d+"T00:00:00");
+    if(isNaN(dt.getTime())) return "";
+    return dt.toLocaleDateString("en-US",{day:"numeric",month:"short"});
+  }
+  function stagesMarkup(p){
+    var order = ["planned","in_progress","done"];
+    var cls = {planned:"s-planned", in_progress:"s-progress", done:"s-done"};
+    var dates = {planned:p.plannedAt, in_progress:p.progressAt, done:p.doneAt};
+    var cur = order.indexOf(p.status);
+    return '<div class="stages">' + order.map(function(s,i){
+      var st = i===cur ? "is-active" : (i<cur ? "is-past" : "is-future");
+      var d = dates[s];
+      return '<button class="stage '+cls[s]+' '+st+'" data-act="stage" data-stage="'+s+'">'+
+        '<span class="stage-name">'+STAGE_LABEL[s]+'</span>'+
+        '<span class="stage-date">'+(d?esc(fmtShortDate(d)):"")+'</span>'+
+        '</button>';
+    }).join("") + '</div>';
+  }
+
+  function stampStage(p){
+    var today = todayStr();
+    if(p.status==="planned" && !p.plannedAt) p.plannedAt = today;
+    if(p.status==="in_progress" && !p.progressAt) p.progressAt = today;
+    if(p.status==="done" && !p.doneAt) p.doneAt = today;
   }
 
   function crewMarkup(p){
@@ -719,9 +760,12 @@
     }
 
     list.innerHTML = items.map(function(p){
-      var paidBadge = p.paid
-        ? '<button class="badge act b-paid" data-act="pay" title="Mark unpaid">Paid</button>'
-        : '<button class="badge act b-unpaid" data-act="pay" title="Mark paid">Unpaid</button>';
+      var paidBadge = '<div class="pay-wrap">'+
+        (p.paid
+          ? '<button class="badge act b-paid" data-act="pay" title="Mark unpaid">Paid</button>'
+          : '<button class="badge act b-unpaid" data-act="pay" title="Mark paid">Unpaid</button>')+
+        '<span class="pay-date">'+(p.paid && p.paidAt ? esc(fmtShortDate(p.paidAt)) : "")+'</span>'+
+      '</div>';
       var typeBadge = typeSelect(p);
       return ''+
       '<div class="row" data-id="'+p.id+'">'+
@@ -730,12 +774,11 @@
             '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+ typeBadge+
           '</div>'+
           crewMarkup(p)+
-          '<div class="row-meta">'+
-            statusSelect(p)+
-            paidBadge+ dueMarkup(p)+
-          '</div>'+
+          stagesMarkup(p)+
+          (dueMarkup(p) ? '<div class="row-meta">'+dueMarkup(p)+'</div>' : '')+
         '</div>'+
         '<div class="row-right">'+
+          paidBadge+
           '<div class="amount editable'+(p.paid?" paid":"")+'" data-act="editamount" title="Click to edit amount">'+money(p.amount)+'</div>'+
           '<div class="row-tools">'+
             '<button class="icon-btn" data-act="edit" aria-label="Edit">'+
@@ -759,7 +802,8 @@
   /* ---------- quick add (no modal) + inline editing in the card ---------- */
   function quickAdd(){
     var p = { id:uid(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
-      paid:false, amount:0, director:"", dop:"", producer:"", due:"", notes:"" };
+      paid:false, amount:0, director:"", dop:"", producer:"", due:"", notes:"",
+      plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"" };
     state.projects.push(p);
     if(ui.month){ ui.month=null; updateMonthLabel(); }   // ensure the new card is visible
     renderAll(); save(); cloudUpsert(p);
@@ -849,8 +893,10 @@
       if(p){ Object.assign(p, payload); delete p.name; delete p.client; target = p; }
     } else {
       payload.id = uid(); payload.createdAt = Date.now();
+      payload.plannedAt = todayStr(); payload.progressAt = ""; payload.doneAt = "";
       state.projects.push(payload); target = payload;
     }
+    if(target){ stampStage(target); if(target.paid){ if(!target.paidAt) target.paidAt=todayStr(); } else { target.paidAt=""; } }
     hideOverlay("formOverlay"); renderAll(); save();
     if(target) cloudUpsert(target);
   }
@@ -922,7 +968,8 @@
       var act = actBtn.dataset.act;
       if(act==="editname"){ inlineEdit(actBtn, p, "project", {placeholder:"Project title"}); return; }
       if(act==="editamount"){ inlineEdit(actBtn, p, "amount", {number:true}); return; }
-      if(act==="pay"){ p.paid=!p.paid; renderAll(); save(); cloudUpsert(p); }
+      if(act==="stage"){ p.status = actBtn.dataset.stage; stampStage(p); renderAll(); save(); cloudUpsert(p); return; }
+      if(act==="pay"){ p.paid=!p.paid; if(p.paid){ if(!p.paidAt) p.paidAt=todayStr(); } else { p.paidAt=""; } renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
       else if(act==="del"){
         pendingDelete = p.id;
