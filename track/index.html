@@ -79,6 +79,8 @@
   .fx{margin-top:12px;font-size:13px;letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
   #earned{cursor:pointer}
   .earned.locked,.amount.locked{letter-spacing:.06em;filter:grayscale(.15)}
+  .earned-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .earned-cur{font-size:12px;padding:5px 26px 5px 13px;background-position:right 9px center;align-self:center}
   .fx-sub{margin-top:4px;font-size:11px;letter-spacing:.02em;color:var(--muted);opacity:.72;font-variant-numeric:tabular-nums}
   .amount-wrap{display:flex;flex-direction:column;align-items:flex-end}
   .amount-line{display:flex;align-items:center;gap:8px;justify-content:flex-end}
@@ -337,18 +339,20 @@
     </div>
     <div class="top-actions">
       <span class="saving" id="saving">Saved</span>
-      <select class="cur-select" id="currency" aria-label="Currency">
-        <option value="USD">$ USD</option>
-        <option value="UAH">₴ UAH</option>
-        <option value="EUR">€ EUR</option>
-      </select>
       <button class="btn btn-primary" id="addBtn">+ New project</button>
     </div>
   </div>
 
   <div class="ledger">
     <div class="lbl">Earned (received)</div>
-    <div class="earned" id="earned">—</div>
+    <div class="earned-line">
+      <div class="earned" id="earned">—</div>
+      <select class="inline-select cur-inline earned-cur" id="currency" aria-label="View currency">
+        <option value="USD">$ USD</option>
+        <option value="UAH">₴ UAH</option>
+        <option value="EUR">€ EUR</option>
+      </select>
+    </div>
     <div class="fx" id="fx"></div>
     <div class="rule"></div>
     <div class="subfigs">
