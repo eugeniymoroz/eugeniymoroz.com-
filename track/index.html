@@ -81,7 +81,9 @@
   .earned.locked,.amount.locked{letter-spacing:.06em;filter:grayscale(.15)}
   .fx-sub{margin-top:4px;font-size:11px;letter-spacing:.02em;color:var(--muted);opacity:.72;font-variant-numeric:tabular-nums}
   .amount-wrap{display:flex;flex-direction:column;align-items:flex-end}
-  .amount-fx{margin-top:3px;text-align:right}
+  .amount-line{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+  .cur-inline{font-size:10px;padding:3px 20px 3px 9px;background-position:right 6px center}
+  .amount-fx{margin-top:4px;text-align:right}
   .amount-fx:empty{display:none}
   /* inline editing of name / amount right in the card */
   .row-name.editable,.amount.editable{cursor:text}
@@ -477,9 +479,17 @@
         <div class="err" id="errAmount">Enter a number</div>
       </div>
       <div class="field">
-        <label for="fDue">Due date</label>
-        <input id="fDue" type="date">
+        <label for="fAmountCur">Paid in</label>
+        <select id="fAmountCur">
+          <option value="USD">$ USD</option>
+          <option value="UAH">₴ UAH</option>
+          <option value="EUR">€ EUR</option>
+        </select>
       </div>
+    </div>
+    <div class="field">
+      <label for="fDue">Due date</label>
+      <input id="fDue" type="date">
     </div>
     <div class="field-row">
       <div class="field">
@@ -572,6 +582,21 @@
   function amtInCur(p){        /* stored amount shown in the currently selected currency */
     if(!p.amountCur || p.amountCur===state.currency) return (p.amount!=null?p.amount:"");
     return Math.round(convertAmt(p.amount, p.amountCur, state.currency)*100)/100;
+  }
+  function moneyNative(amount, cur){     /* format an amount in its own currency, no conversion */
+    cur = cur || "USD";
+    var v = Number(amount)||0;
+    var hasDec = Math.round(v) !== v;
+    var s = v.toLocaleString("en-US", {minimumFractionDigits:hasDec?2:0, maximumFractionDigits:2});
+    return (SYM[cur]||"") + " " + s;
+  }
+  function fxFrom(amount, fromCur){      /* amount in fromCur shown in the OTHER two currencies */
+    if(!fxRates) return "";
+    fromCur = fromCur || "USD";
+    var usd = (Number(amount)||0) / (fxRates[fromCur] || 1);
+    return ["USD","UAH","EUR"].filter(function(c){ return c!==fromCur; }).map(function(c){
+      return SYM[c] + " " + Math.round(usd * (fxRates[c] || 1)).toLocaleString("en-US");
+    }).join("   ·   ");
   }
   function todayStr(){ return new Date().toISOString().slice(0,10); }
   function nowLocalInput(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
@@ -785,6 +810,13 @@
         return '<option value="'+t+'"'+(t===p.type?" selected":"")+'>'+esc(TYPE_LABEL[t])+'</option>';
       }).join("")+'</select>';
   }
+  function curSelect(p){
+    var cur = p.amountCur || "USD";
+    return '<select class="inline-select cur-inline" data-field="amountCur" title="Paid in">'+
+      ["USD","UAH","EUR"].map(function(c){
+        return '<option value="'+c+'"'+(c===cur?" selected":"")+'>'+SYM[c]+" "+c+'</option>';
+      }).join("")+'</select>';
+  }
   function fmtShortDate(d){
     if(!d) return "";
     var dt = new Date(d+"T00:00:00");
@@ -884,8 +916,11 @@
         '<div class="row-right">'+
           paidBadge+
           '<div class="amount-wrap">'+
-            '<div class="amount editable'+(p.paid?" paid":"")+(revealed?"":" locked")+'" data-act="editamount" title="Click to edit amount">'+(revealed?money(p.amount, p.amountCur||"USD"):maskFig())+'</div>'+
-            '<div class="fx-sub amount-fx">'+(revealed?esc(fxOthers(convertAmt(p.amount, p.amountCur, state.currency))):"")+'</div>'+
+            '<div class="amount-line">'+
+              '<div class="amount editable'+(p.paid?" paid":"")+(revealed?"":" locked")+'" data-act="editamount" title="Click to edit amount">'+(revealed?moneyNative(p.amount, p.amountCur||"USD"):maskFig())+'</div>'+
+              curSelect(p)+
+            '</div>'+
+            '<div class="fx-sub amount-fx">'+(revealed?esc(fxFrom(p.amount, p.amountCur||"USD")):"")+'</div>'+
           '</div>'+
           '<div class="row-tools">'+
             '<button class="icon-btn" data-act="edit" aria-label="Edit">'+
@@ -903,8 +938,7 @@
   function renderAll(){ renderStats(); renderList(); }
 
   /* ---------- add: modal on phones, inline on desktop ---------- */
-  function isMobile(){ try{ return window.matchMedia("(max-width:600px)").matches; }catch(e){ return window.innerWidth<=600; } }
-  function addProject(){ if(isMobile()){ openAdd(); } else { quickAdd(); } }
+  function addProject(){ quickAdd(); }
 
   /* ---------- quick add (no modal) + inline editing in the card ---------- */
   function quickAdd(){
@@ -929,13 +963,13 @@
     inp.type = opts.number ? "number" : "text";
     if(opts.number){ inp.step="any"; inp.min="0"; inp.inputMode="decimal"; }
     if(opts.placeholder) inp.placeholder = opts.placeholder;
-    inp.value = field==="amount" ? amtInCur(p) : (p[field]||"");
+    inp.value = field==="amount" ? (p.amount!=null?p.amount:"") : (p[field]||"");
     el.textContent = ""; el.appendChild(inp);
     inp.focus(); if(!opts.number){ try{ inp.select(); }catch(e){} }
     var done = false;
     function commit(){
       if(done) return; done = true;
-      if(field==="amount"){ p.amount = parseFloat(inp.value)||0; p.amountCur = state.currency; }
+      if(field==="amount"){ p.amount = parseFloat(inp.value)||0; }
       else { p[field] = inp.value.trim(); }
       save(); cloudUpsert(p); renderAll();
     }
@@ -951,7 +985,7 @@
     document.getElementById("formTitle").textContent = "New project";
     setVal("fName",""); setVal("fType","commercial"); setVal("fStatus","planned");
     setVal("fDirector",""); setVal("fDop",""); setVal("fProducer","");
-    setVal("fAmount",""); setVal("fDue",""); setVal("fNotes","");
+    setVal("fAmount",""); setVal("fAmountCur",state.currency); setVal("fDue",""); setVal("fNotes","");
     setVal("fSession",""); setVal("fSessionMode","");
     document.getElementById("fPaid").checked=false;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
@@ -962,7 +996,7 @@
     document.getElementById("formTitle").textContent = "Edit project";
     setVal("fName",projName(p)); setVal("fType",p.type||"commercial"); setVal("fStatus",p.status||"planned");
     setVal("fDirector",p.director||""); setVal("fDop",p.dop||""); setVal("fProducer",p.producer||"");
-    setVal("fAmount",amtInCur(p)); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
+    setVal("fAmount",(p.amount!=null?p.amount:"")); setVal("fAmountCur",p.amountCur||"USD"); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
     setVal("fSession",p.sessionAt||""); setVal("fSessionMode",p.sessionMode||"");
     document.getElementById("fPaid").checked=!!p.paid;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
@@ -990,7 +1024,7 @@
       dop:document.getElementById("fDop").value.trim(),
       producer:document.getElementById("fProducer").value.trim(),
       amount:amount,
-      amountCur:state.currency,
+      amountCur:document.getElementById("fAmountCur").value||"USD",
       status:document.getElementById("fStatus").value,
       due:document.getElementById("fDue").value||"",
       paid:document.getElementById("fPaid").checked,
