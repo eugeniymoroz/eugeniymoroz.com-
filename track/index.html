@@ -406,6 +406,7 @@
       <option value="music_video">Music video</option>
       <option value="feature">Feature</option>
       <option value="social">Social</option>
+      <option value="fashion">Fashion</option>
       <option value="short">Short</option>
       <option value="show">Show</option>
       <option value="series">Series</option>
@@ -448,6 +449,7 @@
           <option value="music_video">Music video</option>
           <option value="feature">Feature</option>
           <option value="social">Social</option>
+          <option value="fashion">Fashion</option>
           <option value="short">Short</option>
           <option value="show">Show</option>
           <option value="series">Series</option>
@@ -549,7 +551,7 @@
   var STAGE_LABEL = {planned:"Planned", in_progress:"In progress", done:"Completed"};
   var STAGE_BADGE = {planned:"b-planned", in_progress:"b-progress", done:"b-done"};
   var TYPE_LABEL = {commercial:"Commercial", music_video:"Music video", feature:"Feature",
-    social:"Social", short:"Short", show:"Show", series:"Series"};
+    social:"Social", fashion:"Fashion", short:"Short", show:"Show", series:"Series"};
 
   var state = {currency:"USD", projects:[]};
   var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null};
@@ -810,7 +812,7 @@
 
   function typeSelect(p){
     return '<select class="inline-select type-select" data-field="type" title="Type">'+
-      ["commercial","music_video","feature","social","short","show","series"].map(function(t){
+      ["commercial","music_video","feature","social","fashion","short","show","series"].map(function(t){
         return '<option value="'+t+'"'+(t===p.type?" selected":"")+'>'+esc(TYPE_LABEL[t])+'</option>';
       }).join("")+'</select>';
   }
