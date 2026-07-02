@@ -537,11 +537,22 @@
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-  function money(n){
+  function convertAmt(n, from, to){
     n = Number(n)||0;
-    var hasDec = Math.round(n) !== n;
-    var s = n.toLocaleString("en-US", {minimumFractionDigits:hasDec?2:0, maximumFractionDigits:2});
+    from = from || "USD"; to = to || state.currency;
+    if(from===to || !fxRates) return n;
+    var usd = n / (fxRates[from] || 1);
+    return usd * (fxRates[to] || 1);
+  }
+  function money(n, cur){
+    var v = (cur===undefined) ? (Number(n)||0) : convertAmt(n, cur, state.currency);
+    var hasDec = Math.round(v) !== v;
+    var s = v.toLocaleString("en-US", {minimumFractionDigits:hasDec?2:0, maximumFractionDigits:2});
     return SYM[state.currency] + " " + s;
+  }
+  function amtInCur(p){        /* stored amount shown in the currently selected currency */
+    if(!p.amountCur || p.amountCur===state.currency) return (p.amount!=null?p.amount:"");
+    return Math.round(convertAmt(p.amount, p.amountCur, state.currency)*100)/100;
   }
   function todayStr(){ return new Date().toISOString().slice(0,10); }
   function nowLocalInput(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
@@ -621,6 +632,7 @@
   function rowFromP(p){
     return { id:p.id, project:p.project||"", type:p.type||"commercial", status:p.status||"planned",
       director:p.director||"", dop:p.dop||"", producer:p.producer||"", amount:Number(p.amount)||0,
+      amount_cur:p.amountCur||state.currency||"USD",
       due:p.due||"", paid:!!p.paid, notes:p.notes||"",
       planned_at:p.plannedAt||null, progress_at:p.progressAt||null, done_at:p.doneAt||null,
       paid_at:p.paidAt||null, session_at:p.sessionAt||null, session_mode:p.sessionMode||null };
@@ -640,6 +652,7 @@
       state.projects = (res.data||[]).map(function(r){
         return { id:r.id, project:r.project, type:r.type, status:r.status,
           director:r.director, dop:r.dop, producer:r.producer, amount:Number(r.amount)||0,
+          amountCur:r.amount_cur||"USD",
           due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime(),
           plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"",
           sessionAt:r.session_at||"", sessionMode:r.session_mode||"" };
@@ -652,7 +665,7 @@
     var src = state.projects.filter(inMonth);
     var earned=0, awaiting=0, pipeline=0, total=0, active=0, done=0;
     src.forEach(function(p){
-      var a = Number(p.amount)||0;
+      var a = convertAmt(p.amount, p.amountCur, state.currency);
       total += a;
       if(p.paid){ earned += a; }
       else if(p.status==="done"){ awaiting += a; }
@@ -693,7 +706,7 @@
     try{
       fetch("https://open.er-api.com/v6/latest/USD")
         .then(function(r){ return r.json(); })
-        .then(function(d){ if(d && d.rates){ fxRates = d.rates; renderFx(); } })
+        .then(function(d){ if(d && d.rates){ fxRates = d.rates; if(started) renderAll(); else renderFx(); } })
         .catch(function(){});
     }catch(e){}
   }
@@ -839,7 +852,7 @@
         '</div>'+
         '<div class="row-right">'+
           paidBadge+
-          '<div class="amount editable'+(p.paid?" paid":"")+'" data-act="editamount" title="Click to edit amount">'+money(p.amount)+'</div>'+
+          '<div class="amount editable'+(p.paid?" paid":"")+'" data-act="editamount" title="Click to edit amount">'+money(p.amount, p.amountCur||"USD")+'</div>'+
           '<div class="row-tools">'+
             '<button class="icon-btn" data-act="edit" aria-label="Edit">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
@@ -862,7 +875,7 @@
   /* ---------- quick add (no modal) + inline editing in the card ---------- */
   function quickAdd(){
     var p = { id:uid(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
-      paid:false, amount:0, director:"", dop:"", producer:"", due:"", notes:"",
+      paid:false, amount:0, amountCur:state.currency, director:"", dop:"", producer:"", due:"", notes:"",
       plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"" };
     state.projects.push(p);
     if(ui.month){ ui.month=null; updateMonthLabel(); }   // ensure the new card is visible
@@ -882,13 +895,13 @@
     inp.type = opts.number ? "number" : "text";
     if(opts.number){ inp.step="any"; inp.min="0"; inp.inputMode="decimal"; }
     if(opts.placeholder) inp.placeholder = opts.placeholder;
-    inp.value = field==="amount" ? (p.amount!=null?p.amount:"") : (p[field]||"");
+    inp.value = field==="amount" ? amtInCur(p) : (p[field]||"");
     el.textContent = ""; el.appendChild(inp);
     inp.focus(); if(!opts.number){ try{ inp.select(); }catch(e){} }
     var done = false;
     function commit(){
       if(done) return; done = true;
-      if(field==="amount"){ p.amount = parseFloat(inp.value)||0; }
+      if(field==="amount"){ p.amount = parseFloat(inp.value)||0; p.amountCur = state.currency; }
       else { p[field] = inp.value.trim(); }
       save(); cloudUpsert(p); renderAll();
     }
@@ -915,7 +928,7 @@
     document.getElementById("formTitle").textContent = "Edit project";
     setVal("fName",projName(p)); setVal("fType",p.type||"commercial"); setVal("fStatus",p.status||"planned");
     setVal("fDirector",p.director||""); setVal("fDop",p.dop||""); setVal("fProducer",p.producer||"");
-    setVal("fAmount",(p.amount!=null?p.amount:"")); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
+    setVal("fAmount",amtInCur(p)); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
     setVal("fSession",p.sessionAt||""); setVal("fSessionMode",p.sessionMode||"");
     document.getElementById("fPaid").checked=!!p.paid;
     buildDatalists(); clearErrors(); showOverlay("formOverlay");
@@ -943,6 +956,7 @@
       dop:document.getElementById("fDop").value.trim(),
       producer:document.getElementById("fProducer").value.trim(),
       amount:amount,
+      amountCur:state.currency,
       status:document.getElementById("fStatus").value,
       due:document.getElementById("fDue").value||"",
       paid:document.getElementById("fPaid").checked,
