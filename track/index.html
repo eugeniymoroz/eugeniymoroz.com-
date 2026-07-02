@@ -77,6 +77,10 @@
   .earned{font-family:var(--display);font-weight:600;font-size:clamp(40px,8vw,64px);color:var(--white);
     line-height:1;letter-spacing:-0.02em;margin:12px 0 0;font-variant-numeric:tabular-nums}
   .fx{margin-top:12px;font-size:13px;letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
+  .fx-sub{margin-top:4px;font-size:11px;letter-spacing:.02em;color:var(--muted);opacity:.72;font-variant-numeric:tabular-nums}
+  .amount-wrap{display:flex;flex-direction:column;align-items:flex-end}
+  .amount-fx{margin-top:3px;text-align:right}
+  .amount-fx:empty{display:none}
   /* inline editing of name / amount right in the card */
   .row-name.editable,.amount.editable{cursor:text}
   .row-name.editable:hover,.amount.editable:hover{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--grey)}
@@ -347,14 +351,17 @@
       <div class="subfig">
         <div class="k"><span class="dot" style="background:var(--amber)"></span>Awaiting payment</div>
         <div class="v" id="awaiting">—</div>
+        <div class="fx-sub" id="fxAwaiting"></div>
       </div>
       <div class="subfig">
         <div class="k"><span class="dot" style="background:var(--blue)"></span>In progress</div>
         <div class="v" id="pipeline">—</div>
+        <div class="fx-sub" id="fxPipeline"></div>
       </div>
       <div class="subfig">
         <div class="k"><span class="dot" style="background:var(--ink)"></span>Total value</div>
         <div class="v" id="total">—</div>
+        <div class="fx-sub" id="fxTotal"></div>
       </div>
     </div>
     <div class="distbar" id="distbar" aria-hidden="true"></div>
@@ -364,7 +371,7 @@
     <div class="kpi"><div class="k">Total projects</div><div class="v" id="kCount">0</div></div>
     <div class="kpi"><div class="k">In progress</div><div class="v" id="kActive">0</div></div>
     <div class="kpi"><div class="k">Completed</div><div class="v" id="kDone">0</div></div>
-    <div class="kpi"><div class="k">Avg. fee</div><div class="v" id="kAvg">—</div></div>
+    <div class="kpi"><div class="k">Avg. fee</div><div class="v" id="kAvg">—</div><div class="fx-sub" id="fxAvg"></div></div>
   </div>
 
   <div class="monthbar">
@@ -688,6 +695,11 @@
     document.getElementById("kDone").textContent = s.done;
     document.getElementById("kAvg").textContent = s.count ? money(s.total/s.count) : "—";
 
+    setFxSub("fxAwaiting", s.awaiting);
+    setFxSub("fxPipeline", s.pipeline);
+    setFxSub("fxTotal", s.total);
+    setFxSub("fxAvg", s.count ? s.total/s.count : 0);
+
     var bar = document.getElementById("distbar");
     var sum = s.earned + s.awaiting + s.pipeline;
     if(sum>0){
@@ -710,14 +722,19 @@
         .catch(function(){});
     }catch(e){}
   }
-  function renderFx(earnedCur){
-    var el = document.getElementById("fx"); if(!el) return;
-    if(earnedCur==null) earnedCur = stats().earned;
-    if(!fxRates){ el.textContent=""; return; }
-    var usd = earnedCur / (fxRates[state.currency] || 1);
-    el.textContent = ["USD","UAH","EUR"].map(function(c){
+  function fxOthers(valCur){         /* value (in selected currency) shown in the OTHER currencies */
+    if(!fxRates) return "";
+    var usd = (Number(valCur)||0) / (fxRates[state.currency] || 1);
+    return ["USD","UAH","EUR"].filter(function(c){ return c!==state.currency; }).map(function(c){
       return SYM[c] + " " + Math.round(usd * (fxRates[c] || 1)).toLocaleString("en-US");
     }).join("   ·   ");
+  }
+  function setFxSub(id, valCur){
+    var el = document.getElementById(id); if(el) el.textContent = fxOthers(valCur);
+  }
+  function renderFx(earnedCur){
+    if(earnedCur==null) earnedCur = stats().earned;
+    setFxSub("fx", earnedCur);
   }
 
   function filtered(){
@@ -852,7 +869,10 @@
         '</div>'+
         '<div class="row-right">'+
           paidBadge+
-          '<div class="amount editable'+(p.paid?" paid":"")+'" data-act="editamount" title="Click to edit amount">'+money(p.amount, p.amountCur||"USD")+'</div>'+
+          '<div class="amount-wrap">'+
+            '<div class="amount editable'+(p.paid?" paid":"")+'" data-act="editamount" title="Click to edit amount">'+money(p.amount, p.amountCur||"USD")+'</div>'+
+            '<div class="fx-sub amount-fx">'+esc(fxOthers(convertAmt(p.amount, p.amountCur, state.currency)))+'</div>'+
+          '</div>'+
           '<div class="row-tools">'+
             '<button class="icon-btn" data-act="edit" aria-label="Edit">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
