@@ -252,6 +252,16 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a90' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
     background-repeat:no-repeat;background-position:right 12px center}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  /* custom crew autocomplete (wider dropdown, prefix search from saved names) */
+  .ac-wrap{position:relative}
+  .ac-menu{position:absolute;left:0;right:0;top:100%;margin-top:5px;z-index:80;display:none;
+    background:var(--surface);border:1px solid var(--line);border-radius:9px;overflow:hidden;
+    box-shadow:0 18px 46px rgba(0,0,0,.55);max-height:230px;overflow-y:auto}
+  .ac-menu.show{display:block}
+  .ac-item{padding:11px 14px;font-size:14.5px;cursor:pointer;color:var(--ink);
+    border-bottom:1px solid var(--line-soft);transition:background .12s var(--ease)}
+  .ac-item:last-child{border-bottom:none}
+  .ac-item:hover,.ac-item.active{background:rgba(255,255,255,.06)}
   .check{display:flex;align-items:center;gap:9px;padding:12px 13px;border:1px solid var(--line);
     border-radius:var(--radius);background:var(--bg);cursor:pointer}
   .check input{width:18px;height:18px;accent-color:var(--white);cursor:pointer}
@@ -464,19 +474,20 @@
         </select>
       </div>
     </div>
-    <div class="field">
+    <div class="field ac-wrap">
       <label for="fDirector">Director</label>
-      <input id="fDirector" type="text" placeholder="Name" autocomplete="off" list="dlDirector">
+      <input id="fDirector" type="text" placeholder="Start typing a name…" autocomplete="off">
+      <div class="ac-menu" id="acDirector"></div>
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="fDop">DOP</label>
-        <input id="fDop" type="text" placeholder="Name" autocomplete="off" list="dlDop">
-      </div>
-      <div class="field">
-        <label for="fProducer">Producer</label>
-        <input id="fProducer" type="text" placeholder="Name" autocomplete="off" list="dlProducer">
-      </div>
+    <div class="field ac-wrap">
+      <label for="fDop">DOP</label>
+      <input id="fDop" type="text" placeholder="Start typing a name…" autocomplete="off">
+      <div class="ac-menu" id="acDop"></div>
+    </div>
+    <div class="field ac-wrap">
+      <label for="fProducer">Producer</label>
+      <input id="fProducer" type="text" placeholder="Start typing a name…" autocomplete="off">
+      <div class="ac-menu" id="acProducer"></div>
     </div>
     <div class="field-row">
       <div class="field">
@@ -646,6 +657,41 @@
     var el=document.getElementById(id); if(!el) return;
     el.innerHTML = Object.keys(map).sort().map(function(v){
       return '<option value="'+esc(v)+'"></option>'; }).join("");
+  }
+  function crewNames(role){
+    var map={};
+    state.projects.forEach(function(p){ if(p[role]) map[p[role]]=1; });
+    return Object.keys(map).sort(function(a,b){ return a.toLowerCase()<b.toLowerCase()?-1:1; });
+  }
+  function setupAutocomplete(inputId, menuId, role){
+    var inp = document.getElementById(inputId), menu = document.getElementById(menuId);
+    if(!inp || !menu) return;
+    var items = [], active = -1;
+    function paint(){ for(var i=0;i<menu.children.length;i++) menu.children[i].classList.toggle("active", i===active); }
+    function render(){
+      var q = inp.value.trim().toLowerCase();
+      items = crewNames(role).filter(function(n){ return !q || n.toLowerCase().indexOf(q)>-1; }).slice(0,8);
+      if(!items.length){ hide(); return; }
+      active = -1;
+      menu.innerHTML = items.map(function(n,i){ return '<div class="ac-item" data-i="'+i+'">'+esc(n)+'</div>'; }).join("");
+      menu.classList.add("show");
+    }
+    function hide(){ menu.classList.remove("show"); menu.innerHTML=""; active=-1; }
+    function choose(i){ if(items[i]!=null){ inp.value = items[i]; hide(); } }
+    inp.addEventListener("input", render);
+    inp.addEventListener("focus", render);
+    inp.addEventListener("blur", function(){ setTimeout(hide, 130); });
+    inp.addEventListener("keydown", function(e){
+      if(!menu.classList.contains("show")) return;
+      if(e.key==="ArrowDown"){ e.preventDefault(); active=Math.min(active+1, items.length-1); paint(); }
+      else if(e.key==="ArrowUp"){ e.preventDefault(); active=Math.max(active-1, 0); paint(); }
+      else if(e.key==="Enter" && active>=0){ e.preventDefault(); choose(active); }
+      else if(e.key==="Escape"){ hide(); }
+    });
+    menu.addEventListener("mousedown", function(e){
+      var it = e.target.closest(".ac-item"); if(!it) return;
+      e.preventDefault(); choose(parseInt(it.dataset.i,10));
+    });
   }
 
   /* ---------- storage (localStorage, works as a standalone file) ---------- */
@@ -1082,6 +1128,9 @@
 
   function bind(){
     document.getElementById("addBtn").onclick = addProject;
+    setupAutocomplete("fDirector","acDirector","director");
+    setupAutocomplete("fDop","acDop","dop");
+    setupAutocomplete("fProducer","acProducer","producer");
     document.getElementById("cancelBtn").onclick = function(){ hideOverlay("formOverlay"); };
     document.getElementById("saveBtn").onclick = saveForm;
     document.getElementById("currency").onchange = function(e){
