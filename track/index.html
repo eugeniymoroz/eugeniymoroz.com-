@@ -34,6 +34,7 @@
   }
   ::selection{background:var(--grey);color:#000}
   .wrap{max-width:940px;margin:0 auto}
+  @media (max-width:600px){ body{overflow-x:hidden} }
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 
   /* ---------- LOGIN GATE ---------- */
@@ -74,6 +75,13 @@
   /* ---------- LEDGER ---------- */
   .ledger{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:28px 30px;margin-bottom:18px}
   .ledger .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .btn[aria-expanded="true"]{border-color:var(--grey);color:var(--white)}
+  .ledger-figs{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .avg-fee{text-align:right;flex:0 0 auto}
+  .avg-fee .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .avg-fee .v{font-family:var(--display);font-weight:600;font-size:20px;color:var(--white);margin-top:4px;font-variant-numeric:tabular-nums}
+  .avg-fee .fx-sub{margin-top:3px}
+  .ledger-figs .subfigs{flex:1 1 auto}
   .earned{font-family:var(--display);font-weight:600;font-size:clamp(40px,8vw,64px);color:var(--white);
     line-height:1;letter-spacing:-0.02em;margin:12px 0 0;font-variant-numeric:tabular-nums}
   .fx{margin-top:12px;font-size:13px;letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -102,7 +110,7 @@
   .distbar span{display:block;height:100%}
 
   /* ---------- KPIS ---------- */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
   .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
   .kpi .k{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
   .kpi .v{font-family:var(--display);font-weight:600;font-size:26px;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums;color:var(--white)}
@@ -328,6 +336,11 @@
     .row-right{padding-top:10px;gap:8px}
     .amount{font-size:19px}
     .session-dt{font-size:10.5px;padding:2px 4px}
+    /* keep cards inside the screen — let wide bits wrap instead of stretching */
+    .row,.row-main,.row-head,.row-right,.pay-line,.amount-wrap{min-width:0}
+    .row-name{min-width:0;overflow-wrap:anywhere}
+    .session{flex-wrap:wrap;white-space:normal;gap:5px}
+    .session-dt,.deadline-dt{max-width:118px}
     .field-row{grid-template-columns:1fr}
     .modal{padding:22px 18px;border-radius:8px}
     .footer{gap:14px;row-gap:10px}
@@ -368,11 +381,12 @@
     </div>
     <div class="top-actions">
       <span class="saving" id="saving">Saved</span>
+      <button class="btn" id="earnToggle" aria-expanded="false">Earned (received)</button>
       <button class="btn btn-primary" id="addBtn">+ New project</button>
     </div>
   </div>
 
-  <div class="ledger">
+  <div class="ledger" id="ledger" hidden>
     <div class="lbl">Earned (received)</div>
     <div class="earned-line">
       <div class="earned" id="earned">—</div>
@@ -383,32 +397,40 @@
       </select>
     </div>
     <div class="fx" id="fx"></div>
-    <div class="rule"></div>
-    <div class="subfigs">
-      <div class="subfig">
-        <div class="k"><span class="dot" style="background:var(--amber)"></span>Awaiting payment</div>
-        <div class="v" id="awaiting">—</div>
-        <div class="fx-sub" id="fxAwaiting"></div>
+    <div class="ledger-details">
+      <div class="rule"></div>
+      <div class="ledger-figs">
+        <div class="subfigs">
+          <div class="subfig">
+            <div class="k"><span class="dot" style="background:var(--amber)"></span>Awaiting payment</div>
+            <div class="v" id="awaiting">—</div>
+            <div class="fx-sub" id="fxAwaiting"></div>
+          </div>
+          <div class="subfig">
+            <div class="k"><span class="dot" style="background:var(--blue)"></span>In progress</div>
+            <div class="v" id="pipeline">—</div>
+            <div class="fx-sub" id="fxPipeline"></div>
+          </div>
+          <div class="subfig">
+            <div class="k"><span class="dot" style="background:var(--ink)"></span>Total value</div>
+            <div class="v" id="total">—</div>
+            <div class="fx-sub" id="fxTotal"></div>
+          </div>
+        </div>
+        <div class="avg-fee">
+          <div class="k">Avg. fee</div>
+          <div class="v" id="kAvg">—</div>
+          <div class="fx-sub" id="fxAvg"></div>
+        </div>
       </div>
-      <div class="subfig">
-        <div class="k"><span class="dot" style="background:var(--blue)"></span>In progress</div>
-        <div class="v" id="pipeline">—</div>
-        <div class="fx-sub" id="fxPipeline"></div>
-      </div>
-      <div class="subfig">
-        <div class="k"><span class="dot" style="background:var(--ink)"></span>Total value</div>
-        <div class="v" id="total">—</div>
-        <div class="fx-sub" id="fxTotal"></div>
-      </div>
+      <div class="distbar" id="distbar" aria-hidden="true"></div>
     </div>
-    <div class="distbar" id="distbar" aria-hidden="true"></div>
   </div>
 
   <div class="kpis">
     <div class="kpi"><div class="k">Total projects</div><div class="v" id="kCount">0</div></div>
     <div class="kpi"><div class="k">In progress</div><div class="v" id="kActive">0</div></div>
     <div class="kpi"><div class="k">Completed</div><div class="v" id="kDone">0</div></div>
-    <div class="kpi"><div class="k">Avg. fee</div><div class="v" id="kAvg">—</div><div class="fx-sub" id="fxAvg"></div></div>
   </div>
 
   <div class="monthbar">
@@ -1188,6 +1210,21 @@
     var earnedEl = document.getElementById("earned");
     earnedEl.title = "Tap to reveal / hide amounts";
     earnedEl.addEventListener("click", function(){ revealed = !revealed; renderAll(); });
+
+    var ledgerEl = document.getElementById("ledger");
+    var earnBtn = document.getElementById("earnToggle");
+    function applyLedger(open){
+      ledgerEl.hidden = !open;
+      earnBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    var ledgerOpen = false;
+    try{ ledgerOpen = localStorage.getItem("tracker:ledgerOpen")==="1"; }catch(e){}
+    applyLedger(ledgerOpen);
+    earnBtn.onclick = function(){
+      ledgerOpen = !ledgerOpen;
+      applyLedger(ledgerOpen);
+      try{ localStorage.setItem("tracker:ledgerOpen", ledgerOpen ? "1" : "0"); }catch(e){}
+    };
 
     document.getElementById("monthPrev").onclick = function(){
       ui.month = ui.month ? shiftMonth(ui.month,-1) : currentYM(); updateMonthLabel(); renderAll();
