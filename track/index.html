@@ -372,20 +372,22 @@
   @media (max-width:600px){
     .row{grid-template-columns:1fr auto;
       grid-template-areas:
-        "head head"
+        "head tools"
         "crew crew"
         "stages paid"
-        "deadline amount"
-        "tools tools";
-      align-items:center;column-gap:12px;row-gap:8px}
+        "deadline amount";
+      align-items:center;column-gap:10px;row-gap:8px}
     .row-main,.row-right,.pay-line{display:contents}
-    .row-head{grid-area:head;align-self:start}
+    .row-head{grid-area:head;align-self:center}
     .row-crew{grid-area:crew;align-self:start}
-    .stages{grid-area:stages;margin-top:0}
+    .stages{grid-area:stages;margin-top:0;gap:3px}
+    .stage{padding:3px 6px}
+    .stage-name{font-size:9.5px}
+    .stage-date{font-size:9px}
     .pay-wrap{grid-area:paid;justify-self:end}
     .deadline-pill{grid-area:deadline;justify-self:start}
     .amount-wrap{grid-area:amount;align-items:flex-end}
-    .row-tools{grid-area:tools;justify-self:end;margin-top:2px}
+    .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
   }
 </style>
 </head>
