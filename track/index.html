@@ -114,7 +114,6 @@
   .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
   .kpi .k{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
   .kpi .v{font-family:var(--display);font-weight:600;font-size:26px;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums;color:var(--white)}
-  @media (max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}}
 
   /* ---------- MONTH NAV ---------- */
   .monthbar{display:flex;align-items:center;gap:8px;margin-bottom:18px}
@@ -319,9 +318,10 @@
     .earned{font-size:clamp(34px,13vw,52px)}
     .fx{font-size:12px}
     .subfigs{gap:16px 22px}
-    .kpis{gap:10px;margin-bottom:20px}
-    .kpi{padding:13px 14px}
-    .kpi .v{font-size:22px}
+    .kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+    .kpi{padding:10px 9px;text-align:center}
+    .kpi .k{font-size:9px;letter-spacing:.06em}
+    .kpi .v{font-size:19px;margin-top:5px}
     .filters{gap:8px}
     .month-label{min-width:138px;flex:1}
     .monthbar{gap:8px}
@@ -346,7 +346,9 @@
     .footer{gap:14px;row-gap:10px}
   }
   @media (max-width:380px){
-    .kpis{grid-template-columns:1fr 1fr}
+    .kpis{grid-template-columns:repeat(3,1fr);gap:6px}
+    .kpi{padding:9px 6px}
+    .kpi .k{font-size:8.5px}
     .chip{padding:6px 11px}
     .row{padding:11px 12px}
     .row-name{font-size:15px}
