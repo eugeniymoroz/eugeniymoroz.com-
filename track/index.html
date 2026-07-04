@@ -317,7 +317,12 @@
     .ledger{padding:20px 18px}
     .earned{font-size:clamp(34px,13vw,52px)}
     .fx{font-size:12px}
-    .subfigs{gap:16px 22px}
+    .ledger-figs{flex-direction:column;gap:14px}
+    .subfigs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .subfig .k{font-size:9.5px;letter-spacing:.02em;gap:5px}
+    .subfig .v{font-size:16px;margin-top:4px}
+    .subfig .fx-sub{font-size:9px}
+    .avg-fee{align-self:center;text-align:center}
     .kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
     .kpi{padding:10px 9px;text-align:center}
     .kpi .k{font-size:9px;letter-spacing:.06em}
