@@ -378,7 +378,10 @@
         "deadline amount";
       align-items:center;column-gap:10px;row-gap:8px}
     .row-main,.row-right,.pay-line{display:contents}
-    .row-head{grid-area:head;align-self:center}
+    .row-head{grid-area:head;align-self:center;flex-wrap:nowrap;min-width:0;gap:6px}
+    .row-name{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+    .type-select{flex:0 0 auto}
+    .session{flex-wrap:nowrap;white-space:nowrap;min-width:0}
     .row-crew{grid-area:crew;align-self:start}
     .stages{grid-area:stages;margin-top:0;gap:3px}
     .stage{padding:3px 6px}
