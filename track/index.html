@@ -363,19 +363,29 @@
     .row{padding:11px 12px}
     .row-name{font-size:15px}
   }
-  /* mobile card: name/type/session, then crew, then stages on the left with
-     deadline+Paid (and amount under Paid) on the right of the same line */
+  /* mobile card layout:
+       row 1: name / type / session
+       row 2: director / dop / producer
+       row 3: stages ............... Paid
+       row 4: deadline ............. amount (under Paid)
+       row 5: edit / delete icons  */
   @media (max-width:600px){
     .row{grid-template-columns:1fr auto;
-      grid-template-areas:"head head" "crew crew" "stages right";
-      align-items:start;column-gap:12px;row-gap:9px}
-    .row-main{display:contents}
-    .row-head{grid-area:head}
-    .row-crew{grid-area:crew}
-    .stages{grid-area:stages;margin-top:0;align-self:start}
-    .row-right{grid-area:right;flex-direction:column;align-items:flex-end;gap:6px;
-      border-top:none;padding-top:0}
-    .pay-line{width:auto;justify-content:flex-end}
+      grid-template-areas:
+        "head head"
+        "crew crew"
+        "stages paid"
+        "deadline amount"
+        "tools tools";
+      align-items:center;column-gap:12px;row-gap:8px}
+    .row-main,.row-right,.pay-line{display:contents}
+    .row-head{grid-area:head;align-self:start}
+    .row-crew{grid-area:crew;align-self:start}
+    .stages{grid-area:stages;margin-top:0}
+    .pay-wrap{grid-area:paid;justify-self:end}
+    .deadline-pill{grid-area:deadline;justify-self:start}
+    .amount-wrap{grid-area:amount;align-items:flex-end}
+    .row-tools{grid-area:tools;justify-self:end;margin-top:2px}
   }
 </style>
 </head>
