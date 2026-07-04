@@ -564,7 +564,7 @@
   var TYPE_LABEL = {commercial:"Commercial", music_video:"Music video", feature:"Feature",
     social:"Social", fashion:"Fashion", short:"Short", show:"Show", series:"Series"};
 
-  var state = {currency:"USD", projects:[]};
+  var state = {currency:"USD", projects:[], crewList:{director:[], dop:[], producer:[]}};
   var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null};
   var editingId = null;
   var pendingDelete = null;
@@ -661,7 +661,30 @@
   function crewNames(role){
     var map={};
     state.projects.forEach(function(p){ if(p[role]) map[p[role]]=1; });
+    (state.crewList[role]||[]).forEach(function(n){ if(n) map[n]=1; });   // persistent directory
     return Object.keys(map).sort(function(a,b){ return a.toLowerCase()<b.toLowerCase()?-1:1; });
+  }
+  function rememberCrew(p){
+    [["director",p.director],["dop",p.dop],["producer",p.producer]].forEach(function(pair){
+      var role=pair[0], name=(pair[1]||"").trim();
+      if(!name) return;
+      if(!state.crewList[role]) state.crewList[role]=[];
+      if(state.crewList[role].indexOf(name)===-1) state.crewList[role].push(name);
+      if(sb && session){
+        sb.from("crew").upsert({user_id:session.user.id, role:role, name:name},
+          {onConflict:"user_id,role,name", ignoreDuplicates:true})
+          .then(function(res){ if(res.error) console.error("crew", res.error); });
+      }
+    });
+  }
+  function loadCrew(){
+    if(!sb || !session) return;
+    sb.from("crew").select("role,name").then(function(res){
+      if(res.error){ console.error("loadCrew", res.error); return; }
+      var cl={director:[], dop:[], producer:[]};
+      (res.data||[]).forEach(function(r){ if(cl[r.role] && cl[r.role].indexOf(r.name)===-1) cl[r.role].push(r.name); });
+      state.crewList = cl;
+    });
   }
   function setupAutocomplete(inputId, menuId, role){
     var inp = document.getElementById(inputId), menu = document.getElementById(menuId);
@@ -1096,7 +1119,7 @@
     }
     if(target){ stampStage(target); if(target.paid){ if(!target.paidAt) target.paidAt=todayStr(); } else { target.paidAt=""; } }
     hideOverlay("formOverlay"); renderAll(); save();
-    if(target) cloudUpsert(target);
+    if(target){ cloudUpsert(target); rememberCrew(target); }
   }
 
   function showOverlay(id){ document.getElementById(id).classList.add("show"); }
@@ -1244,6 +1267,7 @@
     renderAll();
     loadFx();
     loadFromCloud();        // authoritative refresh from Supabase
+    loadCrew();             // persistent crew directory
   }
 
   /* ---------- auth gate (Supabase) ---------- */
