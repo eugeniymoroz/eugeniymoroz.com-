@@ -148,6 +148,7 @@
   .row:hover{border-color:#3a3a40}
   .row-main{min-width:0}
   .row-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .head-controls{display:flex;align-items:center;gap:10px}
   .row-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:0;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;color:var(--white)}
   .type-badge{font-size:10.5px;font-weight:500;letter-spacing:.1em;padding:3px 9px;border-radius:99px;
@@ -371,19 +372,22 @@
        row 4: deadline ............. amount (under Paid)
        row 5: edit / delete icons  */
   @media (max-width:600px){
-    .row{grid-template-columns:1fr auto;
+    .row{grid-template-columns:auto 1fr auto;
       grid-template-areas:
-        "head tools"
-        "crew crew"
-        "stages paid"
-        "deadline amount";
-      align-items:center;column-gap:10px;row-gap:8px}
-    .row-main,.row-right,.pay-line,.tools-row{display:contents}
-    .row-head{grid-area:head;align-self:start;flex-wrap:nowrap;min-width:0;gap:6px}
-    .row-name{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
-    .type-select{flex:0 0 auto}
-    .session{flex-wrap:nowrap;white-space:nowrap;min-width:0}
-    .row-crew{grid-area:crew;align-self:start}
+        "controls controls tools"
+        "name     crew     crew"
+        "stages   stages   paid"
+        "deadline deadline amount";
+      align-items:center;column-gap:8px;row-gap:8px}
+    .row-main,.row-right,.pay-line,.tools-row,.row-head{display:contents}
+    .head-controls{grid-area:controls;display:flex;align-items:center;gap:6px;min-width:0}
+    .head-controls .type-select{flex:1 1 0;min-width:0}
+    .head-controls .session{flex:1 1 0;min-width:0;flex-wrap:nowrap;white-space:nowrap}
+    .head-controls .session-select{flex:1 1 auto;min-width:0}
+    .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
+    .row-name{grid-area:name;align-self:center;min-width:0;max-width:42vw;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+    .row-crew{grid-area:crew;align-self:center;margin-top:0}
     .stages{grid-area:stages;margin-top:0;gap:3px}
     .stage{padding:3px 6px}
     .stage-name{font-size:9.5px}
@@ -391,7 +395,6 @@
     .pay-wrap{grid-area:paid;justify-self:end}
     .deadline-pill{grid-area:deadline;justify-self:start}
     .amount-wrap{grid-area:amount;align-items:flex-end}
-    .row-tools{grid-area:tools;justify-self:end;align-self:start;margin-top:0}
   }
 </style>
 </head>
@@ -654,13 +657,7 @@
   var started = false;
   var revealed = false;   // amounts hidden behind emojis until the total is tapped (privacy)
 
-  var MASK_EMO = ["🎬","🎞️","🎥","🕶️","🌙","🔒","🎟️","📽️","🖤","✦"];
-  function maskFig(){
-    var n = 2 + Math.floor(Math.random()*2);   // 2–3 emojis
-    var out = [];
-    for(var i=0;i<n;i++) out.push(MASK_EMO[Math.floor(Math.random()*MASK_EMO.length)]);
-    return out.join(" ");
-  }
+  function maskFig(){ return "🔒"; }   // hidden amounts shown as a lock
   function showMoney(v, cur){ return revealed ? money(v, cur) : maskFig(); }
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -1069,7 +1066,8 @@
       '<div class="row" data-id="'+p.id+'">'+
         '<div class="row-main">'+
           '<div class="row-head">'+
-            '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+ typeBadge + sessionMarkup(p)+
+            '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+
+            '<div class="head-controls">'+ typeBadge + sessionMarkup(p) +'</div>'+
           '</div>'+
           crewMarkup(p)+
           stagesMarkup(p)+
