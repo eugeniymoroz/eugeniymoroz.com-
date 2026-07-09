@@ -1350,6 +1350,14 @@
     gal.addEventListener("scroll", update);
     window.addEventListener("resize", layout);
     new MutationObserver(layout).observe(gal, { childList: true });
+    // ResizeObserver on the wrapper catches cases a plain window "resize"
+    // event misses — e.g. this gallery becoming visible when its tab is
+    // switched to (clientWidth going from 0 to a real value). Without this,
+    // setHeight() can silently skip the row clamp and the grid renders
+    // unclamped, showing every card stacked with no row limit.
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(layout).observe(wrap);
+    }
     layout();
   });
 
