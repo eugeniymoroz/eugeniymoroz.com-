@@ -379,7 +379,7 @@
       align-items:center;column-gap:8px;row-gap:8px}
     .row-main,.row-right,.pay-line,.tools-row,.row-head{display:contents}
     .head-controls{grid-area:controls;display:flex;align-items:center;gap:6px;min-width:0}
-    .head-controls .type-select{flex:0 1 auto;min-width:0}
+    .head-controls .type-select{flex:0 0 auto;min-width:0}
     .head-controls .session{flex:1 1 auto;min-width:0;flex-wrap:nowrap;white-space:nowrap}
     .head-controls .session-select{flex:0 1 auto;min-width:0}
     .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
@@ -955,7 +955,7 @@
     }
     return '<span class="deadline-pill'+(over?" over":"")+'">'+
       '<span class="deadline-lbl">Deadline</span>'+
-      '<input class="deadline-dt" type="date" data-act="due-dt" value="'+esc(p.due)+'">'+
+      '<input class="deadline-dt" type="date" lang="en-GB" data-act="due-dt" value="'+esc(p.due)+'">'+
       (over?'<span class="deadline-tag">overdue</span>':'')+
       '<button class="deadline-x" data-act="due-clear" title="Clear deadline">×</button>'+
     '</span>';
@@ -1019,7 +1019,7 @@
         '<option value="offline"'+(mode==="offline"?" selected":"")+'>Offline</option>'+
       '</select>';
     if(mode){
-      html += '<input class="session-dt" type="datetime-local" data-act="session-dt" value="'+esc(p.sessionAt||"")+'">';
+      html += '<input class="session-dt" type="datetime-local" lang="en-GB" data-act="session-dt" value="'+esc(p.sessionAt||"")+'">';
     }
     return html + '</span>';
   }
