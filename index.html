@@ -126,6 +126,7 @@
     transform: translate(-50%, -50%) scale(1.35);  /* fill screen even for 4:3 clips */
     border: 0;
     pointer-events: none;
+    filter: blur(6px);      /* soft focus so the foreground text/UI reads first */
   }
   .site-bg::after {
     content: "";
@@ -217,6 +218,7 @@
     transform: translate(-50%, -50%);
     border: 0;
     pointer-events: none;
+    filter: blur(6px);      /* soft focus so the foreground text/UI reads first */
   }
   .hero-bg::after {
     content: "";
