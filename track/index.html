@@ -399,7 +399,8 @@
     .stage-name{font-size:9.5px}
     .stage-date{font-size:9px}
     .pay-wrap{grid-area:paid;justify-self:end}
-    .deadline-pill{grid-area:deadline;justify-self:start}
+    .deadline-pill{grid-area:deadline;justify-self:stretch;justify-content:flex-start}
+    .deadline-pill .deadline-dt{flex:1 1 auto;min-width:0}
     .amount-wrap{grid-area:amount;align-items:flex-end}
   }
 </style>
