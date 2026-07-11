@@ -167,7 +167,7 @@
   .b-progress{background:var(--blue-soft);color:var(--blue)}      /* blue    */
   .b-done{background:var(--green-soft);color:var(--green);box-shadow:0 0 10px rgba(143,191,159,.4)}  /* green, glowing */
   .b-paid{background:var(--green-soft);color:var(--green);box-shadow:0 0 10px rgba(143,191,159,.4)}  /* green, glowing */
-  .b-unpaid{background:var(--red-soft);color:var(--red)}          /* red     */
+  .b-unpaid{background:var(--red-soft);color:var(--red);box-shadow:0 0 10px rgba(199,123,112,.4)}    /* red, glowing */
   .badge.act{cursor:pointer;font-family:inherit;border:1px solid transparent;
     transition:filter .15s var(--ease),border-color .15s var(--ease)}
   .badge.act:hover{filter:brightness(1.3);border-color:currentColor}
@@ -1027,15 +1027,18 @@
     if(isNaN(dt.getTime())) return s;
     return dt.toLocaleString("en-US",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false});
   }
+  function isMobileWidth(){ return window.innerWidth <= 600; }
   function sessionMarkup(p){
     var mode = p.sessionMode==="offline" ? "offline" : (p.sessionMode==="online" ? "online" : "");
     var cls = mode==="offline" ? "s-off" : (mode==="online" ? "s-on" : "s-none");
+    var mobile = isMobileWidth();
+    var lbl = mobile ? {none:"No", online:"On", offline:"Off"} : {none:"No session", online:"Online", offline:"Offline"};
     var html = '<span class="session '+cls+'">'+
       '<span class="session-dot"></span>'+
       '<select class="inline-select session-select" data-field="sessionMode" title="Session">'+
-        '<option value=""'+(mode===""?" selected":"")+'>No session</option>'+
-        '<option value="online"'+(mode==="online"?" selected":"")+'>Online</option>'+
-        '<option value="offline"'+(mode==="offline"?" selected":"")+'>Offline</option>'+
+        '<option value=""'+(mode===""?" selected":"")+'>'+lbl.none+'</option>'+
+        '<option value="online"'+(mode==="online"?" selected":"")+'>'+lbl.online+'</option>'+
+        '<option value="offline"'+(mode==="offline"?" selected":"")+'>'+lbl.offline+'</option>'+
       '</select>';
     if(mode){
       html += '<span class="dt-wrap">'+
@@ -1395,6 +1398,19 @@
     loadFx();
     loadFromCloud();        // authoritative refresh from Supabase
     loadCrew();             // persistent crew directory
+
+    // re-render the list when the viewport crosses the mobile breakpoint
+    // (rotating a phone, resizing a browser window) so the session labels
+    // switch between "Online/Offline" (web) and "On/Off" (mobile).
+    var wasMobile = isMobileWidth();
+    var resizeTimer = null;
+    window.addEventListener("resize", function(){
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function(){
+        var nowMobile = isMobileWidth();
+        if(nowMobile !== wasMobile){ wasMobile = nowMobile; renderList(); }
+      }, 150);
+    });
   }
 
   /* ---------- auth gate (Supabase) ---------- */
