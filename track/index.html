@@ -210,12 +210,19 @@
   .session.s-on .session-select{color:var(--violet)}
   .session.s-off .session-dot{background:var(--amber);box-shadow:0 0 6px rgba(194,160,106,.55)}    /* offline */
   .session.s-off .session-select{color:var(--amber)}
-  .session-dt{-webkit-appearance:none;appearance:none;background:transparent;border:none;
-    color:var(--muted);font:inherit;font-size:11px;font-variant-numeric:tabular-nums;
-    cursor:pointer;padding:2px 5px;border-radius:6px;transition:background .15s var(--ease),color .15s var(--ease)}
-  .session-dt:hover{background:rgba(255,255,255,.05);color:var(--ink)}
-  .session-dt:focus{outline:none;background:rgba(255,255,255,.07);color:var(--ink)}
-  .session-dt::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer;opacity:.7}
+  /* numeric date/time display: the real <input type=date/datetime-local> sits
+     invisible on top (so tapping still opens the native picker everywhere,
+     not just on a tiny icon) while a plain span shows our own DD.MM.YYYY
+     text — native browser/OS locale text (spelled-out months) never shows,
+     which matters most on mobile where the `lang` attribute is ignored. */
+  .dt-wrap{position:relative;display:inline-flex;align-items:center}
+  .dt-wrap input[type="date"],.dt-wrap input[type="datetime-local"]{
+    position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;
+    border:0;padding:0;margin:0;-webkit-appearance:none;appearance:none}
+  .dt-disp{pointer-events:none;white-space:nowrap;font:inherit;font-variant-numeric:tabular-nums}
+  .session .dt-disp{font-size:11px;color:var(--muted);padding:2px 5px;border-radius:6px;
+    transition:background .15s var(--ease),color .15s var(--ease)}
+  .session .dt-wrap:hover .dt-disp,.session .dt-wrap:focus-within .dt-disp{background:rgba(255,255,255,.05);color:var(--ink)}
   .due{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
   .due.over{color:var(--red)}
   /* deadline pill (editable Due date, "none" by default) */
@@ -226,11 +233,9 @@
   .deadline-lbl{font-family:var(--display);font-size:10.5px;font-weight:500;letter-spacing:.1em;
     text-transform:uppercase;color:var(--muted)}
   .deadline-none{font-size:12px;color:#5a5a60;letter-spacing:.02em}
-  .deadline-dt{-webkit-appearance:none;appearance:none;background:transparent;border:none;color:var(--ink);
-    font:inherit;font-size:12px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0}
-  .deadline-dt::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer;opacity:.7}
+  .deadline-pill .dt-disp{font-size:12px;color:var(--ink)}
   .deadline-pill.over{border-color:rgba(224,110,100,.5)}
-  .deadline-pill.over .deadline-dt{color:var(--red)}
+  .deadline-pill.over .dt-disp{color:var(--red)}
   .deadline-tag{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
   .deadline-x{-webkit-appearance:none;appearance:none;background:transparent;border:none;color:var(--muted);
     cursor:pointer;font-size:15px;line-height:1;padding:0 0 0 2px}
@@ -346,12 +351,12 @@
     .amount-fx{font-size:10px}
     .deadline-pill{padding:3px 10px;gap:6px}
     .deadline-lbl{font-size:9.5px}
-    .session-dt{font-size:10.5px;padding:2px 4px}
+    .session .dt-disp{font-size:10.5px;padding:2px 4px}
     /* keep cards inside the screen — let wide bits wrap instead of stretching */
     .row,.row-main,.row-head,.row-right,.pay-line,.amount-wrap{min-width:0}
     .row-name{min-width:0;overflow-wrap:anywhere}
     .session{flex-wrap:wrap;white-space:normal;gap:5px}
-    .session-dt,.deadline-dt{max-width:118px}
+    .dt-disp{max-width:118px;overflow:hidden;text-overflow:ellipsis}
     .field-row{grid-template-columns:1fr}
     .modal{padding:22px 18px;border-radius:8px}
     .footer{gap:14px;row-gap:10px}
@@ -956,7 +961,10 @@
     }
     return '<span class="deadline-pill'+(over?" over":"")+'">'+
       '<span class="deadline-lbl">Deadline</span>'+
-      '<input class="deadline-dt" type="date" lang="en-GB" data-act="due-dt" value="'+esc(p.due)+'">'+
+      '<span class="dt-wrap">'+
+        '<input class="deadline-dt" type="date" data-act="due-dt" value="'+esc(p.due)+'">'+
+        '<span class="dt-disp">'+esc(fmtNumericDate(p.due))+'</span>'+
+      '</span>'+
       (over?'<span class="deadline-tag">overdue</span>':'')+
       '<button class="deadline-x" data-act="due-clear" title="Clear deadline">×</button>'+
     '</span>';
@@ -974,6 +982,16 @@
       ["USD","UAH","EUR"].map(function(c){
         return '<option value="'+c+'"'+(c===cur?" selected":"")+'>'+SYM[c]+" "+c+'</option>';
       }).join("")+'</select>';
+  }
+  /* numeric DD.MM.YYYY formatting, independent of browser/OS locale
+     (native date inputs spell out months on mobile regardless of `lang`) */
+  function fmtNumericDate(d){
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d||"");
+    return m ? (m[3]+"."+m[2]+"."+m[1]) : "";
+  }
+  function fmtNumericDateTime(s){
+    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s||"");
+    return m ? (m[3]+"."+m[2]+"."+m[1]+" "+m[4]+":"+m[5]) : "";
   }
   function fmtShortDate(d){
     if(!d) return "";
@@ -1020,7 +1038,10 @@
         '<option value="offline"'+(mode==="offline"?" selected":"")+'>Offline</option>'+
       '</select>';
     if(mode){
-      html += '<input class="session-dt" type="datetime-local" lang="en-GB" data-act="session-dt" value="'+esc(p.sessionAt||"")+'">';
+      html += '<span class="dt-wrap">'+
+        '<input class="session-dt" type="datetime-local" data-act="session-dt" value="'+esc(p.sessionAt||"")+'">'+
+        '<span class="dt-disp">'+esc(p.sessionAt ? fmtNumericDateTime(p.sessionAt) : "set time")+'</span>'+
+      '</span>';
     }
     return html + '</span>';
   }
