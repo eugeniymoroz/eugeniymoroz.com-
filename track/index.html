@@ -96,10 +96,13 @@
   .stats-total span{text-align:right;font-variant-numeric:tabular-nums;color:var(--white);font-weight:600}
   .stats-total span:first-child{text-align:left;color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
   @media (max-width:600px){
-    .statspanel{padding:16px 14px}
-    .stats-head,.stats-row,.stats-total{grid-template-columns:1.4fr .6fr 1fr 1fr;gap:8px}
+    .statspanel{padding:16px 12px}
+    .stats-head,.stats-row,.stats-total{grid-template-columns:1fr .5fr 1.2fr 1.1fr;gap:6px}
+    .stats-head{font-size:8px}
     .stats-row .st-type{font-size:12px}
-    .stats-head{font-size:8.5px}
+    .stats-row .num,.stats-total span{font-size:12px;white-space:nowrap}
+    .stats-total span:first-child{font-size:8px}
+    .stats-year .yearly-v{font-size:18px}
   }
   .ledger-figs{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
   .avg-fee{text-align:right;flex:0 0 auto}
@@ -148,6 +151,7 @@
 
   /* ---------- KPIS ---------- */
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
+  .kpis[hidden]{display:none}
   .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
   .kpi .k{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
   .kpi .v{font-family:var(--display);font-weight:600;font-size:26px;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums;color:var(--white)}
@@ -540,7 +544,7 @@
     <div class="stats-total" id="statsTotalRow"></div>
   </div>
 
-  <div class="kpis">
+  <div class="kpis" id="kpis">
     <div class="kpi"><div class="k">Total projects</div><div class="v" id="kCount">0</div></div>
     <div class="kpi"><div class="k">In progress</div><div class="v" id="kActive">0</div></div>
     <div class="kpi"><div class="k">Completed</div><div class="v" id="kDone">0</div></div>
@@ -1428,6 +1432,8 @@
     function applyPanels(){
       ledgerEl.hidden = activePanel!=="earn";
       statsEl.hidden  = activePanel!=="stats";
+      var kpisEl = document.getElementById("kpis");
+      if(kpisEl) kpisEl.hidden = activePanel==="stats";   // counters belong to Earned view only
       earnBtn.setAttribute("aria-expanded", activePanel==="earn" ? "true" : "false");
       statsBtn.setAttribute("aria-expanded", activePanel==="stats" ? "true" : "false");
     }
