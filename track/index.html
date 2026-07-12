@@ -78,6 +78,29 @@
   .ledger{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:28px 30px;margin-bottom:18px}
   .ledger .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
   .btn[aria-expanded="true"]{border-color:var(--grey);color:var(--white)}
+  /* statistics panel */
+  .statspanel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px 24px;margin-bottom:18px}
+  .statspanel .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:16px}
+  .stats-head,.stats-row{display:grid;grid-template-columns:1.6fr .7fr 1fr 1fr;gap:12px;align-items:center}
+  .stats-head{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .stats-head span:not(:first-child),.stats-row .num{text-align:right;font-variant-numeric:tabular-nums}
+  .st-sort{cursor:pointer;transition:color .15s var(--ease)}
+  .st-sort:hover{color:var(--ink)}
+  .st-sort.active{color:var(--white)}
+  .st-money{cursor:pointer}
+  .stats-row{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+  .stats-row:last-child{border-bottom:none}
+  .stats-row .st-type{font-family:var(--display);font-weight:500;color:var(--ink);font-size:14px}
+  .stats-row .st-total{color:var(--white);font-weight:500}
+  .stats-total{display:grid;grid-template-columns:1.6fr .7fr 1fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .stats-total span{text-align:right;font-variant-numeric:tabular-nums;color:var(--white);font-weight:600}
+  .stats-total span:first-child{text-align:left;color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  @media (max-width:600px){
+    .statspanel{padding:16px 14px}
+    .stats-head,.stats-row,.stats-total{grid-template-columns:1.4fr .6fr 1fr 1fr;gap:8px}
+    .stats-row .st-type{font-size:12px}
+    .stats-head{font-size:8.5px}
+  }
   .ledger-figs{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
   .avg-fee{text-align:right;flex:0 0 auto}
   .avg-fee .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -87,6 +110,18 @@
   .earned{font-family:var(--display);font-weight:600;font-size:clamp(40px,8vw,64px);color:var(--white);
     line-height:1;letter-spacing:-0.02em;margin:12px 0 0;font-variant-numeric:tabular-nums}
   .fx{margin-top:12px;font-size:13px;letter-spacing:.02em;color:var(--muted);font-variant-numeric:tabular-nums}
+  .stats-year{margin:14px 0 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .stats-year .fx-sub{margin-top:0}
+  .ledger-top-line{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .earned-period{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+  .year-nav{display:flex;align-items:center;gap:8px}
+  .ynav{width:26px;height:26px;border:1px solid var(--line);background:transparent;color:var(--muted);
+    border-radius:6px;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;
+    transition:border-color .15s var(--ease),color .15s var(--ease)}
+  .ynav:hover{border-color:var(--grey);color:var(--ink)}
+  .year-label{font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);
+    min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
+  .yearly-v{font-family:var(--display);font-weight:600;font-size:22px;color:var(--white);font-variant-numeric:tabular-nums;cursor:pointer}
   #earned{cursor:pointer}
   .earned.locked,.amount.locked{letter-spacing:.06em;filter:grayscale(.15)}
   .earned-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -433,13 +468,17 @@
     </div>
     <div class="top-actions">
       <span class="saving" id="saving">Saved</span>
+      <button class="btn" id="statsToggle" aria-expanded="false">Statistics</button>
       <button class="btn" id="earnToggle" aria-expanded="false">Earned (received)</button>
       <button class="btn btn-primary" id="addBtn">+ New project</button>
     </div>
   </div>
 
   <div class="ledger" id="ledger" hidden>
-    <div class="lbl">Earned (received)</div>
+    <div class="ledger-top-line">
+      <div class="lbl">Earned (received)</div>
+      <span class="earned-period" id="earnedPeriod"></span>
+    </div>
     <div class="earned-line">
       <div class="earned" id="earned">—</div>
       <select class="inline-select cur-inline earned-cur" id="currency" aria-label="View currency">
@@ -479,6 +518,28 @@
     </div>
   </div>
 
+  <div class="statspanel" id="statsPanel" hidden>
+    <div class="lbl">Earned per year</div>
+    <div class="stats-year">
+      <div class="year-nav">
+        <button class="ynav" id="yearPrev" aria-label="Previous year">‹</button>
+        <span class="year-label" id="yearlyYear">2026</span>
+        <button class="ynav" id="yearNext" aria-label="Next year">›</button>
+      </div>
+      <span class="yearly-v st-money" id="yearly">—</span>
+      <span class="fx-sub" id="fxYearly"></span>
+    </div>
+    <div class="lbl" id="statsTypeLbl" style="margin-top:22px">By project type</div>
+    <div class="stats-head">
+      <span>Type</span>
+      <span class="st-sort" data-sort="count">Projects</span>
+      <span class="st-sort" data-sort="total">Total</span>
+      <span class="st-sort" data-sort="avg">Avg. fee</span>
+    </div>
+    <div class="stats-body" id="statsBody"></div>
+    <div class="stats-total" id="statsTotalRow"></div>
+  </div>
+
   <div class="kpis">
     <div class="kpi"><div class="k">Total projects</div><div class="v" id="kCount">0</div></div>
     <div class="kpi"><div class="k">In progress</div><div class="v" id="kActive">0</div></div>
@@ -486,9 +547,15 @@
   </div>
 
   <div class="monthbar">
-    <button class="mnav" id="monthPrev" aria-label="Previous month">‹</button>
-    <button class="month-label" id="monthLabel">All time</button>
-    <button class="mnav" id="monthNext" aria-label="Next month">›</button>
+    <select class="sort-select" id="monthJump" aria-label="Month">
+      <option value="01">January</option><option value="02">February</option>
+      <option value="03">March</option><option value="04">April</option>
+      <option value="05">May</option><option value="06">June</option>
+      <option value="07">July</option><option value="08">August</option>
+      <option value="09">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+    <select class="sort-select" id="yearJump" aria-label="Year"></select>
   </div>
 
   <div class="filters">
@@ -510,6 +577,8 @@
       <option value="feature">Feature</option>
       <option value="social">Social</option>
       <option value="fashion">Fashion</option>
+      <option value="documentary">Documentary</option>
+      <option value="reels">Reels</option>
       <option value="short">Short</option>
       <option value="show">Show</option>
       <option value="series">Series</option>
@@ -553,6 +622,8 @@
           <option value="feature">Feature</option>
           <option value="social">Social</option>
           <option value="fashion">Fashion</option>
+          <option value="documentary">Documentary</option>
+          <option value="reels">Reels</option>
           <option value="short">Short</option>
           <option value="show">Show</option>
           <option value="series">Series</option>
@@ -655,10 +726,11 @@
   var STAGE_LABEL = {planned:"Planned", in_progress:"In progress", done:"Completed"};
   var STAGE_BADGE = {planned:"b-planned", in_progress:"b-progress", done:"b-done"};
   var TYPE_LABEL = {commercial:"Commercial", music_video:"Music video", feature:"Feature",
-    social:"Social", fashion:"Fashion", short:"Short", show:"Show", series:"Series"};
+    social:"Social", fashion:"Fashion", documentary:"Documentary", reels:"Reels",
+    short:"Short", show:"Show", series:"Series"};
 
   var state = {currency:"USD", projects:[], crewList:{director:[], dop:[], producer:[]}};
-  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null};
+  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count"};
   var editingId = null;
   var pendingDelete = null;
   var started = false;
@@ -724,10 +796,26 @@
     var d=new Date(+ym.slice(0,4), +ym.slice(5,7)-1, 1);
     return d.toLocaleDateString("en-US",{month:"long",year:"numeric"});
   }
-  function updateMonthLabel(){
-    var el=document.getElementById("monthLabel"); if(!el) return;
-    el.textContent = monthLabelText(ui.month);
-    el.classList.toggle("active", !!ui.month);
+  function updateMonthLabel(){ syncMonthUI(); }   // kept for existing callers
+  function populateYearJump(){
+    var sel=document.getElementById("yearJump"); if(!sel) return;
+    var years={}; state.projects.forEach(function(p){ years[projMonth(p).slice(0,4)]=1; });
+    years[String(new Date().getFullYear())]=1;
+    var list=Object.keys(years).sort().reverse();
+    sel.innerHTML = list.map(function(y){ return '<option value="'+y+'">'+y+'</option>'; }).join("") +
+      '<option value="all">All time</option>';
+    syncMonthUI();
+  }
+  function syncMonthUI(){
+    var ys=document.getElementById("yearJump"), ms=document.getElementById("monthJump");
+    if(!ys||!ms) return;
+    if(ui.month){ ys.value=ui.month.slice(0,4); ms.value=ui.month.slice(5); ms.disabled=false; }
+    else { ys.value="all"; ms.disabled=true; }
+  }
+  function applyMonthYear(){
+    var ys=document.getElementById("yearJump").value, ms=document.getElementById("monthJump").value;
+    ui.month = (ys==="all") ? null : (ys + "-" + ms);
+    syncMonthUI(); renderAll();
   }
 
   /* ---------- crew autocomplete (remembers directors/dops/producers) ---------- */
@@ -863,7 +951,7 @@
           plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"",
           sessionAt:r.session_at||"", sessionMode:r.session_mode||"" };
       });
-      save(); renderAll();
+      save(); populateYearJump(); buildDatalists(); renderAll();
     });
   }
 
@@ -888,6 +976,8 @@
     var earnedEl = document.getElementById("earned");
     earnedEl.textContent = showMoney(s.earned);
     earnedEl.classList.toggle("locked", !revealed);
+    var epEl = document.getElementById("earnedPeriod");
+    if(epEl) epEl.textContent = monthLabelText(ui.month);
     document.getElementById("awaiting").textContent = showMoney(s.awaiting);
     document.getElementById("pipeline").textContent = showMoney(s.pipeline);
     document.getElementById("total").textContent = showMoney(s.total);
@@ -901,6 +991,18 @@
     setFxSub("fxTotal", s.total);
     setFxSub("fxAvg", s.count ? s.total/s.count : 0);
 
+    // Yearly — received (paid) income summed across the selected year
+    var yearForView = String(ui.yearView);
+    var yearly = 0;
+    state.projects.forEach(function(p){
+      if(p.paid && projMonth(p).slice(0,4) === yearForView){
+        yearly += convertAmt(p.amount, p.amountCur, state.currency);
+      }
+    });
+    document.getElementById("yearlyYear").textContent = yearForView;
+    document.getElementById("yearly").textContent = showMoney(yearly);
+    setFxSub("fxYearly", yearly);
+
     var bar = document.getElementById("distbar");
     var sum = s.earned + s.awaiting + s.pipeline;
     if(sum>0 && revealed){
@@ -911,9 +1013,45 @@
     } else { bar.innerHTML=""; }
 
     renderFx(s.earned);
+    renderStatsPanel();
   }
 
-  /* ---------- live exchange rates: show Earned in $, ₴, € ---------- */
+  /* ---------- statistics by project type (for the selected year) ---------- */
+  function renderStatsPanel(){
+    var body = document.getElementById("statsBody"); if(!body) return;
+    var yr = String(ui.yearView);
+    var lbl = document.getElementById("statsTypeLbl");
+    if(lbl) lbl.textContent = "By project type · " + yr;
+    var order = ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series"];
+    var agg = {};
+    state.projects.forEach(function(p){
+      if(projMonth(p).slice(0,4) !== yr) return;   // only the selected year
+      var t = p.type || "commercial";
+      if(!agg[t]) agg[t] = {n:0, sum:0};
+      agg[t].n++;
+      agg[t].sum += convertAmt(p.amount, p.amountCur, state.currency);
+    });
+    var rows = [];
+    order.forEach(function(t){ if(agg[t]) rows.push({t:t, n:agg[t].n, sum:agg[t].sum}); });
+    Object.keys(agg).forEach(function(t){ if(order.indexOf(t)===-1) rows.push({t:t, n:agg[t].n, sum:agg[t].sum}); });
+    rows.forEach(function(r){ r.avg = r.n ? r.sum/r.n : 0; });
+    var key = ui.statSort==="avg" ? "avg" : (ui.statSort==="total" ? "sum" : "n");
+    rows.sort(function(a,b){ return b[key] - a[key]; });
+    [].forEach.call(document.querySelectorAll(".st-sort"), function(s){ s.classList.toggle("active", s.dataset.sort===ui.statSort); });
+    var totN=0, totSum=0;
+    body.innerHTML = rows.map(function(r){
+      totN += r.n; totSum += r.sum;
+      return '<div class="stats-row">'+
+        '<span class="st-type">'+esc(TYPE_LABEL[r.t]||r.t)+'</span>'+
+        '<span class="num">'+r.n+'</span>'+
+        '<span class="num st-total st-money">'+showMoney(r.sum)+'</span>'+
+        '<span class="num st-money">'+showMoney(r.avg)+'</span>'+
+      '</div>';
+    }).join("") || '<div class="stats-row"><span class="st-type" style="color:var(--muted)">No projects yet</span><span></span><span></span><span></span></div>';
+    document.getElementById("statsTotalRow").innerHTML =
+      '<span>Total</span><span class="num">'+totN+'</span><span class="num st-money">'+showMoney(totSum)+'</span>'+
+      '<span class="num st-money">'+(totN?showMoney(totSum/totN):"—")+'</span>';
+  }
   var fxRates = null;
   function loadFx(){
     try{
@@ -975,7 +1113,7 @@
 
   function typeSelect(p){
     return '<select class="inline-select type-select" data-field="type" title="Type">'+
-      ["commercial","music_video","feature","social","fashion","short","show","series"].map(function(t){
+      ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series"].map(function(t){
         return '<option value="'+t+'"'+(t===p.type?" selected":"")+'>'+esc(TYPE_LABEL[t])+'</option>';
       }).join("")+'</select>';
   }
@@ -1134,7 +1272,7 @@
       paid:false, amount:0, amountCur:state.currency, director:"", dop:"", producer:"", due:"", notes:"",
       plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"" };
     state.projects.push(p);
-    if(ui.month){ ui.month=null; updateMonthLabel(); }   // ensure the new card is visible
+    ui.month = currentYM(); populateYearJump(); updateMonthLabel();   // new project always in the current month
     renderAll(); save(); cloudUpsert(p);
     var row = document.querySelector('.row[data-id="'+p.id+'"]');
     if(row){
@@ -1280,30 +1418,38 @@
     earnedEl.title = "Tap to reveal / hide amounts";
     earnedEl.addEventListener("click", function(){ revealed = !revealed; renderAll(); });
 
+    // Earned / Statistics share one slot — clicking one swaps to it, clicking the active one hides it
     var ledgerEl = document.getElementById("ledger");
-    var earnBtn = document.getElementById("earnToggle");
-    function applyLedger(open){
-      ledgerEl.hidden = !open;
-      earnBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    var statsEl  = document.getElementById("statsPanel");
+    var earnBtn  = document.getElementById("earnToggle");
+    var statsBtn = document.getElementById("statsToggle");
+    var activePanel = null;
+    try{ activePanel = localStorage.getItem("tracker:panel") || null; }catch(e){}
+    function applyPanels(){
+      ledgerEl.hidden = activePanel!=="earn";
+      statsEl.hidden  = activePanel!=="stats";
+      earnBtn.setAttribute("aria-expanded", activePanel==="earn" ? "true" : "false");
+      statsBtn.setAttribute("aria-expanded", activePanel==="stats" ? "true" : "false");
     }
-    var ledgerOpen = false;
-    try{ ledgerOpen = localStorage.getItem("tracker:ledgerOpen")==="1"; }catch(e){}
-    applyLedger(ledgerOpen);
-    earnBtn.onclick = function(){
-      ledgerOpen = !ledgerOpen;
-      applyLedger(ledgerOpen);
-      try{ localStorage.setItem("tracker:ledgerOpen", ledgerOpen ? "1" : "0"); }catch(e){}
-    };
+    applyPanels();
+    function setPanel(name){
+      activePanel = (activePanel===name) ? null : name;
+      applyPanels();
+      try{ localStorage.setItem("tracker:panel", activePanel || ""); }catch(e){}
+    }
+    earnBtn.onclick  = function(){ setPanel("earn"); };
+    statsBtn.onclick = function(){ setPanel("stats"); };
 
-    document.getElementById("monthPrev").onclick = function(){
-      ui.month = ui.month ? shiftMonth(ui.month,-1) : currentYM(); updateMonthLabel(); renderAll();
-    };
-    document.getElementById("monthNext").onclick = function(){
-      ui.month = ui.month ? shiftMonth(ui.month,1) : currentYM(); updateMonthLabel(); renderAll();
-    };
-    document.getElementById("monthLabel").onclick = function(){
-      ui.month = ui.month ? null : currentYM(); updateMonthLabel(); renderAll();
-    };
+    document.getElementById("monthJump").onchange = applyMonthYear;
+    document.getElementById("yearJump").onchange = applyMonthYear;
+
+    document.getElementById("statsPanel").addEventListener("click", function(e){
+      var sortBtn = e.target.closest(".st-sort");
+      if(sortBtn){ ui.statSort = sortBtn.dataset.sort; renderStatsPanel(); return; }
+      if(e.target.closest(".st-money")){ revealed = !revealed; renderAll(); }
+    });
+    document.getElementById("yearPrev").onclick = function(){ ui.yearView -= 1; renderStats(); };
+    document.getElementById("yearNext").onclick = function(){ ui.yearView += 1; renderStats(); };
 
     document.getElementById("stageChips").addEventListener("click", function(e){
       var b = e.target.closest(".chip"); if(!b) return;
@@ -1396,6 +1542,8 @@
       state.currency = session.user.user_metadata.currency;   // synced currency choice
     }
     document.getElementById("currency").value = state.currency;
+    if(ui.month===null) ui.month = currentYM();   // default view: current month
+    populateYearJump();
     updateMonthLabel();
     renderAll();
     loadFx();
