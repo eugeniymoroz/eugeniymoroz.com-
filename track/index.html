@@ -790,9 +790,13 @@
   function pad2(n){ return (n<10?"0":"")+n; }
   function currentYM(){ var d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1); }
   function projMonth(p){
-    if(p.due) return p.due.slice(0,7);
-    var d = new Date(p.createdAt||Date.now());
-    return d.getFullYear()+"-"+pad2(d.getMonth()+1);
+    // A project is "closed" when it's paid — it belongs to the payment month.
+    // Until then it's carried in the current month, so it stays on your plate.
+    if(p.paid){
+      var src = p.paidAt || (p.createdAt ? new Date(p.createdAt).toISOString().slice(0,10) : todayStr());
+      return src.slice(0,7);
+    }
+    return currentYM();   // unpaid → always the current month
   }
   function inMonth(p){ return !ui.month || projMonth(p)===ui.month; }
   function shiftMonth(ym, delta){
