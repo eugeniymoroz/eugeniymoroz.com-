@@ -175,6 +175,12 @@
     padding:7px 14px;border-radius:99px;cursor:pointer;font-weight:500;text-transform:uppercase;transition:all .18s var(--ease)}
   .chip:hover{border-color:#3a3a40;color:var(--ink)}
   .chip.on{background:var(--white);border-color:var(--white);color:#000}
+  /* active filter chips glow with the same colour as in the timeline */
+  #stageChips .chip.on[data-stage="planned"]{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+  #stageChips .chip.on[data-stage="in_progress"]{background:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+  #stageChips .chip.on[data-stage="done"]{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  #payChips .chip.on[data-pay="paid"]{background:rgba(76,189,146,.16);border-color:#4cbd92;color:#4cbd92}
+  #payChips .chip.on[data-pay="unpaid"]{background:rgba(221,126,114,.16);border-color:#dd7e72;color:#dd7e72}
   .spacer{flex:1}
   .sort-select{appearance:none;-webkit-appearance:none;background:transparent;border:1px solid var(--line);
     border-radius:99px;padding:7px 28px 7px 14px;font-size:12px;letter-spacing:.04em;color:var(--muted);cursor:pointer;
@@ -379,6 +385,8 @@
     .kpi .k{font-size:9px;letter-spacing:.06em}
     .kpi .v{font-size:19px;margin-top:5px}
     .filters{gap:8px}
+    .filters .spacer{display:none}
+    .filters #typeFilter,.filters #sort{flex:1 1 0;min-width:0}   /* All types + Newest share one row */
     .month-label{min-width:138px;flex:1}
     .monthbar{gap:8px}
     /* compact project cards on mobile */
