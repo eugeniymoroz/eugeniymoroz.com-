@@ -384,9 +384,14 @@
     .kpi{padding:10px 9px;text-align:center}
     .kpi .k{font-size:9px;letter-spacing:.06em}
     .kpi .v{font-size:19px;margin-top:5px}
-    .filters{gap:8px}
+    .filters{display:grid;grid-template-columns:1fr auto 1fr;
+      grid-template-areas:"stages stages stages" "type pay sort";
+      gap:10px 8px;align-items:center}
     .filters .spacer{display:none}
-    .filters #typeFilter,.filters #sort{flex:1 1 0;min-width:0}   /* All types + Newest share one row */
+    #stageChips{grid-area:stages;justify-content:space-between;width:100%}
+    #payChips{grid-area:pay;justify-self:center}
+    .filters #typeFilter{grid-area:type;justify-self:start;width:auto}
+    .filters #sort{grid-area:sort;justify-self:end;width:auto}
     .month-label{min-width:138px;flex:1}
     .monthbar{gap:8px}
     /* compact project cards on mobile */
