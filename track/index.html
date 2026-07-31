@@ -1259,13 +1259,12 @@
         '<div class="row-main">'+
           '<div class="row-head">'+
             '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+
-            '<div class="head-controls">'+ typeBadge + sessionMarkup(p) +'</div>'+
           '</div>'+
           crewMarkup(p)+
           stagesMarkup(p)+
         '</div>'+
         '<div class="row-right">'+
-          '<div class="pay-line">'+paidBadge+'</div>'+
+          '<div class="pay-line">'+ '<div class="head-controls">'+ typeBadge + sessionMarkup(p) +'</div>' + paidBadge +'</div>'+
           '<div class="amount-wrap">'+
             '<div class="amount-line">'+
               '<div class="amount editable'+(p.paid?" paid":"")+(revealed?"":" locked")+'" data-act="editamount" title="Click to edit amount">'+(revealed?moneyNative(p.amount, p.amountCur||"USD"):maskFig())+'</div>'+
