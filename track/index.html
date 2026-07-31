@@ -195,7 +195,7 @@
   .row:hover{border-color:#3a3a40}
   .row-main{min-width:0}
   .row-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .head-controls{display:flex;align-items:center;gap:10px}
+  .head-controls{display:flex;align-items:flex-start;gap:10px}
   .row-name{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:0;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;color:var(--white)}
   .type-badge{font-size:10.5px;font-weight:500;letter-spacing:.1em;padding:3px 9px;border-radius:99px;
@@ -293,7 +293,7 @@
     cursor:pointer;font-size:15px;line-height:1;padding:0 0 0 2px}
   .deadline-x:hover{color:var(--ink)}
   .row-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-  .pay-line{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+  .pay-line{display:flex;align-items:flex-start;justify-content:flex-end;gap:10px}
   .amount{font-family:var(--display);font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
   .amount.paid{color:var(--white)}
   .tools-row{display:flex;align-items:center;gap:12px}
@@ -443,7 +443,7 @@
         "deadline deadline amount";
       align-items:center;column-gap:8px;row-gap:8px}
     .row-main,.row-right,.pay-line,.tools-row,.row-head{display:contents}
-    .head-controls{grid-area:controls;display:flex;align-items:center;gap:6px;min-width:0}
+    .head-controls{grid-area:controls;display:flex;align-items:flex-start;gap:6px;min-width:0}
     .head-controls .type-select{flex:0 0 auto;min-width:0}
     .head-controls .session{flex:0 0 auto;min-width:0}
     .head-controls .session-select{flex:0 0 auto}
