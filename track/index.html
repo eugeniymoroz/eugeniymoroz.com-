@@ -283,6 +283,8 @@
     text-transform:uppercase;color:var(--muted)}
   .deadline-none{font-size:12px;color:#5a5a60;letter-spacing:.02em}
   .deadline-pill .dt-disp{font-size:12px;color:var(--ink)}
+  .deadline-pill.empty .dt-disp{color:#5a5a60}
+  .deadline-pill .dt-wrap{cursor:pointer}
   .deadline-pill.over{border-color:rgba(224,110,100,.5)}
   .deadline-pill.over .dt-disp{color:var(--red)}
   .deadline-tag{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
@@ -1121,18 +1123,14 @@
 
   function deadlineMarkup(p){
     var over = p.due && !p.paid && p.due < todayStr();
-    if(!p.due){
-      return '<button class="deadline-pill" data-act="due-set" title="Set a deadline">'+
-        '<span class="deadline-lbl">Deadline</span><span class="deadline-none">none</span></button>';
-    }
-    return '<span class="deadline-pill'+(over?" over":"")+'">'+
+    return '<span class="deadline-pill'+(over?" over":"")+(p.due?"":" empty")+'">'+
       '<span class="deadline-lbl">Deadline</span>'+
       '<span class="dt-wrap">'+
-        '<input class="deadline-dt" type="date" data-act="due-dt" value="'+esc(p.due)+'">'+
-        '<span class="dt-disp">'+esc(fmtNumericDate(p.due))+'</span>'+
+        '<input class="deadline-dt" type="date" data-act="due-dt" value="'+esc(p.due||"")+'">'+
+        '<span class="dt-disp">'+(p.due?esc(fmtNumericDate(p.due)):"none")+'</span>'+
       '</span>'+
       (over?'<span class="deadline-tag">overdue</span>':'')+
-      '<button class="deadline-x" data-act="due-clear" title="Clear deadline">×</button>'+
+      (p.due?'<button class="deadline-x" data-act="due-clear" title="Clear deadline">×</button>':'')+
     '</span>';
   }
 
@@ -1506,9 +1504,10 @@
       if(act==="editname"){ inlineEdit(actBtn, p, "project", {placeholder:"Project title"}); return; }
       if(act==="editamount"){ if(!revealed){ revealed=true; renderAll(); return; } inlineEdit(actBtn, p, "amount", {number:true}); return; }
       if(act==="stage"){ p.status = actBtn.dataset.stage; stampStage(p); renderAll(); save(); cloudUpsert(p); return; }
-      if(act==="session-dt"){ return; }
-      if(act==="stage-date" || act==="paid-date"){ return; }
-      if(act==="due-dt"){ return; }
+      if(act==="session-dt" || act==="due-dt" || act==="stage-date" || act==="paid-date"){
+        try{ if(actBtn.showPicker) actBtn.showPicker(); }catch(_e){}   // open the calendar on the first click
+        return;
+      }
       if(act==="due-set"){ p.due = todayStr(); renderAll(); save(); cloudUpsert(p); return; }
       if(act==="due-clear"){ p.due = ""; renderAll(); save(); cloudUpsert(p); return; }
       if(act==="pay"){ p.paid=!p.paid; if(p.paid){ if(!p.paidAt) p.paidAt=todayStr(); } else { p.paidAt=""; } renderAll(); save(); cloudUpsert(p); }
