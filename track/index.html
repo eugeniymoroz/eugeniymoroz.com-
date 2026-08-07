@@ -88,6 +88,22 @@
   .st-sort:hover{color:var(--ink)}
   .st-sort.active{color:var(--white)}
   .st-money{cursor:pointer}
+  /* monthly chart */
+  .chart-metrics{display:flex;gap:6px;margin:6px 0 12px}
+  .cmetric{border:1px solid var(--line);background:transparent;color:var(--muted);font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:5px 11px;border-radius:99px;
+    cursor:pointer;font-family:inherit;transition:all .15s var(--ease)}
+  .cmetric:hover{border-color:var(--grey);color:var(--ink)}
+  .cmetric.on{background:var(--white);border-color:var(--white);color:#000}
+  .chart-wrap{width:100%}
+  .chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
+  .chart-bar{fill:var(--slate-soft);transition:fill .15s var(--ease)}
+  .chart-bar.peak{fill:var(--white)}
+  .chart-bar.low{fill:rgba(224,110,100,.55)}
+  .chart-mo{fill:var(--muted);font-size:8px;font-family:var(--body);letter-spacing:.02em}
+  .chart-val{fill:var(--ink);font-size:7.5px;font-family:var(--body);font-variant-numeric:tabular-nums}
+  .chart-val.chart-lock{font-size:9px}
+  .chart-mo.cur{fill:var(--white);font-weight:600}
   .stats-row{padding:11px 0;border-bottom:1px solid var(--line-soft)}
   .stats-row:last-child{border-bottom:none}
   .stats-row .st-type{font-family:var(--display);font-weight:500;color:var(--ink);font-size:14px}
@@ -552,7 +568,16 @@
       <span class="yearly-v st-money" id="yearly">—</span>
       <span class="fx-sub" id="fxYearly"></span>
     </div>
-    <div class="lbl" id="statsTypeLbl" style="margin-top:22px">By project type</div>
+
+    <div class="lbl" style="margin-top:24px">By month · <span id="chartYearLbl"></span></div>
+    <div class="chart-metrics" id="chartMetrics">
+      <button class="cmetric on" data-metric="income">Income</button>
+      <button class="cmetric" data-metric="count">Projects</button>
+      <button class="cmetric" data-metric="avg">Avg. fee</button>
+    </div>
+    <div class="chart-wrap" id="chartWrap"></div>
+
+    <div class="lbl" id="statsTypeLbl" style="margin-top:24px">By project type</div>
     <div class="stats-head">
       <span>Type</span>
       <span class="st-sort" data-sort="count">Projects</span>
@@ -753,7 +778,7 @@
     short:"Short", show:"Show", series:"Series"};
 
   var state = {currency:"USD", projects:[], crewList:{director:[], dop:[], producer:[]}};
-  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count"};
+  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income"};
   var editingId = null;
   var pendingDelete = null;
   var started = false;
@@ -1078,6 +1103,65 @@
     document.getElementById("statsTotalRow").innerHTML =
       '<span>Total</span><span class="num">'+totN+'</span><span class="num st-money">'+showMoney(totSum)+'</span>'+
       '<span class="num st-money">'+(totN?showMoney(totSum/totN):"—")+'</span>';
+
+    renderChart();
+  }
+
+  /* ---------- monthly chart (income / projects / avg fee) for the selected year ---------- */
+  var MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function chartMoney(v){
+    var s = v>=1000 ? (Math.round(v/100)/10)+"k" : String(Math.round(v));
+    return (SYM[state.currency]||"$")+s;
+  }
+  function renderChart(){
+    var wrap = document.getElementById("chartWrap"); if(!wrap) return;
+    var yr = String(ui.yearView);
+    var yl = document.getElementById("chartYearLbl"); if(yl) yl.textContent = yr;
+    [].forEach.call(document.querySelectorAll(".cmetric"), function(b){ b.classList.toggle("on", b.dataset.metric===ui.chartMetric); });
+
+    var income=[], count=[], sumAmt=[];
+    for(var i=0;i<12;i++){ income[i]=0; count[i]=0; sumAmt[i]=0; }
+    state.projects.forEach(function(p){
+      var m = projMonth(p);
+      if(m.slice(0,4)!==yr) return;
+      var mi = parseInt(m.slice(5,7),10)-1; if(mi<0||mi>11) return;
+      var a = convertAmt(p.amount, p.amountCur, state.currency);
+      count[mi]++; sumAmt[mi]+=a; if(p.paid) income[mi]+=a;
+    });
+    var vals=[];
+    for(var j=0;j<12;j++){
+      vals[j] = ui.chartMetric==="count" ? count[j]
+              : ui.chartMetric==="avg" ? (count[j] ? sumAmt[j]/count[j] : 0)
+              : income[j];
+    }
+    var isMoney = ui.chartMetric!=="count";
+    var max = Math.max.apply(null, vals.concat([1]));
+    var nonzero = vals.filter(function(v){ return v>0; });
+    var minNonzero = nonzero.length ? Math.min.apply(null, nonzero) : 0;
+    var nowY = new Date().getFullYear(), nowM = new Date().getMonth();
+
+    var W=372, H=118, padB=16, padT=14, n=12, gap=6;
+    var bw = (W - gap*(n-1)) / n;
+    var chartH = H - padB - padT;
+    var svg = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+    for(var k=0;k<12;k++){
+      var v = vals[k];
+      var bh = max>0 ? Math.max(v>0?3:0, (v/max)*chartH) : 0;
+      var x = k*(bw+gap), y = padT + (chartH - bh);
+      var cls = "chart-bar";
+      if(v>0 && v===max) cls += " peak";
+      else if(v>0 && v===minNonzero && nonzero.length>1) cls += " low";
+      svg += '<rect class="'+cls+'" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2"><title>'+MO[k]+' '+yr+': '+(isMoney?(revealed?money(v):"•"):v)+'</title></rect>';
+      // value label above bar (money → sum when revealed, 🔒 when locked; count → number)
+      if(v>0){
+        var label = isMoney ? (revealed ? chartMoney(v) : "🔒") : String(v);
+        svg += '<text class="chart-val'+(isMoney&&!revealed?" chart-lock":"")+'" x="'+(x+bw/2).toFixed(1)+'" y="'+(y-3).toFixed(1)+'" text-anchor="middle">'+esc(label)+'</text>';
+      }
+      var moCls = (yr===String(nowY) && k===nowM) ? "chart-mo cur" : "chart-mo";
+      svg += '<text class="'+moCls+'" x="'+(x+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+MO[k]+'</text>';
+    }
+    svg += '</svg>';
+    wrap.innerHTML = svg;
   }
   var fxRates = null;
   function loadFx(){
@@ -1479,6 +1563,8 @@
     document.getElementById("yearJump").onchange = applyMonthYear;
 
     document.getElementById("statsPanel").addEventListener("click", function(e){
+      var cm = e.target.closest(".cmetric");
+      if(cm){ ui.chartMetric = cm.dataset.metric; renderChart(); return; }
       var sortBtn = e.target.closest(".st-sort");
       if(sortBtn){ ui.statSort = sortBtn.dataset.sort; renderStatsPanel(); return; }
       if(e.target.closest(".st-money")){ revealed = !revealed; renderAll(); }
