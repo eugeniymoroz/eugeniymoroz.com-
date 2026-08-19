@@ -862,7 +862,7 @@
       var src = p.paidAt || (p.createdAt ? new Date(p.createdAt).toISOString().slice(0,10) : todayStr());
       return src.slice(0,7);
     }
-    return currentYM();   // unpaid → always the current month
+    return currentYM();   // unpaid → carried in the current month (planned card stays visible, but its money isn't claimed)
   }
   function inMonth(p){ return !ui.month || projMonth(p)===ui.month; }
   function shiftMonth(ym, delta){
@@ -877,7 +877,7 @@
   function updateMonthLabel(){ syncMonthUI(); }   // kept for existing callers
   function populateYearJump(){
     var sel=document.getElementById("yearJump"); if(!sel) return;
-    var years={}; state.projects.forEach(function(p){ years[projMonth(p).slice(0,4)]=1; });
+    var years={}; state.projects.forEach(function(p){ var m=projMonth(p); if(m) years[m.slice(0,4)]=1; });
     years[String(new Date().getFullYear())]=1;
     var list=Object.keys(years).sort().reverse();
     sel.innerHTML = list.map(function(y){ return '<option value="'+y+'">'+y+'</option>'; }).join("") +
@@ -1035,20 +1035,21 @@
 
   function stats(){
     var src = state.projects.filter(inMonth);
-    var earned=0, awaiting=0, planned=0, inprog=0, total=0, active=0, done=0, paidCount=0;
+    var earned=0, awaiting=0, planned=0, inprog=0, active=0, done=0, paidCount=0, claimedCount=0;
     src.forEach(function(p){
       var a = convertAmt(p.amount, p.amountCur, state.currency);
-      total += a;
-      if(p.paid){ earned += a; paidCount++; }
-      else if(p.status==="done"){ awaiting += a; }
-      else if(p.status==="in_progress"){ inprog += a; }
-      else { planned += a; }
+      if(p.paid){ earned += a; paidCount++; claimedCount++; }
+      else if(p.status==="done"){ awaiting += a; claimedCount++; }
+      else if(p.status==="in_progress"){ inprog += a; claimedCount++; }
+      else { planned += a; }   // planned money is NOT claimed
       if(p.status==="in_progress") active++;
       if(p.status==="done") done++;
     });
+    // Claimed value = In progress + Completed + Paid. Planned is shown but not counted.
+    var total = inprog + awaiting + earned;
     return {earned:earned, awaiting:awaiting, planned:planned, inprog:inprog,
-      pipeline:planned+inprog, total:total,
-      count:src.length, active:active, done:done, paidCount:paidCount};
+      pipeline:inprog, total:total,
+      count:src.length, claimedCount:claimedCount, active:active, done:done, paidCount:paidCount};
   }
 
   function renderStats(){
@@ -1065,10 +1066,10 @@
     document.getElementById("kCount").textContent = s.count;
     document.getElementById("kActive").textContent = s.active;
     document.getElementById("kDone").textContent = s.done;
-    document.getElementById("kAvg").textContent = !s.count ? "—" : showMoney(s.total/s.count);
+    document.getElementById("kAvg").textContent = !s.claimedCount ? "—" : showMoney(s.total/s.claimedCount);
 
-    // Paid / Unpaid toggle (top-right)
-    var unpaid = s.awaiting + s.pipeline;
+    // Paid / Unpaid toggle (top-right) — Unpaid = claimed but not yet paid (In progress + Completed)
+    var unpaid = s.awaiting + s.inprog;
     var isUnpaid = ui.paidView === "unpaid";
     var pv = isUnpaid ? unpaid : s.earned;
     document.getElementById("paidLabel").textContent = isUnpaid ? "Unpaid" : "Paid";
@@ -1080,7 +1081,7 @@
     setFxSub("fxPipeline", s.inprog);
     setFxSub("fxAwaiting", s.awaiting);
     setFxSub("fxTotal", s.total);
-    setFxSub("fxAvg", s.count ? s.total/s.count : 0);
+    setFxSub("fxAvg", s.claimedCount ? s.total/s.claimedCount : 0);
 
     // Yearly — received (paid) income summed across the selected year
     var yearForView = String(ui.yearView);
@@ -1095,7 +1096,7 @@
     setFxSub("fxYearly", yearly);
 
     var bar = document.getElementById("distbar");
-    var sum = s.planned + s.inprog + s.awaiting + s.earned;
+    var sum = s.inprog + s.awaiting + s.earned;   // claimed only — planned excluded
     if(sum>0 && revealed){
       function seg(color, val, extra, minpx){
         if(val<=0) return '';
@@ -1104,7 +1105,6 @@
         return '<span style="background:'+color+';width:'+w+'%'+mw+'"><em>'+esc(chartMoney(val)+(extra||""))+'</em></span>';
       }
       bar.innerHTML =
-        seg('var(--amber)', s.planned, '') +
         seg('var(--blue)', s.inprog, '') +
         seg('var(--emerald)', s.awaiting, '') +
         seg('var(--white)', s.earned, '  ·  '+s.paidCount+'×', 72);
@@ -1123,7 +1123,8 @@
     var order = ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series"];
     var agg = {};
     state.projects.forEach(function(p){
-      if(projMonth(p).slice(0,4) !== yr) return;   // only the selected year
+      if(!p.paid && p.status==="planned") return;   // planned money isn't claimed → skip
+      var pm=projMonth(p); if(!pm || pm.slice(0,4) !== yr) return;   // only the selected year
       var t = p.type || "commercial";
       if(!agg[t]) agg[t] = {n:0, sum:0};
       agg[t].n++;
@@ -1168,8 +1169,9 @@
     var income=[], count=[], sumAmt=[];
     for(var i=0;i<12;i++){ income[i]=0; count[i]=0; sumAmt[i]=0; }
     state.projects.forEach(function(p){
+      if(!p.paid && p.status==="planned") return;   // planned money isn't claimed → skip
       var m = projMonth(p);
-      if(m.slice(0,4)!==yr) return;
+      if(!m || m.slice(0,4)!==yr) return;
       var mi = parseInt(m.slice(5,7),10)-1; if(mi<0||mi>11) return;
       var a = convertAmt(p.amount, p.amountCur, state.currency);
       count[mi]++; sumAmt[mi]+=a; if(p.paid) income[mi]+=a;
@@ -1435,7 +1437,7 @@
       paid:false, amount:0, amountCur:state.currency, director:"", dop:"", producer:"", due:"", notes:"",
       plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"" };
     state.projects.push(p);
-    ui.month = currentYM(); populateYearJump(); updateMonthLabel();   // new project always in the current month
+    ui.month = currentYM(); populateYearJump(); updateMonthLabel();   // new project shows in the current month
     renderAll(); save(); cloudUpsert(p);
     var row = document.querySelector('.row[data-id="'+p.id+'"]');
     if(row){
