@@ -122,7 +122,7 @@
   }
   .ledger-figs{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
   .avg-fee{text-align:right;flex:0 0 auto}
-  .avg-fee .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .avg-fee .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
   .avg-fee .v{font-family:var(--display);font-weight:600;font-size:20px;color:var(--white);margin-top:4px;font-variant-numeric:tabular-nums}
   .avg-fee .fx-sub{margin-top:3px}
   .ledger-figs .subfigs{flex:1 1 auto}
@@ -159,11 +159,23 @@
   .amount .inline-input{font-family:var(--display);font-size:19px;width:120px;text-align:right}
   .rule{height:1px;background:var(--line);margin:24px 0 18px}
   .subfigs{display:flex;gap:34px;flex-wrap:wrap}
-  .subfig .k{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;letter-spacing:.02em}
+  .subfig .k{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;letter-spacing:.02em;font-weight:600}
   .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
   .subfig .v{font-family:var(--display);font-size:19px;font-weight:500;margin-top:5px;font-variant-numeric:tabular-nums}
-  .distbar{display:flex;height:6px;border-radius:99px;overflow:hidden;margin-top:20px;background:var(--slate-soft)}
-  .distbar span{display:block;height:100%}
+  .distbar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-top:20px;background:var(--slate-soft)}
+  .distbar span{display:flex;align-items:center;justify-content:center;height:100%;overflow:hidden;white-space:nowrap}
+  .distbar em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.02em;color:#0a0a0b;
+    font-variant-numeric:tabular-nums;padding:0 6px}
+  .distbar-total{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-top:11px}
+  .distbar-total .dt-item{display:flex;align-items:baseline;gap:10px}
+  .distbar-total .dt-right{text-align:right}
+  .distbar-total .dt-k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .distbar-total .dt-v{font-family:var(--display);font-weight:700;font-size:17px;color:var(--white);font-variant-numeric:tabular-nums}
+  .distbar-total .fx-sub{font-size:10px}
+  .paid-toggle{cursor:pointer;user-select:none;transition:opacity .15s var(--ease)}
+  .paid-toggle:hover{opacity:.82}
+  .paid-toggle .k#paidLabel{color:var(--white)}
+  .paid-toggle.unpaid .k#paidLabel{color:var(--red)}
 
   /* ---------- KPIS ---------- */
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
@@ -392,13 +404,15 @@
     .ledger{padding:20px 18px}
     .earned{font-size:clamp(34px,13vw,52px)}
     .fx{font-size:12px}
-    /* all four figures (Awaiting / In progress / Total value / Avg. fee) in one row */
-    .ledger-figs{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;align-items:start}
+    /* three stage figures in one row, Paid toggle spans below */
+    .ledger-figs{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;align-items:start}
     .ledger-figs .subfigs{display:contents}
     .subfig .k,.avg-fee .k{font-size:9px;letter-spacing:.02em;gap:4px;white-space:nowrap}
     .subfig .v,.avg-fee .v{font-size:15px;margin-top:4px}
     .subfig .fx-sub,.avg-fee .fx-sub{font-size:8.5px}
     .avg-fee{text-align:left}
+    .ledger-figs .paid-toggle{grid-column:1 / -1;display:flex;align-items:baseline;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line-soft)}
+    .ledger-figs .paid-toggle .fx-sub{margin-left:auto}
     .kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
     .kpi{padding:10px 9px;text-align:center}
     .kpi .k{font-size:9px;letter-spacing:.06em}
@@ -532,28 +546,40 @@
       <div class="ledger-figs">
         <div class="subfigs">
           <div class="subfig">
-            <div class="k"><span class="dot" style="background:var(--amber)"></span>Awaiting</div>
-            <div class="v" id="awaiting">—</div>
-            <div class="fx-sub" id="fxAwaiting"></div>
+            <div class="k" style="color:var(--amber)">Planned</div>
+            <div class="v" id="planned">—</div>
+            <div class="fx-sub" id="fxPlanned"></div>
           </div>
           <div class="subfig">
-            <div class="k"><span class="dot" style="background:var(--blue)"></span>In progress</div>
+            <div class="k" style="color:var(--blue)">In progress</div>
             <div class="v" id="pipeline">—</div>
             <div class="fx-sub" id="fxPipeline"></div>
           </div>
           <div class="subfig">
-            <div class="k"><span class="dot" style="background:var(--ink)"></span>Total value</div>
-            <div class="v" id="total">—</div>
-            <div class="fx-sub" id="fxTotal"></div>
+            <div class="k" style="color:var(--emerald)">Completed</div>
+            <div class="v" id="awaiting">—</div>
+            <div class="fx-sub" id="fxAwaiting"></div>
           </div>
         </div>
-        <div class="avg-fee">
-          <div class="k">Avg. fee</div>
-          <div class="v" id="kAvg">—</div>
-          <div class="fx-sub" id="fxAvg"></div>
+        <div class="avg-fee paid-toggle" id="paidToggle" role="button" tabindex="0" title="Click to switch Paid / Unpaid">
+          <div class="k" id="paidLabel">Paid</div>
+          <div class="v" id="kPaid">—</div>
+          <div class="fx-sub" id="fxPaid"></div>
         </div>
       </div>
       <div class="distbar" id="distbar" aria-hidden="true"></div>
+      <div class="distbar-total">
+        <div class="dt-item">
+          <span class="dt-k">Total value</span>
+          <span class="dt-v" id="total">—</span>
+          <span class="fx-sub" id="fxTotal"></span>
+        </div>
+        <div class="dt-item dt-right">
+          <span class="dt-k">Avg. fee</span>
+          <span class="dt-v" id="kAvg">—</span>
+          <span class="fx-sub" id="fxAvg"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -778,7 +804,7 @@
     short:"Short", show:"Show", series:"Series"};
 
   var state = {currency:"USD", projects:[], crewList:{director:[], dop:[], producer:[]}};
-  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income"};
+  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
   var editingId = null;
   var pendingDelete = null;
   var started = false;
@@ -1009,18 +1035,20 @@
 
   function stats(){
     var src = state.projects.filter(inMonth);
-    var earned=0, awaiting=0, pipeline=0, total=0, active=0, done=0;
+    var earned=0, awaiting=0, planned=0, inprog=0, total=0, active=0, done=0, paidCount=0;
     src.forEach(function(p){
       var a = convertAmt(p.amount, p.amountCur, state.currency);
       total += a;
-      if(p.paid){ earned += a; }
+      if(p.paid){ earned += a; paidCount++; }
       else if(p.status==="done"){ awaiting += a; }
-      else { pipeline += a; }
+      else if(p.status==="in_progress"){ inprog += a; }
+      else { planned += a; }
       if(p.status==="in_progress") active++;
       if(p.status==="done") done++;
     });
-    return {earned:earned, awaiting:awaiting, pipeline:pipeline, total:total,
-      count:src.length, active:active, done:done};
+    return {earned:earned, awaiting:awaiting, planned:planned, inprog:inprog,
+      pipeline:planned+inprog, total:total,
+      count:src.length, active:active, done:done, paidCount:paidCount};
   }
 
   function renderStats(){
@@ -1030,16 +1058,27 @@
     earnedEl.classList.toggle("locked", !revealed);
     var epEl = document.getElementById("earnedPeriod");
     if(epEl) epEl.textContent = monthLabelText(ui.month);
+    document.getElementById("planned").textContent = showMoney(s.planned);
+    document.getElementById("pipeline").textContent = showMoney(s.inprog);
     document.getElementById("awaiting").textContent = showMoney(s.awaiting);
-    document.getElementById("pipeline").textContent = showMoney(s.pipeline);
     document.getElementById("total").textContent = showMoney(s.total);
     document.getElementById("kCount").textContent = s.count;
     document.getElementById("kActive").textContent = s.active;
     document.getElementById("kDone").textContent = s.done;
     document.getElementById("kAvg").textContent = !s.count ? "—" : showMoney(s.total/s.count);
 
+    // Paid / Unpaid toggle (top-right)
+    var unpaid = s.awaiting + s.pipeline;
+    var isUnpaid = ui.paidView === "unpaid";
+    var pv = isUnpaid ? unpaid : s.earned;
+    document.getElementById("paidLabel").textContent = isUnpaid ? "Unpaid" : "Paid";
+    document.getElementById("kPaid").textContent = showMoney(pv);
+    document.getElementById("paidToggle").classList.toggle("unpaid", isUnpaid);
+    setFxSub("fxPaid", pv);
+
+    setFxSub("fxPlanned", s.planned);
+    setFxSub("fxPipeline", s.inprog);
     setFxSub("fxAwaiting", s.awaiting);
-    setFxSub("fxPipeline", s.pipeline);
     setFxSub("fxTotal", s.total);
     setFxSub("fxAvg", s.count ? s.total/s.count : 0);
 
@@ -1056,12 +1095,19 @@
     setFxSub("fxYearly", yearly);
 
     var bar = document.getElementById("distbar");
-    var sum = s.earned + s.awaiting + s.pipeline;
+    var sum = s.planned + s.inprog + s.awaiting + s.earned;
     if(sum>0 && revealed){
+      function seg(color, val, extra, minpx){
+        if(val<=0) return '';
+        var w = val/sum*100;
+        var mw = ';min-width:'+(minpx||58)+'px';
+        return '<span style="background:'+color+';width:'+w+'%'+mw+'"><em>'+esc(chartMoney(val)+(extra||""))+'</em></span>';
+      }
       bar.innerHTML =
-        '<span style="background:var(--emerald);width:'+(s.earned/sum*100)+'%"></span>'+
-        '<span style="background:var(--amber);width:'+(s.awaiting/sum*100)+'%"></span>'+
-        '<span style="background:var(--blue);width:'+(s.pipeline/sum*100)+'%"></span>';
+        seg('var(--amber)', s.planned, '') +
+        seg('var(--blue)', s.inprog, '') +
+        seg('var(--emerald)', s.awaiting, '') +
+        seg('var(--white)', s.earned, '  ·  '+s.paidCount+'×', 72);
     } else { bar.innerHTML=""; }
 
     renderFx(s.earned);
@@ -1534,6 +1580,14 @@
     var earnedEl = document.getElementById("earned");
     earnedEl.title = "Tap to reveal / hide amounts";
     earnedEl.addEventListener("click", function(){ revealed = !revealed; renderAll(); });
+
+    var paidToggleEl = document.getElementById("paidToggle");
+    if(paidToggleEl){
+      paidToggleEl.addEventListener("click", function(){
+        ui.paidView = ui.paidView === "unpaid" ? "paid" : "unpaid";
+        renderStats();
+      });
+    }
 
     // Earned / Statistics share one slot — clicking one swaps to it, clicking the active one hides it
     var ledgerEl = document.getElementById("ledger");
