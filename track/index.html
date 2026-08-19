@@ -1681,7 +1681,7 @@
         var pid=p.id; setTimeout(function(){ var inp=document.querySelector('.row[data-id="'+pid+'"] input[data-act="due-dt"]'); if(inp&&inp.showPicker){ try{ inp.showPicker(); }catch(_e){} } }, 40);
         return; }
       if(act==="due-clear"){ p.due = ""; renderAll(); save(); cloudUpsert(p); return; }
-      if(act==="pay"){ p.paid=!p.paid; if(p.paid){ if(!p.paidAt) p.paidAt=todayStr(); } else { p.paidAt=""; } renderAll(); save(); cloudUpsert(p); }
+      if(act==="pay"){ p.paid=!p.paid; if(p.paid){ if(!p.paidAt) p.paidAt=todayStr(); p.expected=false; } else { p.paidAt=""; } renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
       else if(act==="del"){
         pendingDelete = p.id;
