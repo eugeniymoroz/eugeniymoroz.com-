@@ -95,7 +95,7 @@
     cursor:pointer;font-family:inherit;transition:all .15s var(--ease)}
   .cmetric:hover{border-color:var(--grey);color:var(--ink)}
   .cmetric.on{background:var(--white);border-color:var(--white);color:#000}
-  .chart-wrap{width:100%}
+  .chart-wrap{width:100%;position:relative}
   .chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
   .chart-bar{fill:var(--slate-soft);transition:fill .15s var(--ease)}
   .chart-bar.peak{fill:var(--white)}
@@ -104,6 +104,25 @@
   .chart-val{fill:var(--ink);font-size:7.5px;font-family:var(--body);font-variant-numeric:tabular-nums}
   .chart-val.chart-lock{font-size:9px}
   .chart-mo.cur{fill:var(--white);font-weight:600}
+  .chart-hit{fill:transparent;cursor:pointer}
+  .chart-hit:hover{fill:rgba(255,255,255,.04)}
+  .chart-pop{position:absolute;z-index:20;transform:translateX(-50%);min-width:170px;max-width:240px;
+    background:var(--surface-hi);border:1px solid var(--line);border-radius:8px;padding:9px 11px;
+    box-shadow:0 12px 32px rgba(0,0,0,.55)}
+  .chart-pop[hidden]{display:none}
+  .cp-head{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    padding-bottom:7px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  .cp-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:3px 0}
+  .cp-name{font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cp-amt{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;flex:0 0 auto}
+  .cp-amt.paid{color:var(--green)}
+  .cp-total{border-top:1px solid var(--line);margin-top:6px;padding-top:7px}
+  .cp-total .cp-name,.cp-total .cp-amt{color:var(--white);font-weight:600}
+  .cp-proj{cursor:pointer;border-radius:5px;margin:0 -5px;padding-left:5px;padding-right:5px}
+  .cp-proj:hover{background:rgba(255,255,255,.06)}
+  .cp-proj:hover .cp-name{color:var(--white)}
+  @keyframes rowflash{0%{background:var(--blue-soft)}100%{background:transparent}}
+  .row.flash{animation:rowflash 1.6s var(--ease)}
   .stats-row{padding:11px 0;border-bottom:1px solid var(--line-soft)}
   .stats-row:last-child{border-bottom:none}
   .stats-row .st-type{font-family:var(--display);font-weight:500;color:var(--ink);font-size:14px}
@@ -1205,6 +1224,7 @@
 
     var W=372, H=118, padB=16, padT=14, n=12, gap=6;
     var bw = (W - gap*(n-1)) / n;
+    W_cache=W; bw_cache=bw; gap_cache=gap;
     var chartH = H - padB - padT;
     var svg = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
     for(var k=0;k<12;k++){
@@ -1222,9 +1242,52 @@
       }
       var moCls = (yr===String(nowY) && k===nowM) ? "chart-mo cur" : "chart-mo";
       svg += '<text class="'+moCls+'" x="'+(x+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+MO[k]+'</text>';
+      var hw = Math.min(bw+gap, W - x);
+      svg += '<rect class="chart-hit" x="'+x.toFixed(1)+'" y="0" width="'+hw.toFixed(1)+'" height="'+H+'" data-mo="'+k+'"></rect>';
     }
     svg += '</svg>';
-    wrap.innerHTML = svg;
+    wrap.innerHTML = svg + '<div class="chart-pop" id="chartPop" hidden></div>';
+  }
+  function showMonthProjects(mi){
+    var pop = document.getElementById("chartPop"); if(!pop) return;
+    var ym = ui.yearView + "-" + pad2(mi+1);
+    var list = state.projects.filter(function(p){
+      if(!p.paid && (p.expected || p.status==="planned")) return false;
+      return projMonth(p)===ym;
+    });
+    if(!list.length){ pop.hidden = true; return; }
+    list.sort(function(a,b){ return convertAmt(b.amount,b.amountCur,state.currency) - convertAmt(a.amount,a.amountCur,state.currency); });
+    var total = 0;
+    var rows = list.map(function(p){
+      var a = convertAmt(p.amount, p.amountCur, state.currency); total += a;
+      return '<div class="cp-row cp-proj" data-id="'+esc(p.id)+'" title="Open card"><span class="cp-name">'+esc(projName(p)||"Untitled")+'</span>'+
+        '<span class="cp-amt'+(p.paid?" paid":"")+'">'+esc(revealed?money(a):maskFig())+'</span></div>';
+    }).join("");
+    pop.innerHTML = '<div class="cp-head">'+MO[mi]+' '+ui.yearView+' · '+list.length+'</div>'+rows+
+      '<div class="cp-row cp-total"><span class="cp-name">Total</span><span class="cp-amt">'+(revealed?money(total):maskFig())+'</span></div>';
+    var cf = (mi*(bw_cache+gap_cache) + bw_cache/2) / W_cache;
+    cf = Math.max(0.18, Math.min(0.82, cf));
+    pop.style.left = (cf*100).toFixed(1)+"%";
+    pop.style.top = "100%"; pop.style.marginTop = "6px";
+    pop.hidden = false;
+  }
+  var W_cache=372, bw_cache=26, gap_cache=6;
+  function goToProject(id){
+    var p = state.projects.find(function(x){ return x.id===id; }); if(!p) return;
+    ui.month = projMonth(p);                 // switch to the project's month
+    ui.stage = "all"; ui.pay = "all"; ui.type = "all";   // clear filters so the card is visible
+    syncMonthUI(); populateYearJump();
+    var sc = document.getElementById("stageChips");
+    if(sc){ [].forEach.call(sc.querySelectorAll(".chip"), function(c){ c.classList.toggle("on", c.dataset.stage==="all"); }); }
+    var pc = document.getElementById("payChips");
+    if(pc){ [].forEach.call(pc.querySelectorAll(".chip"), function(c){ c.classList.remove("on"); }); }
+    var tf = document.getElementById("typeFilter"); if(tf) tf.value = "all";
+    renderAll();
+    var row = document.querySelector('.row[data-id="'+id+'"]');
+    if(row){
+      row.scrollIntoView({behavior:"smooth", block:"center"});
+      row.classList.add("flash"); setTimeout(function(){ row.classList.remove("flash"); }, 1600);
+    }
   }
   var fxRates = null;
   function loadFx(){
@@ -1633,13 +1696,19 @@
       applyPanels();
       try{ localStorage.setItem("tracker:panel", activePanel || ""); }catch(e){}
     }
-    earnBtn.onclick  = function(){ setPanel("earn"); };
-    statsBtn.onclick = function(){ setPanel("stats"); };
+    function backToCurrentMonth(){ ui.month = currentYM(); syncMonthUI(); populateYearJump(); }
+    earnBtn.onclick  = function(){ backToCurrentMonth(); setPanel("earn"); renderAll(); };
+    statsBtn.onclick = function(){ backToCurrentMonth(); setPanel("stats"); renderAll(); };
 
     document.getElementById("monthJump").onchange = applyMonthYear;
     document.getElementById("yearJump").onchange = applyMonthYear;
 
     document.getElementById("statsPanel").addEventListener("click", function(e){
+      var cpRow = e.target.closest(".cp-proj[data-id]");
+      if(cpRow){ goToProject(cpRow.getAttribute("data-id")); return; }
+      var moHit = e.target.closest("[data-mo]");
+      if(moHit){ showMonthProjects(+moHit.getAttribute("data-mo")); return; }
+      var pop = document.getElementById("chartPop"); if(pop) pop.hidden = true;   // click elsewhere closes it
       var cm = e.target.closest(".cmetric");
       if(cm){ ui.chartMetric = cm.dataset.metric; renderChart(); return; }
       var sortBtn = e.target.closest(".st-sort");
