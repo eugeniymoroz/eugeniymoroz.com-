@@ -189,7 +189,7 @@
   .distbar-total .dt-item{display:flex;align-items:baseline;gap:10px}
   .distbar-total .dt-right{text-align:right}
   .distbar-total .dt-k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .distbar-total .dt-v{font-family:var(--display);font-weight:700;font-size:17px;color:var(--white);font-variant-numeric:tabular-nums}
+  .distbar-total .dt-v{font-family:var(--display);font-weight:700;font-size:17px;color:var(--white);font-variant-numeric:tabular-nums;white-space:nowrap}
   .distbar-total .fx-sub{font-size:10px}
   .paid-toggle{cursor:pointer;user-select:none;transition:opacity .15s var(--ease)}
   .paid-toggle:hover{opacity:.82}
@@ -438,6 +438,12 @@
     .avg-fee{text-align:left}
     .ledger-figs .paid-toggle{grid-column:1 / -1;display:flex;align-items:baseline;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line-soft)}
     .ledger-figs .paid-toggle .fx-sub{margin-left:auto}
+    .distbar-total{gap:12px;align-items:stretch}
+    .distbar-total .dt-item{flex:1 1 0;min-width:0;flex-direction:column;align-items:flex-start;gap:3px}
+    .distbar-total .dt-item.dt-right{align-items:flex-end;text-align:right}
+    .distbar-total .dt-k{font-size:9px;letter-spacing:.1em}
+    .distbar-total .dt-v{font-size:18px}
+    .distbar-total .fx-sub{font-size:9px;white-space:nowrap}
     .kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
     .kpi{padding:10px 9px;text-align:center}
     .kpi .k{font-size:9px;letter-spacing:.06em}
