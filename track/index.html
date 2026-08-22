@@ -107,6 +107,7 @@
   .chart-hit{fill:transparent;cursor:pointer}
   .chart-hit:hover{fill:rgba(255,255,255,.04)}
   .chart-pop{position:absolute;z-index:20;transform:translateX(-50%);min-width:170px;max-width:240px;
+    max-height:52vh;overflow-y:auto;
     background:var(--surface-hi);border:1px solid var(--line);border-radius:8px;padding:9px 11px;
     box-shadow:0 12px 32px rgba(0,0,0,.55)}
   .chart-pop[hidden]{display:none}
@@ -1271,29 +1272,21 @@
     }).join("");
     pop.innerHTML = '<div class="cp-head">'+MO[mi]+' '+ui.yearView+' · '+list.length+'</div>'+rows+
       '<div class="cp-row cp-total"><span class="cp-name">Total</span><span class="cp-amt">'+(revealed?money(total):maskFig())+'</span></div>';
-    var cf = (mi*(bw_cache+gap_cache) + bw_cache/2) / W_cache;
-    cf = Math.max(0.18, Math.min(0.82, cf));
-    pop.style.left = (cf*100).toFixed(1)+"%";
+    if(window.innerWidth <= 600){
+      pop.style.left = "50%"; pop.style.width = "100%"; pop.style.maxWidth = "none";
+    } else {
+      var cf = (mi*(bw_cache+gap_cache) + bw_cache/2) / W_cache;
+      cf = Math.max(0.18, Math.min(0.82, cf));
+      pop.style.left = (cf*100).toFixed(1)+"%"; pop.style.width = ""; pop.style.maxWidth = "";
+    }
     pop.style.top = "100%"; pop.style.marginTop = "6px";
     pop.hidden = false;
   }
   var W_cache=372, bw_cache=26, gap_cache=6;
   function goToProject(id){
     var p = state.projects.find(function(x){ return x.id===id; }); if(!p) return;
-    ui.month = projMonth(p);                 // switch to the project's month
-    ui.stage = "all"; ui.pay = "all"; ui.type = "all";   // clear filters so the card is visible
-    syncMonthUI(); populateYearJump();
-    var sc = document.getElementById("stageChips");
-    if(sc){ [].forEach.call(sc.querySelectorAll(".chip"), function(c){ c.classList.toggle("on", c.dataset.stage==="all"); }); }
-    var pc = document.getElementById("payChips");
-    if(pc){ [].forEach.call(pc.querySelectorAll(".chip"), function(c){ c.classList.remove("on"); }); }
-    var tf = document.getElementById("typeFilter"); if(tf) tf.value = "all";
-    renderAll();
-    var row = document.querySelector('.row[data-id="'+id+'"]');
-    if(row){
-      row.scrollIntoView({behavior:"smooth", block:"center"});
-      row.classList.add("flash"); setTimeout(function(){ row.classList.remove("flash"); }, 1600);
-    }
+    var pop = document.getElementById("chartPop"); if(pop) pop.hidden = true;   // close the month list
+    openEdit(p);                                                                // open the detailed project card
   }
   var fxRates = null;
   function loadFx(){
