@@ -571,6 +571,7 @@
         <option value="USD">$ USD</option>
         <option value="UAH">₴ UAH</option>
         <option value="EUR">€ EUR</option>
+        <option value="GBP">£ GBP</option>
       </select>
     </div>
     <div class="fx" id="fx"></div>
@@ -777,6 +778,7 @@
           <option value="USD">$ USD</option>
           <option value="UAH">₴ UAH</option>
           <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
         </select>
       </div>
     </div>
@@ -834,7 +836,7 @@
   "use strict";
 
   var STORE_KEY  = "project-tracker:v1";
-  var SYM = {USD:"$", UAH:"₴", EUR:"€"};
+  var SYM = {USD:"$", UAH:"₴", EUR:"€", GBP:"£"};
   var STAGE_LABEL = {planned:"Planned", in_progress:"In progress", done:"Completed"};
   var STAGE_BADGE = {planned:"b-planned", in_progress:"b-progress", done:"b-done"};
   var TYPE_LABEL = {commercial:"Commercial", music_video:"Music video", feature:"Feature",
@@ -882,7 +884,7 @@
     if(!fxRates) return "";
     fromCur = fromCur || "USD";
     var usd = (Number(amount)||0) / (fxRates[fromCur] || 1);
-    return ["USD","UAH","EUR"].filter(function(c){ return c!==fromCur; }).map(function(c){
+    return ["USD","UAH","EUR","GBP"].filter(function(c){ return c!==fromCur; }).map(function(c){
       return SYM[c] + " " + Math.round(usd * (fxRates[c] || 1)).toLocaleString("en-US");
     }).join("   ·   ");
   }
@@ -1301,7 +1303,7 @@
   function fxOthers(valCur){         /* value (in selected currency) shown in the OTHER currencies */
     if(!fxRates) return "";
     var usd = (Number(valCur)||0) / (fxRates[state.currency] || 1);
-    return ["USD","UAH","EUR"].filter(function(c){ return c!==state.currency; }).map(function(c){
+    return ["USD","UAH","EUR","GBP"].filter(function(c){ return c!==state.currency; }).map(function(c){
       return SYM[c] + " " + Math.round(usd * (fxRates[c] || 1)).toLocaleString("en-US");
     }).join("   ·   ");
   }
@@ -1357,7 +1359,7 @@
   function curSelect(p){
     var cur = p.amountCur || "USD";
     return '<select class="inline-select cur-inline" data-field="amountCur" title="Paid in">'+
-      ["USD","UAH","EUR"].map(function(c){
+      ["USD","UAH","EUR","GBP"].map(function(c){
         return '<option value="'+c+'"'+(c===cur?" selected":"")+'>'+SYM[c]+" "+c+'</option>';
       }).join("")+'</select>';
   }
