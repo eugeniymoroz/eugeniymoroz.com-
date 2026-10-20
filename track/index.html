@@ -1937,75 +1937,17 @@
   }
   function addDays(d, n){ var t=new Date(d+"T00:00:00"); t.setDate(t.getDate()+n); return localDateStr(t); }
   function openInvoice(p){
+    // opens the standard invoice (invoice.html, same design as invoice/invoice-template.html)
+    // filled from this card: number, project, type, amount, currency, client, director
     if(!p.invoiceNo){ p.invoiceNo = nextInvoiceNo(); save(); cloudUpsert(p); }
-    var cur = p.amountCur || "USD", amt = moneyNative(p.amount, cur);
-    var issue = todayStr(), due = addDays(issue, 14);
-    var logo = (location.protocol.indexOf("http")===0) ? (location.origin + "/media/logos/my-logo-em.png") : "";
-    var payKey = "tracker:invoice-pay";
-    var savedPay = ""; try{ savedPay = localStorage.getItem(payKey) || ""; }catch(e){}
-    var payHtml = savedPay || (
-      '<div class="k">Method</div><div class="v fill">[ Bank wire / Wise / PayPal ]</div>'+
-      '<div class="k">Account holder</div><div class="v">Evgeniy Moroz</div>'+
-      '<div class="k">Bank</div><div class="v fill">[ Bank name ]</div>'+
-      '<div class="k">IBAN</div><div class="v fill">[ —— ]</div>'+
-      '<div class="k">SWIFT / BIC</div><div class="v fill">[ —— ]</div>');
-    var w = window.open("", "_blank");
-    if(!w){ alert("Allow pop-ups for this page to open the invoice."); return; }
-    var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>Invoice '+esc(p.invoiceNo)+' — '+esc(projName(p))+'</title>'+
-    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">'+
-    '<style>'+
-    ':root{--ink:#15161b;--muted:#8a8d96;--soft:#b6b8bf;--line:#e7e8ec;--line-2:#f1f2f5;--display:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}'+
-    '*{box-sizing:border-box}html,body{margin:0;background:#eceef1;color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}'+
-    '.bar{position:sticky;top:0;z-index:5;display:flex;gap:10px;justify-content:center;align-items:center;padding:12px;background:#15161b;color:#cfd0d4;font-size:12.5px}'+
-    '.bar button{background:#fff;color:#000;border:0;border-radius:4px;padding:9px 16px;font:600 12px var(--display);letter-spacing:.12em;text-transform:uppercase;cursor:pointer}'+
-    '.sheet{width:210mm;min-height:297mm;margin:22px auto;background:#fff;padding:26mm 22mm 20mm;box-shadow:0 10px 40px rgba(0,0,0,.12);position:relative}'+
-    'header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.brand{display:flex;align-items:center;gap:14px}'+
-    '.logo-badge{width:52px;height:52px;border-radius:11px;background:#0d0d0f;display:flex;align-items:center;justify-content:center;color:#fff;font:700 16px var(--display)}.logo-badge img{width:34px;height:34px}'+
-    '.brand-name{font:700 20px/1.1 var(--display)}.brand-sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:4px}'+
-    '.inv-head{text-align:right}.inv-title{font:600 30px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}'+
-    '.inv-meta{margin-top:14px;margin-left:auto;border-collapse:collapse;font-size:12.5px}.inv-meta td{padding:3px 0}'+
-    '.inv-meta td:first-child{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:10px;padding-right:18px;text-align:right}'+
-    '.inv-meta td:last-child{font-weight:500;text-align:right;min-width:120px}.rule{height:1px;background:var(--line);margin:26px 0}'+
-    '.parties{display:grid;grid-template-columns:1fr 1fr;gap:40px}.lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}'+
-    '.party{font-size:13px;line-height:1.7}.strong{font-weight:600;font-size:14px}.fill{color:var(--soft)}'+
-    '.items{width:100%;border-collapse:collapse;margin-top:30px;font-size:13px}.items th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:0 0 12px;border-bottom:1px solid var(--ink)}'+
-    '.items th.r,.items td.r{text-align:right}.items td{padding:14px 0;border-bottom:1px solid var(--line-2);vertical-align:top}.items td.idx{color:var(--soft);width:26px}'+
-    '.desc-main{font-weight:500}.desc-sub{color:var(--muted);font-size:11.5px;margin-top:3px}'+
-    '.totals{margin-top:22px;display:flex;justify-content:flex-end}.totals table{border-collapse:collapse;min-width:280px}.totals td{padding:7px 0;font-size:13px}'+
-    '.totals td:first-child{color:var(--muted);padding-right:40px}.totals td:last-child{text-align:right;font-weight:500}'+
-    '.grand td{border-top:1px solid var(--ink);padding-top:13px;font:600 16px var(--display);color:var(--ink)!important}.grand td:first-child{text-transform:uppercase;letter-spacing:.08em;font-size:12px}'+
-    '.lower{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;margin-top:40px}.pay-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;font-size:12.5px}'+
-    '.pay-grid .k{color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:10px;padding-top:2px}.pay-grid .v{font-weight:500}'+
-    '.notes p{font-size:12.5px;color:#4d4f57;margin:0 0 8px;line-height:1.65}'+
-    'footer{position:absolute;left:22mm;right:22mm;bottom:16mm;display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;font-size:10.5px;letter-spacing:.06em;color:var(--muted)}'+
-    'footer .thanks{font:600 12px var(--display);color:var(--ink)}[contenteditable]:hover{outline:1px dashed #c9cbd1;outline-offset:2px}[contenteditable]:focus{outline:1px solid #8a8d96;outline-offset:2px}'+
-    '@media print{.bar{display:none}html,body{background:#fff}.sheet{margin:0;box-shadow:none;width:auto;min-height:auto}[contenteditable]:hover{outline:none}@page{size:A4;margin:0}}'+
-    '</style></head><body>'+
-    '<div class="bar">Click any text to edit · payment details are remembered on this device <button onclick="window.print()">Print / Save PDF</button></div>'+
-    '<div class="sheet"><header><div class="brand"><div class="logo-badge">'+(logo?'<img src="'+logo+'" alt="EM" onerror="this.replaceWith(document.createTextNode(\'EM\'))">':'EM')+'</div>'+
-    '<div><div class="brand-name">Evgeniy Moroz</div><div class="brand-sub">Freelance Digital Colorist</div></div></div>'+
-    '<div class="inv-head"><div class="inv-title">Invoice</div><table class="inv-meta">'+
-    '<tr><td>Invoice №</td><td contenteditable>'+esc(p.invoiceNo)+'</td></tr>'+
-    '<tr><td>Issue date</td><td contenteditable>'+esc(fmtNumericDate(issue))+'</td></tr>'+
-    '<tr><td>Due date</td><td contenteditable>'+esc(fmtNumericDate(due))+'</td></tr>'+
-    '<tr><td>Currency</td><td>'+esc(cur)+' ('+esc(SYM[cur]||"")+')</td></tr></table></div></header>'+
-    '<div class="rule"></div><div class="parties">'+
-    '<div class="party"><div class="lbl">From</div><span class="strong">Evgeniy Moroz</span><br>Freelance Digital Colorist<br>Kyiv, Ukraine<br>eugeniymoroz@gmail.com<br>eugeniymoroz.com</div>'+
-    '<div class="party" contenteditable><div class="lbl">Bill to</div>'+(p.client?'<span class="strong">'+esc(p.client)+'</span>':'<span class="strong fill">[ Client / Company name ]</span>')+
-    '<br><span class="fill">[ Contact person ]</span><br><span class="fill">[ Address, City, Country ]</span><br><span class="fill">[ Email ]</span></div></div>'+
-    '<table class="items"><thead><tr><th>#</th><th>Description</th><th class="r">Rate</th><th class="r">Qty</th><th class="r">Amount</th></tr></thead><tbody>'+
-    '<tr><td class="idx">01</td><td contenteditable><div class="desc-main">'+esc(projName(p)||"Project")+'</div>'+
-    '<div class="desc-sub">'+esc(TYPE_LABEL[p.type]||"Project")+' · color grading'+(p.director?' · dir. '+esc(p.director):'')+'</div></td>'+
-    '<td class="r">'+esc(amt)+'</td><td class="r">1</td><td class="r">'+esc(amt)+'</td></tr></tbody></table>'+
-    '<div class="totals"><table><tr><td>Subtotal</td><td>'+esc(amt)+'</td></tr><tr class="grand"><td>Total due</td><td>'+esc(amt)+'</td></tr></table></div>'+
-    '<div class="lower"><div><div class="lbl">Payment details</div><div class="pay-grid" id="pay" contenteditable>'+payHtml+'</div></div>'+
-    '<div class="notes" contenteditable><div class="lbl">Notes</div><p>Payment is due within <b>14 days</b> of the issue date.</p>'+
-    '<p>Please reference the invoice number in your transfer. Any bank fees are covered by the payer.</p><p>Thank you for your business.</p></div></div>'+
-    '<footer><span class="thanks">Evgeniy Moroz — Colorist</span><span>eugeniymoroz.com</span></footer></div>'+
-    '<script>(function(){var el=document.getElementById("pay");function keep(){try{localStorage.setItem('+JSON.stringify(payKey)+',el.innerHTML);}catch(e){}}'+
-    'el.addEventListener("input",keep);el.addEventListener("blur",keep);})();<\/script></body></html>';
-    w.document.open(); w.document.write(html); w.document.close();
+    var q = new URLSearchParams({
+      no: p.invoiceNo, project: projName(p) || "Project", type: TYPE_LABEL[p.type] || "Project",
+      amount: String(Number(p.amount)||0), cur: p.amountCur || "USD", issue: todayStr()
+    });
+    if(p.client) q.set("client", p.client);
+    if(p.director) q.set("director", p.director);
+    var w = window.open("invoice.html?" + q.toString(), "_blank");
+    if(!w) alert("Allow pop-ups for this page to open the invoice.");
   }
 
   function showOverlay(id){ document.getElementById(id).classList.add("show"); }
