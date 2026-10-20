@@ -152,6 +152,12 @@
     padding: 22px clamp(20px, 5vw, 56px);
     background: linear-gradient(to bottom, rgba(10,10,11,0.85), rgba(10,10,11,0));
     backdrop-filter: blur(6px);
+    transition: background 0.4s ease, padding 0.4s ease, backdrop-filter 0.4s ease;
+  }
+  .nav.scrolled {
+    background: rgba(10,10,11,0.72);
+    backdrop-filter: blur(12px);
+    padding-top: 16px; padding-bottom: 16px;
   }
   .brand { display: flex; align-items: center; gap: 12px; line-height: 1.1; }
   .brand-logo {
@@ -870,10 +876,18 @@
   /* soft reveal of blocks as they enter the viewport */
   .reveal {
     opacity: 0;
-    transform: translateY(26px);
-    transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+    translate: 0 28px;
+    transition: opacity 0.9s ease, translate 0.9s ease;
+    transition-delay: var(--rd, 0s);
   }
-  .reveal.in { opacity: 1; transform: none; }
+  .reveal.in { opacity: 1; translate: none; }
+  /* cards / tiles: same feel, via animation so their own hover transitions stay snappy */
+  .rv { opacity: 0; }
+  .rv.in { animation: rvIn 0.9s ease var(--rd, 0s) both; }
+  @keyframes rvIn {
+    from { opacity: 0; translate: 0 28px; }
+    to   { opacity: 1; translate: none; }
+  }
 
   /* soft entrance for the hero copy */
   .hero-inner { animation: heroIn 1s var(--ease) both; }
@@ -885,8 +899,56 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
-    .reveal { opacity: 1 !important; transform: none !important; }
+    .reveal, .rv { opacity: 1 !important; translate: none !important; animation: none !important; }
   }
+
+  /* ---------- INSTAGRAM ---------- */
+  .instagram[hidden] { display: none; }
+  .insta-profile {
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 4px;
+    margin-left: auto;
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+  .insta-profile:hover { color: var(--white); border-color: var(--grey); }
+  .insta-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .insta-post {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  .insta-post img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.92;
+    transition: transform 0.6s ease, opacity 0.35s ease;
+  }
+  .insta-post:hover img { transform: scale(1.05); opacity: 1; }
+  .insta-post:focus-visible { outline: 1px solid var(--grey); outline-offset: 4px; }
+  .insta-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    padding: 3px 7px;
+    background: rgba(0,0,0,0.55);
+    color: var(--white);
+    font-size: 0.7rem;
+    line-height: 1.2;
+    pointer-events: none;
+  }
+  @media (max-width: 1000px) { .insta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 560px)  { .insta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 860px) {
@@ -904,6 +966,12 @@
     .hero-nav { gap: 10px; }
     .hero-link { padding: 12px 18px; letter-spacing: 0.14em; }
   }
+  /* ---------- SMOOTH SCROLL (Lenis) ---------- */
+  html.lenis, html.lenis body { height: auto; }
+  html.lenis { scroll-behavior: auto; }
+  .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+  .lenis [data-lenis-prevent] { overscroll-behavior: contain; }
+  .lenis.lenis-smooth iframe { pointer-events: none; }
   </style>
 </head>
 <body>
@@ -953,8 +1021,8 @@
       <span class="section-index">01</span>
       <h2 class="section-title">About</h2>
     </div>
-    <div class="about-portrait reveal">
-      <div class="about-photo">
+    <div class="about-portrait">
+      <div class="about-photo reveal">
         <figure>
           <img src="media/portrait/portrait.jpg" alt="Evgeniy Moroz — colorist" loading="lazy" />
         </figure>
@@ -967,7 +1035,7 @@
           <li>ACES</li>
         </ul>
       </div>
-      <div class="about-text">
+      <div class="about-text reveal">
         <div class="cap">
           <strong>Evgeniy Moroz</strong>
           Colorist
@@ -987,7 +1055,7 @@
       <p class="section-note">Vimeo · auto-updated</p>
     </div>
 
-    <div class="work-tabs" id="workTabs">
+    <div class="work-tabs reveal" id="workTabs">
       <button type="button" class="work-tab is-active" data-target="music">Music Video</button>
       <button type="button" class="work-tab" data-target="commercial">Commercial</button>
       <button type="button" class="work-tab" data-target="fashion">Fashion</button>
@@ -999,7 +1067,7 @@
       <div class="work-cat is-active" data-cat="music">
         <div class="gallery-wrap">
           <button type="button" class="gallery-arrow prev" aria-label="Scroll up" hidden>↑</button>
-          <div class="gallery" data-album="12295317"><div class="gallery-status">Loading…</div></div>
+          <div class="gallery" data-lenis-prevent data-album="12295317"><div class="gallery-status">Loading…</div></div>
           <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
         <button type="button" class="load-more">Load more</button>
@@ -1007,7 +1075,7 @@
       <div class="work-cat" data-cat="commercial">
         <div class="gallery-wrap">
           <button type="button" class="gallery-arrow prev" aria-label="Scroll up" hidden>↑</button>
-          <div class="gallery" data-album="12295351"><div class="gallery-status">Loading…</div></div>
+          <div class="gallery" data-lenis-prevent data-album="12295351"><div class="gallery-status">Loading…</div></div>
           <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
         <button type="button" class="load-more">Load more</button>
@@ -1015,7 +1083,7 @@
       <div class="work-cat" data-cat="fashion">
         <div class="gallery-wrap">
           <button type="button" class="gallery-arrow prev" aria-label="Scroll up" hidden>↑</button>
-          <div class="gallery" data-album="12295355"><div class="gallery-status">Loading…</div></div>
+          <div class="gallery" data-lenis-prevent data-album="12295355"><div class="gallery-status">Loading…</div></div>
           <button type="button" class="gallery-arrow next" aria-label="Scroll down" hidden>↓</button>
         </div>
         <button type="button" class="load-more">Load more</button>
@@ -1023,22 +1091,32 @@
     </div>
   </section>
 
+  <!-- INSTAGRAM (synced to Supabase by the instagram-sync function; hidden until posts load) -->
+  <section class="section instagram" id="instagram" hidden>
+    <div class="section-head reveal">
+      <span class="section-index">03</span>
+      <h2 class="section-title">Instagram</h2>
+      <a class="insta-profile" href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener">@eugeniymoroz ↗</a>
+    </div>
+    <div class="insta-grid" id="instaGrid"></div>
+  </section>
+
   <!-- CONTACT -->
   <section class="section contact" id="contact">
     <div class="section-head reveal">
-      <span class="section-index">03</span>
+      <span class="section-index">04</span>
       <h2 class="section-title">Contact</h2>
     </div>
-    <div class="contact-inner reveal">
-      <p class="contact-lead">Have a project? Let's do color.</p>
-      <div class="contact-icons">
+    <div class="contact-inner">
+      <p class="contact-lead reveal">Have a project? Let's do color.</p>
+      <div class="contact-icons reveal">
         <a href="https://www.instagram.com/eugeniymoroz/" target="_blank" rel="noopener" aria-label="Instagram"><img src="media/logos/inst.png" alt="Instagram" /></a>
         <a href="https://www.linkedin.com/in/eugeniymoroz/" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="media/logos/linkedin.png" alt="LinkedIn" /></a>
         <a href="https://t.me/eugeniymoroz" target="_blank" rel="noopener" aria-label="Telegram"><img src="media/logos/telegram.png" alt="Telegram" /></a>
         <a href="https://wa.me/380636320636" target="_blank" rel="noopener" aria-label="WhatsApp"><img src="media/logos/whatsapp.png" alt="WhatsApp" /></a>
         <a href="mailto:eugeniymoroz.colorist@gmail.com" aria-label="Email"><img src="media/logos/email.png" alt="Email" /></a>
       </div>
-      <a class="contact-mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
+      <a class="contact-mail reveal" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a>
     </div>
   </section>
 
@@ -1054,10 +1132,29 @@
     <p class="lightbox-caption" id="lightboxCaption"></p>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.17/dist/lenis.min.js"></script>
   <script>
   /* ============================================================
      Evgeniy Moroz — Colorist  ·  interactions
      ============================================================ */
+
+  /* ---- Smooth, weighted scrolling for the whole page (Lenis) ----
+     Wheel/trackpad scrolling glides with a soft ease-out; anchor links
+     (About, Portfolio, Contact, Back to top) travel smoothly too.
+     Skipped for reduced-motion users and on touch devices (native feels best). */
+  (function initSmoothScroll() {
+    if (!window.Lenis) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const lenis = new Lenis({
+      duration: 1.25,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 0.9,
+      anchors: { offset: -84, duration: 1.6 },
+      autoRaf: true,
+    });
+    window.__lenis = lenis;
+  })();
 
   /* ---- Background reel ----
      Uses EVERY video in the portfolio, picking a fragment from the
@@ -1259,7 +1356,7 @@
 
   function makeCard(v) {
     const card = document.createElement("article");
-    card.className = "project";
+    card.className = "project rv";
     card.innerHTML = `
       <div class="ph">${escapeHtml(v.title)}</div>
       <img alt="${escapeHtml(v.title)}" loading="lazy" decoding="async" />
@@ -1409,18 +1506,82 @@
     layout();
   });
 
-  /* ---- Soft reveal of blocks as they scroll into view ---- */
-  const revealEls = document.querySelectorAll(".reveal");
-  if (revealEls.length && "IntersectionObserver" in window) {
-    const ro = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) { e.target.classList.add("in"); ro.unobserve(e.target); }
-      });
-    }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-    revealEls.forEach((el) => ro.observe(el));
-  } else {
-    revealEls.forEach((el) => el.classList.add("in"));
+  /* ---- Soft reveal: blocks and cards drift up and fade in as a gentle wave ---- */
+  const REVEAL_SEL = ".reveal, .rv";
+  const revealIO = ("IntersectionObserver" in window)
+    ? new IntersectionObserver((entries) => {
+        const hits = entries.filter((e) => e.isIntersecting)
+          .sort((a, b) => (a.boundingClientRect.top - b.boundingClientRect.top) ||
+                          (a.boundingClientRect.left - b.boundingClientRect.left));
+        hits.forEach((e, i) => {
+          e.target.style.setProperty("--rd", (Math.min(i, 6) * 0.08) + "s");
+          e.target.classList.add("in");
+          revealIO.unobserve(e.target);
+        });
+      }, { threshold: 0.14, rootMargin: "0px 0px -6% 0px" })
+    : null;
+  function observeReveal(root) {
+    (root || document).querySelectorAll(REVEAL_SEL).forEach((el) => {
+      if (el.classList.contains("in")) return;
+      if (revealIO) revealIO.observe(el); else el.classList.add("in");
+    });
   }
+  observeReveal();
+  // cards arrive later from Vimeo / Instagram — pick them up as they're added
+  new MutationObserver((muts) => muts.forEach((m) => m.addedNodes.forEach((n) => {
+    if (n.nodeType !== 1) return;
+    if (n.matches(REVEAL_SEL)) observeReveal(n.parentNode);
+    else observeReveal(n);
+  }))).observe(document.body, { childList: true, subtree: true });
+
+  /* ---- Header turns into a soft glass bar once you scroll ---- */
+  const navEl = document.querySelector(".nav");
+  const navState = () => navEl && navEl.classList.toggle("scrolled", window.scrollY > 40);
+  window.addEventListener("scroll", navState, { passive: true });
+  navState();
+
+  /* ---- Instagram feed ----
+     Posts are synced from the Instagram API into Supabase by the
+     "instagram-sync" Edge Function (images are copied to Supabase Storage).
+     The publishable key below is public by design (read-only via RLS).
+     If the feed is empty or unavailable, the section stays hidden. */
+  const SUPA_URL = "https://yiplmsffgfksxduaxchr.supabase.co";
+  const SUPA_KEY = "sb_publishable_q6Z5rkBMVPzKvPYNg7aaWw_dBgqcQaG";
+  (async function loadInstagram() {
+    const section = document.getElementById("instagram");
+    const grid = document.getElementById("instaGrid");
+    if (!section || !grid) return;
+    try {
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/instagram_posts?select=id,caption,media_type,image_url,permalink&order=published_at.desc&limit=12`,
+        { headers: { apikey: SUPA_KEY } }
+      );
+      if (!res.ok) return;
+      const posts = await res.json();
+      if (!Array.isArray(posts)) return;
+      const imgBase = `${SUPA_URL}/storage/v1/object/public/instagram/`;
+      posts.forEach((p) => {
+        let href = "";
+        try { const u = new URL(p.permalink); if (/(^|\.)instagram\.com$/.test(u.hostname)) href = u.href; } catch (e) {}
+        if (!href || !p.image_url || !p.image_url.startsWith(imgBase)) return;
+        const a = document.createElement("a");
+        a.className = "insta-post rv";
+        a.href = href; a.target = "_blank"; a.rel = "noopener";
+        const img = document.createElement("img");
+        img.src = p.image_url; img.loading = "lazy"; img.decoding = "async";
+        img.alt = (p.caption || "Instagram · @eugeniymoroz").slice(0, 160);
+        a.appendChild(img);
+        if (p.media_type === "VIDEO" || p.media_type === "CAROUSEL_ALBUM") {
+          const badge = document.createElement("span");
+          badge.className = "insta-badge"; badge.setAttribute("aria-hidden", "true");
+          badge.textContent = p.media_type === "VIDEO" ? "▶" : "❐";
+          a.appendChild(badge);
+        }
+        grid.appendChild(a);
+      });
+      if (grid.children.length) section.hidden = false;
+    } catch (e) { /* feed unavailable — keep the section hidden */ }
+  })();
 
   /* ---- Lightbox video ---- */
   const lightbox = document.getElementById("lightbox");
@@ -1436,12 +1597,14 @@
     lightbox.classList.add("open");
     lightbox.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+    if (window.__lenis) window.__lenis.stop();
   }
   function closeLightbox() {
     lightbox.classList.remove("open");
     lightbox.setAttribute("aria-hidden", "true");
     lightboxMedia.innerHTML = "";
     document.body.style.overflow = "";
+    if (window.__lenis) window.__lenis.start();
   }
   lightboxClose.addEventListener("click", closeLightbox);
   lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLightbox(); });
