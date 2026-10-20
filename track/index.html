@@ -4,11 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>evg.track</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+<link rel="icon" href="icons/favicon-32.png" type="image/png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Projects">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
 <style>
   :root{
     color-scheme:dark;
@@ -55,6 +62,9 @@
   .gate-btn:hover{background:transparent;color:var(--white)}
   .gate-err{color:var(--red);font-size:12.5px;letter-spacing:.04em;margin-top:16px;opacity:0;transition:opacity .2s}
   .gate-err.show{opacity:1}
+  .gate-note{color:var(--grey);font-size:12.5px;letter-spacing:.04em;line-height:1.6;margin-top:16px;display:none}
+  .gate-note.show{display:block}
+  .gate-btn:disabled{opacity:.5;cursor:default}
 
   /* ---------- TOP BAR ---------- */
   .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:30px}
@@ -126,6 +136,14 @@
   @keyframes rowflash{0%{background:var(--blue-soft)}100%{background:transparent}}
   .row.flash{animation:rowflash 1.6s var(--ease)}
   .stats-row{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+  .yoy{font-size:11px;letter-spacing:.06em;font-variant-numeric:tabular-nums;padding:2px 8px;border-radius:99px}
+  .yoy:empty{display:none}
+  .yoy.up{color:var(--green);background:var(--green-soft)}
+  .yoy.down{color:var(--red);background:var(--red-soft)}
+  .pay-speed{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+  .pay-speed .lbl{margin:0}
+  .ps-v{font-family:var(--display);font-weight:600;font-size:20px;color:var(--white);font-variant-numeric:tabular-nums}
+  .ps-sub{font-size:11px;color:var(--muted)}
   .stats-row:last-child{border-bottom:none}
   .stats-row .st-type{font-family:var(--display);font-weight:500;color:var(--ink);font-size:14px}
   .stats-row .st-total{color:var(--white);font-weight:500}
@@ -162,7 +180,22 @@
   .year-label{font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink);
     min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
   .yearly-v{font-family:var(--display);font-weight:600;font-size:22px;color:var(--white);font-variant-numeric:tabular-nums;cursor:pointer}
-  #earned{cursor:pointer}
+  #earned{cursor:default}
+  .yearly-v{cursor:default!important}
+  .st-money{cursor:default!important}
+  /* privacy lock — fixed on the right edge */
+  .lock-btn{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:50;width:40px;height:40px;
+    border-radius:50%;border:1px solid var(--line);background:rgba(18,18,20,.82);backdrop-filter:blur(6px);
+    color:var(--muted);display:grid;place-items:center;cursor:pointer;
+    transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease)}
+  .lock-btn:hover{color:var(--white);border-color:var(--grey)}
+  .lock-btn svg{width:18px;height:18px;grid-area:1/1}
+  .lock-btn .ic-closed{display:none}
+  .lock-btn.on{color:var(--amber);border-color:var(--amber)}
+  .lock-btn.on .ic-open{display:none}
+  .lock-btn.on .ic-closed{display:block}
+  .lock-btn:focus-visible{outline:2px solid var(--grey);outline-offset:2px}
+  @media (max-width:600px){ .lock-btn{top:auto;bottom:18px;right:12px;transform:none;width:42px;height:42px;box-shadow:0 6px 18px rgba(0,0,0,.5)} }
   .earned.locked,.amount.locked{letter-spacing:.06em;filter:grayscale(.15)}
   .earned-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
   .earned-cur{font-size:12px;padding:5px 26px 5px 13px;background-position:right 9px center;align-self:center}
@@ -217,9 +250,43 @@
   .month-label:hover{border-color:var(--grey);color:var(--white)}
   .month-label.active{border-color:var(--grey)}
 
+  /* ---------- SEARCH ---------- */
+  .searchbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .search-input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:99px;
+    padding:9px 16px 9px 38px;font-size:13px;letter-spacing:.02em;color:var(--ink);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a8a90' stroke-width='2.2'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg>");
+    background-repeat:no-repeat;background-position:14px center;transition:border-color .2s var(--ease)}
+  .search-input:focus{outline:none;border-color:var(--grey)}
+  .search-input::placeholder{color:#5a5a60}
+  .search-hint{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .search-hint:empty{display:none}
+
+  /* ---------- NEEDS ATTENTION ---------- */
+  .attention{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px 8px;margin-bottom:18px}
+  .attention[hidden]{display:none}
+  .att-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .att-head .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .att-count{font-size:10.5px;font-weight:600;color:#000;background:var(--white);border-radius:99px;padding:1px 7px}
+  .att-item{display:flex;align-items:baseline;gap:12px;width:100%;text-align:left;background:none;border:0;
+    border-top:1px solid var(--line-soft);padding:9px 2px;cursor:pointer;color:var(--ink);font:inherit;font-size:13px;
+    transition:background .15s var(--ease)}
+  .att-item:hover{background:rgba(255,255,255,.03)}
+  .att-item b{font-weight:500;color:var(--white)}
+  .att-k{flex:0 0 128px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+  .att-over .att-k,.att-pay-late .att-k{color:var(--red)}
+  .att-pay .att-k{color:var(--emerald)}
+  .att-session .att-k{color:var(--violet)}
+  .att-t{min-width:0}
+  .client-tag b{color:var(--white)}
+  .att-item.att-more{display:none}
+  .att-toggle{background:none;border:0;border-top:1px solid var(--line-soft);width:100%;text-align:left;padding:9px 2px 4px;
+    color:var(--muted);font:inherit;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+  .att-toggle:hover{color:var(--white)}
+
   /* ---------- FILTERS ---------- */
   .filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
   .chipset{display:flex;gap:6px;flex-wrap:wrap}
+  .chiprow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .chip{border:1px solid var(--line);background:transparent;color:var(--muted);font-size:12px;letter-spacing:.06em;
     padding:7px 14px;border-radius:99px;cursor:pointer;font-weight:500;text-transform:uppercase;transition:all .18s var(--ease)}
   .chip:hover{border-color:#3a3a40;color:var(--ink)}
@@ -373,6 +440,8 @@
   .linkbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
     font-family:inherit;padding:0;transition:color .2s var(--ease)}
   .linkbtn:hover{color:var(--white)}
+  .cloud-backup{font-size:11px;letter-spacing:.06em;color:#5a5a60}
+  .cloud-backup:empty{display:none}
 
   /* ---------- MODALS ---------- */
   .overlay{position:fixed;inset:0;background:rgba(6,6,7,.72);backdrop-filter:blur(4px);display:none;
@@ -418,6 +487,8 @@
 
   .saving{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);opacity:0;transition:opacity .2s}
   .saving.on{opacity:1}
+  .saving.unsynced{color:var(--red);cursor:pointer;opacity:1}
+  .saving.unsynced:hover{text-decoration:underline}
 
   /* ---------- MOBILE ---------- */
   @media (max-width:600px){
@@ -450,14 +521,20 @@
     .kpi{padding:10px 9px;text-align:center}
     .kpi .k{font-size:9px;letter-spacing:.06em}
     .kpi .v{font-size:19px;margin-top:5px}
-    .filters{display:grid;grid-template-columns:1fr auto 1fr;
-      grid-template-areas:"stages stages stages" "type pay sort";
-      gap:10px 8px;align-items:center}
+    /* filters: chips in ONE horizontally scrollable row, selects below */
+    .filters{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"chips chips" "type sort";gap:10px 8px;align-items:center}
     .filters .spacer{display:none}
-    #stageChips{grid-area:stages;justify-content:space-between;width:100%}
-    #payChips{grid-area:pay;justify-self:center}
-    .filters #typeFilter{grid-area:type;justify-self:start;width:auto}
-    .filters #sort{grid-area:sort;justify-self:end;width:auto}
+    .filters .chipset{flex-wrap:nowrap}
+    .chiprow{grid-area:chips;flex-wrap:nowrap;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+      margin:0 -13px;padding:0 13px 2px;mask-image:linear-gradient(90deg,#000 86%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 86%,transparent)}
+    .chiprow::-webkit-scrollbar{display:none}
+    .chiprow .chip{flex:0 0 auto;white-space:nowrap}
+    #payChips{padding-left:6px;margin-left:2px;border-left:1px solid var(--line)}
+    .filters #typeFilter{grid-area:type;width:100%}
+    .filters #sort{grid-area:sort;width:100%}
+    .att-k{flex-basis:96px;font-size:9px}
+    .att-item{font-size:12px;gap:8px}
+    .searchbar{flex-wrap:wrap;gap:6px}
     .month-label{min-width:138px;flex:1}
     .monthbar{gap:8px}
     /* compact project cards on mobile */
@@ -473,6 +550,7 @@
     .amount-fx{font-size:10px}
     .deadline-pill{padding:3px 10px;gap:6px}
     .deadline-lbl{font-size:9.5px}
+    .deadline-tag{display:none}            /* the red pill already says it's overdue */
     .session .dt-disp{font-size:9px;padding:1px 3px}
     /* keep cards inside the screen — let wide bits wrap instead of stretching */
     .row,.row-main,.row-head,.row-right,.pay-line,.amount-wrap{min-width:0}
@@ -501,7 +579,8 @@
     .row{grid-template-columns:auto 1fr auto;
       grid-template-areas:
         "controls controls tools"
-        "name     crew     crew"
+        "name     name     name"
+        "crew     crew     crew"
         "stages   stages   paid"
         "deadline deadline amount";
       align-items:center;column-gap:8px;row-gap:8px}
@@ -513,9 +592,9 @@
     .head-controls .session .dt-wrap{width:auto;display:inline-flex}
     .head-controls .session .dt-disp{width:auto;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;text-align:center}
     .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
-    .row-name{grid-area:name;align-self:center;min-width:0;max-width:42vw;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
-    .row-crew{grid-area:crew;align-self:center;margin-top:0}
+    .row-name{grid-area:name;align-self:center;min-width:0;max-width:100%;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+    .row-crew{grid-area:crew;align-self:center;margin-top:-4px;gap:4px 12px}
     .stages{grid-area:stages;margin-top:0;gap:3px}
     .stage{padding:3px 6px}
     .stage-name{font-size:9.5px}
@@ -536,11 +615,8 @@
     <div class="gate-field">
       <input id="gateEmail" type="email" placeholder="Email" autocomplete="email" required>
     </div>
-    <div class="gate-field">
-      <input id="gatePass" type="password" placeholder="Password" autocomplete="current-password" required>
-    </div>
-    <button class="gate-btn" type="submit" id="gateSignIn">Sign in</button>
-    <button class="gate-btn" type="button" id="gateSignUp" style="background:transparent;color:var(--ink);margin-top:8px">Create account</button>
+    <button class="gate-btn" type="submit" id="gateSignIn">Send sign-in link</button>
+    <div class="gate-note" id="gateNote"></div>
     <div class="gate-err" id="gateErr"></div>
   </form>
 </div>
@@ -632,6 +708,7 @@
       </div>
       <span class="yearly-v st-money" id="yearly">—</span>
       <span class="fx-sub" id="fxYearly"></span>
+      <span class="yoy" id="yoy"></span>
     </div>
 
     <div class="lbl" style="margin-top:24px">By month · <span id="chartYearLbl"></span></div>
@@ -651,6 +728,7 @@
     </div>
     <div class="stats-body" id="statsBody"></div>
     <div class="stats-total" id="statsTotalRow"></div>
+    <div id="statsExtra"></div>
   </div>
 
   <div class="kpis" id="kpis">
@@ -671,7 +749,15 @@
     <select class="sort-select" id="yearJump" aria-label="Year"></select>
   </div>
 
+  <div class="attention" id="attention" hidden></div>
+
+  <div class="searchbar">
+    <input class="search-input" id="search" type="search" placeholder="Search project, client, director, producer…" autocomplete="off" aria-label="Search projects">
+    <span class="search-hint" id="searchHint"></span>
+  </div>
+
   <div class="filters">
+    <div class="chiprow">
     <div class="chipset" id="stageChips">
       <button class="chip on" data-stage="all">All</button>
       <button class="chip" data-stage="planned">Planned</button>
@@ -681,6 +767,7 @@
     <div class="chipset" id="payChips">
       <button class="chip" data-pay="unpaid">Unpaid</button>
       <button class="chip" data-pay="paid">Paid</button>
+    </div>
     </div>
     <span class="spacer"></span>
     <select class="sort-select" id="typeFilter" aria-label="Filter by type">
@@ -709,6 +796,7 @@
   <div class="footer">
     <span id="footCount"></span>
     <span class="spacer"></span>
+    <span class="cloud-backup" id="cloudBackup"></span>
     <button class="linkbtn" id="exportBtn">Save backup</button>
     <button class="linkbtn" id="importBtn">Load backup</button>
     <button class="linkbtn" id="signOutBtn">Sign out</button>
@@ -716,6 +804,12 @@
   </div>
 
 </div>
+
+<!-- privacy lock: hide / show all amounts -->
+<button class="lock-btn" id="lockBtn" aria-pressed="false" title="Hide amounts" aria-label="Hide or show amounts">
+  <svg class="ic-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.8"/></svg>
+  <svg class="ic-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+</button>
 
 <!-- Add / edit modal -->
 <div class="overlay" id="formOverlay">
@@ -750,6 +844,11 @@
           <option value="done">Completed</option>
         </select>
       </div>
+    </div>
+    <div class="field ac-wrap">
+      <label for="fClient">Client — who pays</label>
+      <input id="fClient" type="text" placeholder="Production, studio, label, artist, agency, brand…" autocomplete="off">
+      <div class="ac-menu" id="acClient"></div>
     </div>
     <div class="field ac-wrap">
       <label for="fDirector">Director</label>
@@ -843,12 +942,22 @@
     social:"Social", fashion:"Fashion", documentary:"Documentary", reels:"Reels",
     short:"Short", show:"Show", series:"Series"};
 
-  var state = {currency:"USD", projects:[], crewList:{director:[], dop:[], producer:[]}};
-  var ui = {stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
+  var state = {currency:"USD", projects:[], crewList:{client:[], director:[], dop:[], producer:[]}};
+  var ui = {q:"", stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
   var editingId = null;
   var pendingDelete = null;
   var started = false;
-  var revealed = false;   // amounts hidden behind emojis until the total is tapped (privacy)
+  // amounts are visible by default; the lock button on the right hides them (remembered per device)
+  var revealed = true;
+  try{ revealed = localStorage.getItem("tracker:hideAmounts") !== "1"; }catch(e){}
+  function setRevealed(v){
+    revealed = !!v;
+    try{ localStorage.setItem("tracker:hideAmounts", revealed ? "0" : "1"); }catch(e){}
+    var b = document.getElementById("lockBtn");
+    if(b){ b.classList.toggle("on", !revealed); b.setAttribute("aria-pressed", revealed ? "false" : "true");
+      b.title = revealed ? "Hide amounts" : "Show amounts"; }
+    renderAll();
+  }
 
   function maskFig(){ return "🔒"; }   // hidden amounts shown as a lock
   function showMoney(v, cur){ return revealed ? money(v, cur) : maskFig(); }
@@ -869,9 +978,29 @@
     var s = v.toLocaleString("en-US", {minimumFractionDigits:hasDec?2:0, maximumFractionDigits:2});
     return SYM[state.currency] + " " + s;
   }
+  /* amount of a project in the view currency — paid projects use the
+     exchange rates saved on the day they were paid, so past income
+     doesn't drift with today's rate */
+  function projAmt(p, to){
+    to = to || state.currency;
+    var from = p.amountCur || "USD", n = Number(p.amount)||0;
+    if(from===to) return n;
+    var r = (p.paid && p.paidFx && p.paidFx[from] && p.paidFx[to]) ? p.paidFx : fxRates;
+    if(!r) return n;
+    return n / (r[from]||1) * (r[to]||1);
+  }
+  function fxSnapshot(){
+    if(!fxRates) return null;
+    var o = {}; ["USD","UAH","EUR","GBP"].forEach(function(c){ if(fxRates[c]) o[c]=fxRates[c]; }); return o;
+  }
+  function markPaid(p, on){
+    p.paid = !!on;
+    if(p.paid){ if(!p.paidAt) p.paidAt = todayStr(); p.expected = false; if(!p.paidFx) p.paidFx = fxSnapshot(); }
+    else { p.paidAt = ""; p.paidFx = null; }
+  }
   function amtInCur(p){        /* stored amount shown in the currently selected currency */
     if(!p.amountCur || p.amountCur===state.currency) return (p.amount!=null?p.amount:"");
-    return Math.round(convertAmt(p.amount, p.amountCur, state.currency)*100)/100;
+    return Math.round(projAmt(p)*100)/100;
   }
   function moneyNative(amount, cur){     /* format an amount in its own currency, no conversion */
     cur = cur || "USD";
@@ -888,7 +1017,8 @@
       return SYM[c] + " " + Math.round(usd * (fxRates[c] || 1)).toLocaleString("en-US");
     }).join("   ·   ");
   }
-  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function localDateStr(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function todayStr(){ return localDateStr(new Date()); }
   function nowLocalInput(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
   function projName(p){ return p.project || p.name || ""; }
 
@@ -958,7 +1088,7 @@
     return Object.keys(map).sort(function(a,b){ return a.toLowerCase()<b.toLowerCase()?-1:1; });
   }
   function rememberCrew(p){
-    [["director",p.director],["dop",p.dop],["producer",p.producer]].forEach(function(pair){
+    [["client",p.client],["director",p.director],["dop",p.dop],["producer",p.producer]].forEach(function(pair){
       var role=pair[0], name=(pair[1]||"").trim();
       if(!name) return;
       if(!state.crewList[role]) state.crewList[role]=[];
@@ -970,11 +1100,21 @@
       }
     });
   }
+  function loadBackupInfo(){
+    if(!sb || !session) return;
+    try{
+      sb.from("project_backups").select("taken_at,row_count").order("taken_at",{ascending:false}).limit(1).then(function(res){
+        var el = document.getElementById("cloudBackup"); if(!el || !res || res.error || !res.data || !res.data.length) return;
+        var b = res.data[0];
+        el.textContent = "Auto backup · " + fmtNumericDate(String(b.taken_at).slice(0,10)) + " · " + b.row_count + " projects";
+      });
+    }catch(e){}
+  }
   function loadCrew(){
     if(!sb || !session) return;
     sb.from("crew").select("role,name").then(function(res){
       if(res.error){ console.error("loadCrew", res.error); return; }
-      var cl={director:[], dop:[], producer:[]};
+      var cl={client:[], director:[], dop:[], producer:[]};
       (res.data||[]).forEach(function(r){ if(cl[r.role] && cl[r.role].indexOf(r.name)===-1) cl[r.role].push(r.name); });
       state.crewList = cl;
     });
@@ -1014,9 +1154,11 @@
   var saveTimer = null;
   function flagSaved(){
     var el = document.getElementById("saving");
+    if(el.classList.contains("unsynced")) return;      // keep the "Not saved" warning visible
+    el.textContent = "Saved";
     el.classList.add("on");
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function(){ el.classList.remove("on"); }, 1100);
+    saveTimer = setTimeout(function(){ if(!el.classList.contains("unsynced")) el.classList.remove("on"); }, 1100);
   }
   function save(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); flagSaved(); }
@@ -1048,29 +1190,90 @@
       due:p.due||"", paid:!!p.paid, notes:p.notes||"",
       planned_at:p.plannedAt||null, progress_at:p.progressAt||null, done_at:p.doneAt||null,
       paid_at:p.paidAt||null, session_at:p.sessionAt||null, session_mode:p.sessionMode||null,
-      expected:!!p.expected };
+      expected:!!p.expected, client:p.client||"", paid_fx:p.paidFx||null, invoice_no:p.invoiceNo||null };
+  }
+  /* ---------- reliable cloud sync ----------
+     Every change goes into a small "outbox" kept in this browser first,
+     then is sent to Supabase. If sending fails (offline, flaky network),
+     the change stays in the outbox, a red "Not saved" mark shows, and it's
+     retried automatically (when the connection returns, every 30s, and when
+     the tab comes back). Cloud refreshes never overwrite unsent changes. */
+  var PENDING_KEY = STORE_KEY + ":pending";
+  var pending = {};            // id -> {op:"upsert"|"delete", v:version}
+  var pendingVer = 0, flushing = false, syncFailed = false;
+  try{ pending = JSON.parse(localStorage.getItem(PENDING_KEY) || "{}") || {}; }catch(e){ pending = {}; }
+  function savePending(){ try{ localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); }catch(e){} }
+  function pendingCount(){ return Object.keys(pending).length; }
+  function setSyncStatus(){
+    var el = document.getElementById("saving"); if(!el) return;
+    var n = pendingCount();
+    if(n && syncFailed){
+      el.textContent = "Not saved · " + n + " — retry";
+      el.classList.add("on","unsynced"); el.title = "Changes are kept on this device and will be sent automatically. Click to retry now.";
+    } else {
+      el.classList.remove("unsynced"); el.title = "";
+      el.textContent = n ? "Saving…" : "Saved";
+    }
   }
   function cloudUpsert(p){
-    if(!sb || !session) return;
-    sb.from("projects").upsert(rowFromP(p)).then(function(res){ if(res.error) console.error("upsert", res.error); flagSaved(); });
+    pending[p.id] = {op:"upsert", v:++pendingVer}; savePending(); flushPending();
   }
   function cloudDelete(id){
-    if(!sb || !session) return;
-    sb.from("projects").delete().eq("id", id).then(function(res){ if(res.error) console.error("delete", res.error); flagSaved(); });
+    pending[id] = {op:"delete", v:++pendingVer}; savePending(); flushPending();
   }
+  function flushPending(){
+    if(!sb || !session || flushing) { setSyncStatus(); return; }
+    var ids = Object.keys(pending);
+    if(!ids.length){ syncFailed = false; setSyncStatus(); return; }
+    flushing = true; setSyncStatus();
+    var failed = false;
+    var jobs = ids.map(function(id){
+      var job = pending[id], v = job.v;
+      var req;
+      if(job.op === "delete"){
+        req = sb.from("projects").delete().eq("id", id);
+      } else {
+        var p = state.projects.find(function(x){ return x.id===id; });
+        if(!p){ delete pending[id]; return Promise.resolve(); }
+        req = sb.from("projects").upsert(rowFromP(p));
+      }
+      return Promise.resolve(req).then(function(res){
+        if(res && res.error){ failed = true; console.error("sync", job.op, res.error); return; }
+        if(pending[id] && pending[id].v === v) delete pending[id];   // not changed again meanwhile
+      }, function(err){ failed = true; console.error("sync", err); });
+    });
+    Promise.all(jobs).then(function(){
+      flushing = false; syncFailed = failed; savePending();
+      if(!failed && pendingCount()){ flushPending(); return; }   // changes made while sending
+      if(!failed) flagSaved();
+      setSyncStatus();
+    });
+  }
+  window.addEventListener("online", flushPending);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) flushPending(); });
+  setInterval(function(){ if(pendingCount()) flushPending(); }, 30000);
   function loadFromCloud(){
     if(!sb || !session) return;
     sb.from("projects").select("*").order("created_at",{ascending:false}).then(function(res){
-      if(res.error){ console.error("load", res.error); return; }
-      state.projects = (res.data||[]).map(function(r){
+      if(res.error){ console.error("load", res.error); syncFailed = true; setSyncStatus(); return; }
+      var local = {}; state.projects.forEach(function(p){ local[p.id]=p; });
+      var cloud = (res.data||[]).map(function(r){
         return { id:r.id, project:r.project, type:r.type, status:r.status,
           director:r.director, dop:r.dop, producer:r.producer, amount:Number(r.amount)||0,
           amountCur:r.amount_cur||"USD",
           due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime(),
           plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"",
-          sessionAt:r.session_at||"", sessionMode:r.session_mode||"", expected:!!r.expected };
+          sessionAt:r.session_at||"", sessionMode:r.session_mode||"", expected:!!r.expected,
+          client:r.client||"", paidFx:r.paid_fx||null, invoiceNo:r.invoice_no||"" };
       });
-      save(); populateYearJump(); buildDatalists(); renderAll();
+      // unsent local edits win over the cloud copy; unsent deletes stay deleted
+      var merged = cloud.filter(function(p){ return !(pending[p.id] && pending[p.id].op==="delete"); })
+        .map(function(p){ return (pending[p.id] && pending[p.id].op==="upsert" && local[p.id]) ? local[p.id] : p; });
+      Object.keys(pending).forEach(function(id){
+        if(pending[id].op==="upsert" && local[id] && !merged.some(function(p){ return p.id===id; })) merged.push(local[id]);
+      });
+      state.projects = merged;
+      save(); populateYearJump(); buildDatalists(); renderAll(); flushPending();
     });
   }
 
@@ -1078,7 +1281,7 @@
     var src = state.projects.filter(inMonth);
     var earned=0, awaiting=0, planned=0, inprog=0, expected=0, active=0, done=0, paidCount=0, claimedCount=0;
     src.forEach(function(p){
-      var a = convertAmt(p.amount, p.amountCur, state.currency);
+      var a = projAmt(p);
       if(p.paid){ earned += a; paidCount++; claimedCount++; }
       else if(p.expected){ expected += a; }   // deferred payment — not counted in the total
       else if(p.status==="done"){ awaiting += a; claimedCount++; }
@@ -1132,7 +1335,7 @@
     var yearly = 0;
     state.projects.forEach(function(p){
       if(p.paid && projMonth(p).slice(0,4) === yearForView){
-        yearly += convertAmt(p.amount, p.amountCur, state.currency);
+        yearly += projAmt(p);
       }
     });
     document.getElementById("yearlyYear").textContent = yearForView;
@@ -1172,7 +1375,7 @@
       var t = p.type || "commercial";
       if(!agg[t]) agg[t] = {n:0, sum:0};
       agg[t].n++;
-      agg[t].sum += convertAmt(p.amount, p.amountCur, state.currency);
+      agg[t].sum += projAmt(p);
     });
     var rows = [];
     order.forEach(function(t){ if(agg[t]) rows.push({t:t, n:agg[t].n, sum:agg[t].sum}); });
@@ -1195,7 +1398,57 @@
       '<span>Total</span><span class="num">'+totN+'</span><span class="num st-money">'+showMoney(totSum)+'</span>'+
       '<span class="num st-money">'+(totN?showMoney(totSum/totN):"—")+'</span>';
 
+    renderStatsExtra(yr);
     renderChart();
+  }
+
+  /* ---------- analytics: year over year, payment speed, by client / director ---------- */
+  function counted(p){ return p.paid || !(p.expected || p.status==="planned"); }
+  function renderStatsExtra(yr){
+    var box = document.getElementById("statsExtra"); if(!box) return;
+    var prev = String(+yr - 1), cur = 0, last = 0, waits = [];
+    state.projects.forEach(function(p){
+      if(!p.paid) return;
+      var y = projMonth(p).slice(0,4);
+      if(y===yr){ cur += projAmt(p); if(p.doneAt && p.paidAt){ var d = daysBetween(p.doneAt, p.paidAt); if(d>=0) waits.push(d); } }
+      else if(y===prev) last += projAmt(p);
+    });
+    var yoyEl = document.getElementById("yoy");
+    if(yoyEl){
+      if(last>0){
+        var pct = Math.round((cur-last)/last*100);
+        yoyEl.textContent = (pct>=0?"+":"")+pct+"% vs "+prev;
+        yoyEl.className = "yoy " + (pct>=0 ? "up" : "down");
+      } else { yoyEl.textContent = ""; yoyEl.className = "yoy"; }
+    }
+    var avgWait = waits.length ? Math.round(waits.reduce(function(a,b){return a+b;},0)/waits.length) : null;
+
+    function group(field){
+      var agg = {};
+      state.projects.forEach(function(p){
+        if(!counted(p)) return;
+        if(projMonth(p).slice(0,4)!==yr) return;
+        var k = (p[field]||"").trim(); if(!k) return;
+        if(!agg[k]) agg[k] = {n:0, sum:0};
+        agg[k].n++; agg[k].sum += projAmt(p);
+      });
+      return Object.keys(agg).map(function(k){ return {k:k, n:agg[k].n, sum:agg[k].sum, avg:agg[k].sum/agg[k].n}; })
+        .sort(function(a,b){ return b.sum - a.sum || b.n - a.n; }).slice(0,8);
+    }
+    function table(title, rows, emptyMsg){
+      return '<div class="lbl" style="margin-top:26px">'+title+' · '+yr+'</div>'+
+        '<div class="stats-head"><span>Name</span><span>Projects</span><span>Total</span><span>Avg. fee</span></div>'+
+        (rows.map(function(r){
+          return '<div class="stats-row"><span class="st-type">'+esc(r.k)+'</span><span class="num">'+r.n+'</span>'+
+            '<span class="num st-total">'+showMoney(r.sum)+'</span><span class="num">'+showMoney(r.avg)+'</span></div>';
+        }).join("") || '<div class="stats-row"><span class="st-type" style="color:var(--muted)">'+emptyMsg+'</span><span></span><span></span><span></span></div>');
+    }
+    box.innerHTML =
+      '<div class="pay-speed"><span class="lbl">Avg. time to payment · '+yr+'</span>'+
+        '<span class="ps-v">'+(avgWait==null ? "—" : avgWait+(avgWait===1?" day":" days"))+'</span>'+
+        '<span class="ps-sub">'+(waits.length ? "from “Completed” to “Paid”, "+waits.length+" projects" : "needs Completed and Paid dates")+'</span></div>'+
+      table("By client", group("client"), "Add a client to projects to see this") +
+      table("By director", group("director"), "No directors yet");
   }
 
   /* ---------- monthly chart (income / projects / avg fee) for the selected year ---------- */
@@ -1217,7 +1470,7 @@
       var m = projMonth(p);
       if(!m || m.slice(0,4)!==yr) return;
       var mi = parseInt(m.slice(5,7),10)-1; if(mi<0||mi>11) return;
-      var a = convertAmt(p.amount, p.amountCur, state.currency);
+      var a = projAmt(p);
       count[mi]++; sumAmt[mi]+=a; if(p.paid) income[mi]+=a;
     });
     var vals=[];
@@ -1266,10 +1519,10 @@
       return projMonth(p)===ym;
     });
     if(!list.length){ pop.hidden = true; return; }
-    list.sort(function(a,b){ return convertAmt(b.amount,b.amountCur,state.currency) - convertAmt(a.amount,a.amountCur,state.currency); });
+    list.sort(function(a,b){ return projAmt(b) - projAmt(a); });
     var total = 0;
     var rows = list.map(function(p){
-      var a = convertAmt(p.amount, p.amountCur, state.currency); total += a;
+      var a = projAmt(p); total += a;
       return '<div class="cp-row cp-proj" data-id="'+esc(p.id)+'" title="Open card"><span class="cp-name">'+esc(projName(p)||"Untitled")+'</span>'+
         '<span class="cp-amt'+(p.paid?" paid":"")+'">'+esc(revealed?money(a):maskFig())+'</span></div>';
     }).join("");
@@ -1316,8 +1569,12 @@
   }
 
   function filtered(){
+    var q = ui.q.trim().toLowerCase();
     var arr = state.projects.filter(function(p){
-      if(!inMonth(p)) return false;
+      if(q){   // search looks across all months
+        var hay = [projName(p), p.client, p.director, p.dop, p.producer, p.notes].join(" ").toLowerCase();
+        if(hay.indexOf(q) === -1) return false;
+      } else if(!inMonth(p)) return false;
       if(ui.stage!=="all" && p.status!==ui.stage) return false;
       if(ui.pay==="paid" && !p.paid) return false;
       if(ui.pay==="unpaid" && p.paid) return false;
@@ -1441,6 +1698,7 @@
 
   function crewMarkup(p){
     var parts=[];
+    if(p.client) parts.push('<span class="client-tag"><span class="role">Client</span> <b>'+esc(p.client)+'</b></span>');
     if(p.director) parts.push('<span><span class="role">Dir</span> <b>'+esc(p.director)+'</b></span>');
     if(p.dop) parts.push('<span><span class="role">DOP</span> <b>'+esc(p.dop)+'</b></span>');
     if(p.producer) parts.push('<span><span class="role">Prod</span> <b>'+esc(p.producer)+'</b></span>');
@@ -1451,6 +1709,9 @@
   function renderList(){
     var list = document.getElementById("list");
     var items = filtered();
+    var hint = document.getElementById("searchHint");
+    if(hint) hint.textContent = ui.q.trim() ? (items.length + (items.length===1?" match":" matches") + " · all months") : "";
+    renderAttention();
     var foot = document.getElementById("footCount");
 
     if(state.projects.length===0){
@@ -1462,7 +1723,7 @@
       return;
     }
     if(items.length===0){
-      list.innerHTML = '<div class="empty"><h3>Nothing matches</h3><p>No projects fit the current filters.</p></div>';
+      list.innerHTML = '<div class="empty"><h3>Nothing matches</h3><p>'+(ui.q.trim()?'No projects match “'+esc(ui.q.trim())+'”.':'No projects fit the current filters.')+'</p></div>';
       foot.textContent = (function(n){return n+(n===1?" project":" projects");})(state.projects.filter(inMonth).length);
       return;
     }
@@ -1499,6 +1760,8 @@
           '<div class="tools-row">'+
             deadlineMarkup(p)+
             '<div class="row-tools">'+
+              '<button class="icon-btn" data-act="invoice" aria-label="Invoice" title="Make an invoice">'+
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></button>'+
               '<button class="icon-btn" data-act="edit" aria-label="Edit">'+
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
               '<button class="icon-btn" data-act="del" aria-label="Delete">'+
@@ -1514,13 +1777,51 @@
 
   function renderAll(){ renderStats(); renderList(); }
 
+  /* ---------- "Needs attention": overdue deadlines, unpaid finished work, upcoming sessions ---------- */
+  var PAY_WAIT_DAYS = 14;   // a finished project counts as "waiting too long" after this
+  function daysBetween(a, b){ return Math.round((new Date(b+"T00:00:00") - new Date(a+"T00:00:00"))/86400000); }
+  var attOpen = false;
+  function renderAttention(){
+    var box = document.getElementById("attention"); if(!box) return;
+    var today = todayStr(), items = [];
+    var weekAhead = new Date(); weekAhead.setDate(weekAhead.getDate()+7);
+    var nowLocal = nowLocalInput();
+    var limitLocal = (function(d){ d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); })(weekAhead);
+    state.projects.forEach(function(p){
+      var name = esc(projName(p)||"Untitled");
+      if(p.due && p.due < today && p.status!=="done" && !p.paid){
+        items.push({k:"over", sort:"0"+p.due, id:p.id, html:'<b>'+name+'</b> — deadline passed '+esc(fmtNumericDate(p.due))+' ('+daysBetween(p.due, today)+'d ago)'});
+      }
+      if(p.status==="done" && !p.paid && !p.expected){
+        var since = p.doneAt ? daysBetween(p.doneAt, today) : null;
+        var late = since!=null && since >= PAY_WAIT_DAYS;
+        items.push({k: late?"pay-late":"pay", sort:(late?"1":"3")+(p.doneAt||""), id:p.id,
+          html:'<b>'+name+'</b> — finished'+(since!=null?' '+since+'d ago':'')+', not paid · '+(revealed?esc(moneyNative(p.amount,p.amountCur||"USD")):maskFig())+(p.client?' · '+esc(p.client):'')});
+      }
+      if(p.sessionAt && p.sessionMode && p.sessionAt >= nowLocal && p.sessionAt <= limitLocal){
+        items.push({k:"session", sort:"2"+p.sessionAt, id:p.id,
+          html:'<b>'+name+'</b> — '+(p.sessionMode==="offline"?"offline":"online")+' session '+esc(fmtSessionDateTime(p.sessionAt))});
+      }
+    });
+    if(!items.length){ box.hidden = true; box.innerHTML = ""; return; }
+    items.sort(function(a,b){ return a.sort < b.sort ? -1 : 1; });
+    var LBL = {over:"Overdue", "pay-late":"Payment late", pay:"Awaiting payment", session:"Session soon"};
+    var SHOW = 4, extra = items.length - SHOW;
+    box.innerHTML = '<div class="att-head"><span class="lbl">Needs attention</span><span class="att-count">'+items.length+'</span></div>'+
+      items.map(function(it, i){
+        return '<button class="att-item att-'+it.k+(i>=SHOW && !attOpen ? ' att-more' : '')+'" data-id="'+esc(it.id)+'"><span class="att-k">'+LBL[it.k]+'</span><span class="att-t">'+it.html+'</span></button>';
+      }).join("") +
+      (extra>0 ? '<button class="att-toggle" id="attToggle">'+(attOpen ? 'Show less' : '+ '+extra+' more')+'</button>' : '');
+    box.hidden = false;
+  }
+
   /* ---------- add: modal on phones, inline on desktop ---------- */
   function addProject(){ quickAdd(); }
 
   /* ---------- quick add (no modal) + inline editing in the card ---------- */
   function quickAdd(){
     var p = { id:uid(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
-      paid:false, amount:0, amountCur:state.currency, director:"", dop:"", producer:"", due:"", notes:"",
+      paid:false, amount:0, amountCur:state.currency, client:"", director:"", dop:"", producer:"", due:"", notes:"",
       plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"", expected:false };
     state.projects.push(p);
     ui.month = currentYM(); populateYearJump(); updateMonthLabel();   // new project shows in the current month
@@ -1561,7 +1862,7 @@
     editingId = null;
     document.getElementById("formTitle").textContent = "New project";
     setVal("fName",""); setVal("fType","commercial"); setVal("fStatus","planned");
-    setVal("fDirector",""); setVal("fDop",""); setVal("fProducer","");
+    setVal("fClient",""); setVal("fDirector",""); setVal("fDop",""); setVal("fProducer","");
     setVal("fAmount",""); setVal("fAmountCur",state.currency); setVal("fDue",""); setVal("fNotes","");
     setVal("fSession",""); setVal("fSessionMode","");
     document.getElementById("fPaid").checked=false;
@@ -1572,7 +1873,7 @@
     editingId = p.id;
     document.getElementById("formTitle").textContent = "Edit project";
     setVal("fName",projName(p)); setVal("fType",p.type||"commercial"); setVal("fStatus",p.status||"planned");
-    setVal("fDirector",p.director||""); setVal("fDop",p.dop||""); setVal("fProducer",p.producer||"");
+    setVal("fClient",p.client||""); setVal("fDirector",p.director||""); setVal("fDop",p.dop||""); setVal("fProducer",p.producer||"");
     setVal("fAmount",(p.amount!=null?p.amount:"")); setVal("fAmountCur",p.amountCur||"USD"); setVal("fDue",p.due||""); setVal("fNotes",p.notes||"");
     setVal("fSession",p.sessionAt||""); setVal("fSessionMode",p.sessionMode||"");
     document.getElementById("fPaid").checked=!!p.paid;
@@ -1597,6 +1898,7 @@
     var payload = {
       project:name,
       type:document.getElementById("fType").value,
+      client:document.getElementById("fClient").value.trim(),
       director:document.getElementById("fDirector").value.trim(),
       dop:document.getElementById("fDop").value.trim(),
       producer:document.getElementById("fProducer").value.trim(),
@@ -1613,15 +1915,97 @@
     var target = null;
     if(editingId){
       var p = state.projects.find(function(x){return x.id===editingId;});
-      if(p){ Object.assign(p, payload); delete p.name; delete p.client; target = p; }
+      if(p){ Object.assign(p, payload); delete p.name; target = p; }
     } else {
       payload.id = uid(); payload.createdAt = Date.now();
       payload.plannedAt = todayStr(); payload.progressAt = ""; payload.doneAt = "";
       state.projects.push(payload); target = payload;
     }
-    if(target){ stampStage(target); if(target.paid){ if(!target.paidAt) target.paidAt=todayStr(); } else { target.paidAt=""; } }
+    if(target){ stampStage(target); markPaid(target, target.paid); }
     hideOverlay("formOverlay"); renderAll(); save();
     if(target){ cloudUpsert(target); rememberCrew(target); }
+  }
+
+  /* ---------- invoice in one click (based on invoice/invoice-template.html) ---------- */
+  function nextInvoiceNo(){
+    var yr = String(new Date().getFullYear()), max = 0;
+    state.projects.forEach(function(x){
+      var m = /^EM-(\d{4})-(\d+)$/.exec(x.invoiceNo||"");
+      if(m && m[1]===yr) max = Math.max(max, +m[2]);
+    });
+    return "EM-" + yr + "-" + String(max+1).padStart(3,"0");
+  }
+  function addDays(d, n){ var t=new Date(d+"T00:00:00"); t.setDate(t.getDate()+n); return localDateStr(t); }
+  function openInvoice(p){
+    if(!p.invoiceNo){ p.invoiceNo = nextInvoiceNo(); save(); cloudUpsert(p); }
+    var cur = p.amountCur || "USD", amt = moneyNative(p.amount, cur);
+    var issue = todayStr(), due = addDays(issue, 14);
+    var logo = (location.protocol.indexOf("http")===0) ? (location.origin + "/media/logos/my-logo-em.png") : "";
+    var payKey = "tracker:invoice-pay";
+    var savedPay = ""; try{ savedPay = localStorage.getItem(payKey) || ""; }catch(e){}
+    var payHtml = savedPay || (
+      '<div class="k">Method</div><div class="v fill">[ Bank wire / Wise / PayPal ]</div>'+
+      '<div class="k">Account holder</div><div class="v">Evgeniy Moroz</div>'+
+      '<div class="k">Bank</div><div class="v fill">[ Bank name ]</div>'+
+      '<div class="k">IBAN</div><div class="v fill">[ —— ]</div>'+
+      '<div class="k">SWIFT / BIC</div><div class="v fill">[ —— ]</div>');
+    var w = window.open("", "_blank");
+    if(!w){ alert("Allow pop-ups for this page to open the invoice."); return; }
+    var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">'+
+    '<title>Invoice '+esc(p.invoiceNo)+' — '+esc(projName(p))+'</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">'+
+    '<style>'+
+    ':root{--ink:#15161b;--muted:#8a8d96;--soft:#b6b8bf;--line:#e7e8ec;--line-2:#f1f2f5;--display:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}'+
+    '*{box-sizing:border-box}html,body{margin:0;background:#eceef1;color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}'+
+    '.bar{position:sticky;top:0;z-index:5;display:flex;gap:10px;justify-content:center;align-items:center;padding:12px;background:#15161b;color:#cfd0d4;font-size:12.5px}'+
+    '.bar button{background:#fff;color:#000;border:0;border-radius:4px;padding:9px 16px;font:600 12px var(--display);letter-spacing:.12em;text-transform:uppercase;cursor:pointer}'+
+    '.sheet{width:210mm;min-height:297mm;margin:22px auto;background:#fff;padding:26mm 22mm 20mm;box-shadow:0 10px 40px rgba(0,0,0,.12);position:relative}'+
+    'header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.brand{display:flex;align-items:center;gap:14px}'+
+    '.logo-badge{width:52px;height:52px;border-radius:11px;background:#0d0d0f;display:flex;align-items:center;justify-content:center;color:#fff;font:700 16px var(--display)}.logo-badge img{width:34px;height:34px}'+
+    '.brand-name{font:700 20px/1.1 var(--display)}.brand-sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:4px}'+
+    '.inv-head{text-align:right}.inv-title{font:600 30px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}'+
+    '.inv-meta{margin-top:14px;margin-left:auto;border-collapse:collapse;font-size:12.5px}.inv-meta td{padding:3px 0}'+
+    '.inv-meta td:first-child{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:10px;padding-right:18px;text-align:right}'+
+    '.inv-meta td:last-child{font-weight:500;text-align:right;min-width:120px}.rule{height:1px;background:var(--line);margin:26px 0}'+
+    '.parties{display:grid;grid-template-columns:1fr 1fr;gap:40px}.lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}'+
+    '.party{font-size:13px;line-height:1.7}.strong{font-weight:600;font-size:14px}.fill{color:var(--soft)}'+
+    '.items{width:100%;border-collapse:collapse;margin-top:30px;font-size:13px}.items th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:0 0 12px;border-bottom:1px solid var(--ink)}'+
+    '.items th.r,.items td.r{text-align:right}.items td{padding:14px 0;border-bottom:1px solid var(--line-2);vertical-align:top}.items td.idx{color:var(--soft);width:26px}'+
+    '.desc-main{font-weight:500}.desc-sub{color:var(--muted);font-size:11.5px;margin-top:3px}'+
+    '.totals{margin-top:22px;display:flex;justify-content:flex-end}.totals table{border-collapse:collapse;min-width:280px}.totals td{padding:7px 0;font-size:13px}'+
+    '.totals td:first-child{color:var(--muted);padding-right:40px}.totals td:last-child{text-align:right;font-weight:500}'+
+    '.grand td{border-top:1px solid var(--ink);padding-top:13px;font:600 16px var(--display);color:var(--ink)!important}.grand td:first-child{text-transform:uppercase;letter-spacing:.08em;font-size:12px}'+
+    '.lower{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;margin-top:40px}.pay-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;font-size:12.5px}'+
+    '.pay-grid .k{color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:10px;padding-top:2px}.pay-grid .v{font-weight:500}'+
+    '.notes p{font-size:12.5px;color:#4d4f57;margin:0 0 8px;line-height:1.65}'+
+    'footer{position:absolute;left:22mm;right:22mm;bottom:16mm;display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;font-size:10.5px;letter-spacing:.06em;color:var(--muted)}'+
+    'footer .thanks{font:600 12px var(--display);color:var(--ink)}[contenteditable]:hover{outline:1px dashed #c9cbd1;outline-offset:2px}[contenteditable]:focus{outline:1px solid #8a8d96;outline-offset:2px}'+
+    '@media print{.bar{display:none}html,body{background:#fff}.sheet{margin:0;box-shadow:none;width:auto;min-height:auto}[contenteditable]:hover{outline:none}@page{size:A4;margin:0}}'+
+    '</style></head><body>'+
+    '<div class="bar">Click any text to edit · payment details are remembered on this device <button onclick="window.print()">Print / Save PDF</button></div>'+
+    '<div class="sheet"><header><div class="brand"><div class="logo-badge">'+(logo?'<img src="'+logo+'" alt="EM" onerror="this.replaceWith(document.createTextNode(\'EM\'))">':'EM')+'</div>'+
+    '<div><div class="brand-name">Evgeniy Moroz</div><div class="brand-sub">Freelance Digital Colorist</div></div></div>'+
+    '<div class="inv-head"><div class="inv-title">Invoice</div><table class="inv-meta">'+
+    '<tr><td>Invoice №</td><td contenteditable>'+esc(p.invoiceNo)+'</td></tr>'+
+    '<tr><td>Issue date</td><td contenteditable>'+esc(fmtNumericDate(issue))+'</td></tr>'+
+    '<tr><td>Due date</td><td contenteditable>'+esc(fmtNumericDate(due))+'</td></tr>'+
+    '<tr><td>Currency</td><td>'+esc(cur)+' ('+esc(SYM[cur]||"")+')</td></tr></table></div></header>'+
+    '<div class="rule"></div><div class="parties">'+
+    '<div class="party"><div class="lbl">From</div><span class="strong">Evgeniy Moroz</span><br>Freelance Digital Colorist<br>Kyiv, Ukraine<br>eugeniymoroz@gmail.com<br>eugeniymoroz.com</div>'+
+    '<div class="party" contenteditable><div class="lbl">Bill to</div>'+(p.client?'<span class="strong">'+esc(p.client)+'</span>':'<span class="strong fill">[ Client / Company name ]</span>')+
+    '<br><span class="fill">[ Contact person ]</span><br><span class="fill">[ Address, City, Country ]</span><br><span class="fill">[ Email ]</span></div></div>'+
+    '<table class="items"><thead><tr><th>#</th><th>Description</th><th class="r">Rate</th><th class="r">Qty</th><th class="r">Amount</th></tr></thead><tbody>'+
+    '<tr><td class="idx">01</td><td contenteditable><div class="desc-main">'+esc(projName(p)||"Project")+'</div>'+
+    '<div class="desc-sub">'+esc(TYPE_LABEL[p.type]||"Project")+' · color grading'+(p.director?' · dir. '+esc(p.director):'')+'</div></td>'+
+    '<td class="r">'+esc(amt)+'</td><td class="r">1</td><td class="r">'+esc(amt)+'</td></tr></tbody></table>'+
+    '<div class="totals"><table><tr><td>Subtotal</td><td>'+esc(amt)+'</td></tr><tr class="grand"><td>Total due</td><td>'+esc(amt)+'</td></tr></table></div>'+
+    '<div class="lower"><div><div class="lbl">Payment details</div><div class="pay-grid" id="pay" contenteditable>'+payHtml+'</div></div>'+
+    '<div class="notes" contenteditable><div class="lbl">Notes</div><p>Payment is due within <b>14 days</b> of the issue date.</p>'+
+    '<p>Please reference the invoice number in your transfer. Any bank fees are covered by the payer.</p><p>Thank you for your business.</p></div></div>'+
+    '<footer><span class="thanks">Evgeniy Moroz — Colorist</span><span>eugeniymoroz.com</span></footer></div>'+
+    '<script>(function(){var el=document.getElementById("pay");function keep(){try{localStorage.setItem('+JSON.stringify(payKey)+',el.innerHTML);}catch(e){}}'+
+    'el.addEventListener("input",keep);el.addEventListener("blur",keep);})();<\/script></body></html>';
+    w.document.open(); w.document.write(html); w.document.close();
   }
 
   function showOverlay(id){ document.getElementById(id).classList.add("show"); }
@@ -1653,6 +2037,7 @@
 
   function bind(){
     document.getElementById("addBtn").onclick = addProject;
+    setupAutocomplete("fClient","acClient","client");
     setupAutocomplete("fDirector","acDirector","director");
     setupAutocomplete("fDop","acDop","dop");
     setupAutocomplete("fProducer","acProducer","producer");
@@ -1663,11 +2048,18 @@
       if(sb && session){ sb.auth.updateUser({data:{currency:state.currency}}); }
     };
     document.getElementById("sort").onchange = function(e){ ui.sort=e.target.value; renderList(); };
+    var searchEl = document.getElementById("search"), searchT = null;
+    searchEl.addEventListener("input", function(){
+      clearTimeout(searchT);
+      searchT = setTimeout(function(){ ui.q = searchEl.value; renderList(); }, 120);
+    });
+    document.getElementById("saving").addEventListener("click", function(){ if(pendingCount()){ syncFailed=false; flushPending(); } });
     document.getElementById("typeFilter").onchange = function(e){ ui.type=e.target.value; renderList(); };
 
-    var earnedEl = document.getElementById("earned");
-    earnedEl.title = "Tap to reveal / hide amounts";
-    earnedEl.addEventListener("click", function(){ revealed = !revealed; renderAll(); });
+    var lockBtn = document.getElementById("lockBtn");
+    lockBtn.addEventListener("click", function(){ setRevealed(!revealed); });
+    lockBtn.classList.toggle("on", !revealed); lockBtn.setAttribute("aria-pressed", revealed ? "false" : "true");
+    lockBtn.title = revealed ? "Hide amounts" : "Show amounts";
 
     var paidToggleEl = document.getElementById("paidToggle");
     if(paidToggleEl){
@@ -1715,11 +2107,16 @@
       if(cm){ ui.chartMetric = cm.dataset.metric; renderChart(); return; }
       var sortBtn = e.target.closest(".st-sort");
       if(sortBtn){ ui.statSort = sortBtn.dataset.sort; renderStatsPanel(); return; }
-      if(e.target.closest(".st-money")){ revealed = !revealed; renderAll(); }
+
     });
     document.getElementById("yearPrev").onclick = function(){ ui.yearView -= 1; renderStats(); };
     document.getElementById("yearNext").onclick = function(){ ui.yearView += 1; renderStats(); };
 
+    document.getElementById("attention").addEventListener("click", function(e){
+      if(e.target.closest("#attToggle")){ attOpen = !attOpen; renderAttention(); return; }
+      var it = e.target.closest(".att-item[data-id]"); if(!it) return;
+      var p = state.projects.find(function(x){ return x.id===it.dataset.id; }); if(p) openEdit(p);
+    });
     document.getElementById("stageChips").addEventListener("click", function(e){
       var b = e.target.closest(".chip"); if(!b) return;
       ui.stage = b.dataset.stage;
@@ -1741,7 +2138,7 @@
       if(!p) return;
       var act = actBtn.dataset.act;
       if(act==="editname"){ inlineEdit(actBtn, p, "project", {placeholder:"Project title"}); return; }
-      if(act==="editamount"){ if(!revealed){ revealed=true; renderAll(); return; } inlineEdit(actBtn, p, "amount", {number:true}); return; }
+      if(act==="editamount"){ if(!revealed) return; inlineEdit(actBtn, p, "amount", {number:true}); return; }
       if(act==="stage"){ p.status = actBtn.dataset.stage; stampStage(p); renderAll(); save(); cloudUpsert(p); return; }
       if(act==="session-dt" || act==="due-dt" || act==="stage-date" || act==="paid-date"){
         try{ if(actBtn.showPicker) actBtn.showPicker(); }catch(_e){}   // open the picker on the first click
@@ -1752,8 +2149,9 @@
         var pid=p.id; setTimeout(function(){ var inp=document.querySelector('.row[data-id="'+pid+'"] input[data-act="due-dt"]'); if(inp&&inp.showPicker){ try{ inp.showPicker(); }catch(_e){} } }, 40);
         return; }
       if(act==="due-clear"){ p.due = ""; renderAll(); save(); cloudUpsert(p); return; }
-      if(act==="pay"){ p.paid=!p.paid; if(p.paid){ if(!p.paidAt) p.paidAt=todayStr(); p.expected=false; } else { p.paidAt=""; } renderAll(); save(); cloudUpsert(p); }
+      if(act==="pay"){ markPaid(p, !p.paid); renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
+      else if(act==="invoice"){ openInvoice(p); }
       else if(act==="del"){
         pendingDelete = p.id;
         document.getElementById("confirmText").textContent = "“"+(projName(p)||"Untitled")+"” will be removed permanently.";
@@ -1828,6 +2226,7 @@
     loadFx();
     loadFromCloud();        // authoritative refresh from Supabase
     loadCrew();             // persistent crew directory
+    loadBackupInfo();       // date of the latest automatic weekly cloud backup
 
     // re-render the list when the viewport crosses the mobile breakpoint
     // (rotating a phone, resizing a browser window) so the session labels
@@ -1843,6 +2242,11 @@
     });
   }
 
+  /* installable app: register the service worker (only on the real site, not when opened as a file) */
+  if("serviceWorker" in navigator && location.protocol==="https:"){
+    window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+  }
+
   /* ---------- auth gate (Supabase) ---------- */
   var gate = document.getElementById("gate");
   function gateError(m){ var e=document.getElementById("gateErr"); e.textContent=m||""; e.classList.toggle("show", !!m); }
@@ -1856,26 +2260,28 @@
   if(!sb){
     showGate("Could not load Supabase — check your connection and reload.");
   } else {
+    /* passwordless sign-in: email -> magic link -> back here, signed in.
+       shouldCreateUser:false — only the existing account can get a link. */
+    var gateNote = document.getElementById("gateNote");
+    function gateMsg(m){ gateNote.textContent=m||""; gateNote.classList.toggle("show", !!m); }
     document.getElementById("gateForm").addEventListener("submit", function(ev){
       ev.preventDefault();
       var email=document.getElementById("gateEmail").value.trim();
-      var pass=document.getElementById("gatePass").value;
-      gateError("");
-      sb.auth.signInWithPassword({email:email, password:pass}).then(function(res){
+      var btn=document.getElementById("gateSignIn");
+      if(!email){ gateError("Enter your email"); return; }
+      gateError(""); gateMsg(""); btn.disabled=true; btn.textContent="Sending…";
+      sb.auth.signInWithOtp({
+        email: email,
+        options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname }
+      }).then(function(res){
+        btn.disabled=false; btn.textContent="Send sign-in link";
         if(res.error){ gateError(res.error.message); return; }
-        session = res.data.session; openApp();
+        gateMsg("Check your inbox — open the link from this device to sign in.");
       });
     });
-    document.getElementById("gateSignUp").addEventListener("click", function(){
-      var email=document.getElementById("gateEmail").value.trim();
-      var pass=document.getElementById("gatePass").value;
-      if(!email || !pass){ gateError("Enter email and password"); return; }
-      gateError("");
-      sb.auth.signUp({email:email, password:pass}).then(function(res){
-        if(res.error){ gateError(res.error.message); return; }
-        if(res.data.session){ session=res.data.session; openApp(); }
-        else { gateError("Account created — confirm via the email we sent, then sign in."); }
-      });
+    // the magic link lands back on this page; pick up the new session as soon as it appears
+    sb.auth.onAuthStateChange(function(event, s){
+      if(s && !started){ session=s; openApp(); }
     });
     sb.auth.getSession().then(function(res){
       if(res.data && res.data.session){ session=res.data.session; openApp(); }
