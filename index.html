@@ -947,8 +947,16 @@
     line-height: 1.2;
     pointer-events: none;
   }
-  @media (max-width: 1000px) { .insta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 560px)  { .insta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+  /* always three rows: 6×3 desktop, 3×3 tablet, 2×3 phone */
+  .insta-grid .insta-post:nth-child(n+19) { display: none; }
+  @media (max-width: 1000px) {
+    .insta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .insta-grid .insta-post:nth-child(n+10) { display: none; }
+  }
+  @media (max-width: 560px) {
+    .insta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .insta-grid .insta-post:nth-child(n+7) { display: none; }
+  }
 
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 860px) {
@@ -1553,7 +1561,7 @@
     if (!section || !grid) return;
     try {
       const res = await fetch(
-        `${SUPA_URL}/rest/v1/instagram_posts?select=id,caption,media_type,image_url,permalink&order=published_at.desc&limit=12`,
+        `${SUPA_URL}/rest/v1/instagram_posts?select=id,caption,media_type,image_url,permalink&order=published_at.desc&limit=18`,
         { headers: { apikey: SUPA_KEY } }
       );
       if (!res.ok) return;
