@@ -183,6 +183,29 @@
   #earned{cursor:default}
   .yearly-v{cursor:default!important}
   .st-money{cursor:default!important}
+  /* session picker */
+  button.session-when{-webkit-appearance:none;appearance:none;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit}
+  .dtpop{position:fixed;z-index:120;width:280px;background:var(--surface-hi);border:1px solid var(--line);border-radius:10px;
+    padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  .dtpop[hidden]{display:none}
+  .dtpop-title{font-family:var(--display);font-weight:600;font-size:13px;color:var(--white);margin-bottom:12px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dtpop-fields{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}
+  .dtpop-fields label{display:flex;flex-direction:column;gap:5px}
+  .dtpop-fields span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .dtpop-fields input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+    padding:9px 10px;font-size:14px;color:var(--ink);color-scheme:dark}
+  .dtpop-fields input:focus{outline:none;border-color:var(--grey)}
+  .dtpop-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  .dtpop-actions .btn{padding:8px 14px}
+  .dtpop-actions .dtpop-clear{margin-right:auto;border-color:transparent;color:var(--muted)}
+  .dtpop-actions .dtpop-clear:hover{color:var(--red);background:transparent}
+  .dtpop.date-only .dtpop-fields{grid-template-columns:1fr}
+  .dtpop.date-only #dtPopTimeWrap{display:none}
+  button.dt-wrap{-webkit-appearance:none;appearance:none;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit;text-align:inherit}
+  @media (max-width:600px){
+    .dtpop{left:12px!important;right:12px;top:auto!important;bottom:16px;width:auto}
+  }
   /* privacy lock — fixed on the right edge */
   .lock-btn{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:50;width:40px;height:40px;
     border-radius:50%;border:1px solid var(--line);background:rgba(18,18,20,.82);backdrop-filter:blur(6px);
@@ -803,6 +826,20 @@
     <input type="file" id="importFile" accept="application/json" style="display:none">
   </div>
 
+</div>
+
+<!-- session date & time picker with an explicit Save -->
+<div class="dtpop" id="dtPop" hidden role="dialog" aria-label="Change date">
+  <div class="dtpop-title" id="dtPopTitle">Session</div>
+  <div class="dtpop-fields">
+    <label><span>Date</span><input type="date" id="dtPopDate"></label>
+    <label id="dtPopTimeWrap"><span>Time</span><input type="time" id="dtPopTime" step="300"></label>
+  </div>
+  <div class="dtpop-actions">
+    <button type="button" class="btn dtpop-clear" id="dtPopClear">Clear</button>
+    <button type="button" class="btn" id="dtPopCancel">Cancel</button>
+    <button type="button" class="btn btn-primary" id="dtPopSave">Save</button>
+  </div>
 </div>
 
 <!-- privacy lock: hide / show all amounts -->
@@ -1598,10 +1635,9 @@
     }
     return '<span class="deadline-pill'+(over?" over":"")+'">'+
       '<span class="deadline-lbl">Deadline</span>'+
-      '<span class="dt-wrap">'+
-        '<input class="deadline-dt" type="date" data-act="due-dt" value="'+esc(p.due)+'">'+
+      '<button type="button" class="dt-wrap" data-act="date-edit" data-field="due" title="Change deadline">'+
         '<span class="dt-disp">'+esc(fmtNumericDate(p.due))+'</span>'+
-      '</span>'+
+      '</button>'+
       (over?'<span class="deadline-tag">overdue</span>':'')+
       '<button class="deadline-x" data-act="due-clear" title="Clear deadline">×</button>'+
     '</span>';
@@ -1651,10 +1687,9 @@
       var d = dates[s];
       return '<div class="stage '+cls[s]+' '+st+'">'+
         '<button class="stage-name" data-act="stage" data-stage="'+s+'">'+STAGE_LABEL[s]+'</button>'+
-        '<span class="dt-wrap stage-dt">'+
-          '<input type="date" data-act="stage-date" data-stage="'+s+'" value="'+esc(d||"")+'">'+
+        '<button type="button" class="dt-wrap stage-dt" data-act="date-edit" data-field="'+s+'" title="Change date">'+
           '<span class="stage-date dt-disp">'+(d?esc(fmtShortDate(d)):"—")+'</span>'+
-        '</span>'+
+        '</button>'+
       '</div>';
     }).join("") + '</div>';
   }
@@ -1688,10 +1723,9 @@
         '</select>'+
       '</span>';
     if(mode){
-      html += '<span class="dt-wrap session-when">'+
-        '<input class="session-dt" type="datetime-local" data-act="session-dt" value="'+esc(p.sessionAt||"")+'">'+
+      html += '<button type="button" class="dt-wrap session-when" data-act="session-edit" title="Change session date & time">'+
         '<span class="dt-disp">'+esc(p.sessionAt ? fmtNumericDateTime(p.sessionAt) : "set time")+'</span>'+
-      '</span>';
+      '</button>';
     }
     return html + '</span>';
   }
@@ -1735,7 +1769,7 @@
           ? '<button class="badge act b-paid" data-act="pay" title="Mark unpaid">Paid</button>'
           : '<button class="badge act b-unpaid" data-act="pay" title="Mark paid">Unpaid</button>')+
         (p.paid
-          ? '<span class="dt-wrap pay-dt"><input type="date" data-act="paid-date" value="'+esc(p.paidAt||"")+'"><span class="pay-date dt-disp">'+(p.paidAt?esc(fmtShortDate(p.paidAt)):"—")+'</span></span>'
+          ? '<button type="button" class="dt-wrap pay-dt" data-act="date-edit" data-field="paid" title="Change payment date"><span class="pay-date dt-disp">'+(p.paidAt?esc(fmtShortDate(p.paidAt)):"—")+'</span></button>'
           : expCtrl)+
       '</div>';
       var typeBadge = typeSelect(p);
@@ -1926,6 +1960,50 @@
     if(target){ cloudUpsert(target); rememberCrew(target); }
   }
 
+  /* ---------- dates in the card: our own picker, applied only on Save ----------
+     session → date + time; deadline / stage dates / paid date → date only */
+  var DATE_FIELDS = {
+    session:     {key:"sessionAt",  time:true,  clear:false, label:function(p){ return (p.sessionMode==="offline"?"Offline":"Online")+" session"; }},
+    due:         {key:"due",        time:false, clear:true,  label:function(){ return "Deadline"; }},
+    planned:     {key:"plannedAt",  time:false, clear:true,  label:function(){ return "Planned — date"; }},
+    in_progress: {key:"progressAt", time:false, clear:true,  label:function(){ return "In progress — date"; }},
+    done:        {key:"doneAt",     time:false, clear:true,  label:function(){ return "Completed — date"; }},
+    paid:        {key:"paidAt",     time:false, clear:false, label:function(){ return "Paid — date"; }}
+  };
+  var dtPopProject = null, dtPopField = null;
+  function openDatePicker(p, field, anchor){
+    var f = DATE_FIELDS[field]; if(!f) return;
+    var pop = document.getElementById("dtPop");
+    dtPopProject = p; dtPopField = field;
+    var v = p[f.key] || (f.time ? nowLocalInput() : todayStr());
+    document.getElementById("dtPopDate").value = v.slice(0,10);
+    document.getElementById("dtPopTime").value = f.time ? (v.slice(11,16) || "12:00") : "";
+    document.getElementById("dtPopTitle").textContent = (projName(p)||"Untitled") + " · " + f.label(p);
+    document.getElementById("dtPopClear").hidden = !(f.clear && p[f.key]);
+    pop.classList.toggle("date-only", !f.time);
+    pop.hidden = false;
+    var r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    var left = Math.min(Math.max(12, r.left + r.width/2 - w/2), window.innerWidth - w - 12);
+    var top = r.bottom + 8; if(top + h > window.innerHeight - 12) top = Math.max(12, r.top - h - 8);
+    pop.style.left = left + "px"; pop.style.top = top + "px";
+    setTimeout(function(){ document.getElementById("dtPopDate").focus(); }, 30);
+  }
+  function openSessionPicker(p, anchor){ openDatePicker(p, "session", anchor); }
+  function closeSessionPicker(){ document.getElementById("dtPop").hidden = true; dtPopProject = null; dtPopField = null; }
+  function applyDatePicker(value){
+    var p = dtPopProject, f = DATE_FIELDS[dtPopField]; if(!p || !f) return;
+    p[f.key] = value;
+    closeSessionPicker();
+    renderAll(); save(); cloudUpsert(p);
+  }
+  function saveSessionPicker(){
+    var f = DATE_FIELDS[dtPopField]; if(!f) return;
+    var d = document.getElementById("dtPopDate").value;
+    if(!d){ document.getElementById("dtPopDate").focus(); return; }
+    if(f.time){ var t = document.getElementById("dtPopTime").value || "00:00"; applyDatePicker(d + "T" + t.slice(0,5)); }
+    else applyDatePicker(d);
+  }
+
   /* ---------- invoice in one click (based on invoice/invoice-template.html) ---------- */
   function nextInvoiceNo(){
     var yr = String(new Date().getFullYear()), max = 0;
@@ -2054,6 +2132,18 @@
     document.getElementById("yearPrev").onclick = function(){ ui.yearView -= 1; renderStats(); };
     document.getElementById("yearNext").onclick = function(){ ui.yearView += 1; renderStats(); };
 
+    document.getElementById("dtPopSave").addEventListener("click", saveSessionPicker);
+    document.getElementById("dtPopCancel").addEventListener("click", closeSessionPicker);
+    document.getElementById("dtPopClear").addEventListener("click", function(){ applyDatePicker(""); });
+    document.getElementById("dtPop").addEventListener("keydown", function(e){
+      if(e.key==="Enter"){ e.preventDefault(); saveSessionPicker(); }
+      else if(e.key==="Escape"){ e.stopPropagation(); closeSessionPicker(); }
+    });
+    document.addEventListener("mousedown", function(e){
+      var pop = document.getElementById("dtPop");
+      if(!pop.hidden && !pop.contains(e.target) && !e.target.closest('[data-act="session-edit"],[data-act="date-edit"],[data-act="due-set"]')) closeSessionPicker();
+    });
+    window.addEventListener("resize", closeSessionPicker);
     document.getElementById("attention").addEventListener("click", function(e){
       if(e.target.closest("#attToggle")){ attOpen = !attOpen; renderAttention(); return; }
       var it = e.target.closest(".att-item[data-id]"); if(!it) return;
@@ -2087,12 +2177,12 @@
         return;
       }
       if(act==="expected"){ p.expected = !p.expected; renderAll(); save(); cloudUpsert(p); return; }
-      if(act==="due-set"){ p.due = todayStr(); renderAll(); save(); cloudUpsert(p);
-        var pid=p.id; setTimeout(function(){ var inp=document.querySelector('.row[data-id="'+pid+'"] input[data-act="due-dt"]'); if(inp&&inp.showPicker){ try{ inp.showPicker(); }catch(_e){} } }, 40);
-        return; }
+      if(act==="due-set"){ openDatePicker(p, "due", actBtn); return; }
+      if(act==="date-edit"){ openDatePicker(p, actBtn.dataset.field, actBtn); return; }
       if(act==="due-clear"){ p.due = ""; renderAll(); save(); cloudUpsert(p); return; }
       if(act==="pay"){ markPaid(p, !p.paid); renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
+      else if(act==="session-edit"){ openSessionPicker(p, actBtn); }
       else if(act==="invoice"){ openInvoice(p); }
       else if(act==="del"){
         pendingDelete = p.id;
