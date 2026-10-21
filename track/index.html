@@ -2106,7 +2106,7 @@
       var p = state.projects.find(function(x){return x.id===row.dataset.id;});
       if(!p) return;
       var dt = e.target.closest('input[data-act="session-dt"]');
-      if(dt){ p.sessionAt = dt.value; save(); cloudUpsert(p); return; }
+      if(dt){ p.sessionAt = dt.value; renderAll(); save(); cloudUpsert(p); return; }   // re-render so the new time shows right away
       var due = e.target.closest('input[data-act="due-dt"]');
       if(due){ p.due = due.value; renderAll(); save(); cloudUpsert(p); return; }
       var sd = e.target.closest('input[data-act="stage-date"]');
