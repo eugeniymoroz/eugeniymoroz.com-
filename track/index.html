@@ -255,7 +255,23 @@
   .paid-toggle.unpaid .k#paidLabel{color:var(--red)}
 
   /* ---------- MONEY PANEL (v3: one hero number, explained cards) ---------- */
-  .lg-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .lg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .lg-period{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .lg-period .lbl{margin-right:6px}
+  .lg-sel{appearance:none;-webkit-appearance:none;background:transparent;border:1px solid var(--line);border-radius:99px;
+    padding:5px 26px 5px 12px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;color:var(--ink);cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238a8a90' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 9px center;transition:border-color .2s var(--ease)}
+  .lg-sel:hover,.lg-sel:focus{border-color:var(--grey);outline:none}
+  .lg-sel:disabled{opacity:.4;cursor:default}
+  @media (max-width:600px){
+    .lg-head{flex-wrap:nowrap;gap:6px}
+    .lg-period{flex-wrap:nowrap;gap:4px;min-width:0}
+    .lg-period .lbl{display:none}
+    .lg-sel{font-size:10px;letter-spacing:.06em;padding:5px 20px 5px 9px;background-position:right 6px center}
+    .lg-period .ynav{width:26px;height:26px;flex:0 0 auto}
+    .lg-head .earned-cur{flex:0 0 auto}
+  }
   .lg-hero{margin-top:14px}
   .lg-k{font-size:12px;color:var(--muted);letter-spacing:.04em}
   .lg-hero .earned{margin-top:6px}
@@ -709,7 +725,20 @@
 
   <div class="ledger" id="ledger" hidden>
     <div class="lg-head">
-      <span class="lbl">Money · <span id="earnedPeriod"></span></span>
+      <div class="lg-period">
+        <span class="lbl">Money</span>
+        <button class="ynav" id="lgPrev" aria-label="Previous month">‹</button>
+        <select class="lg-sel" id="lgMonth" aria-label="Month">
+          <option value="01">January</option><option value="02">February</option>
+          <option value="03">March</option><option value="04">April</option>
+          <option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option>
+          <option value="09">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <select class="lg-sel" id="lgYear" aria-label="Year"></select>
+        <button class="ynav" id="lgNext" aria-label="Next month">›</button>
+      </div>
       <select class="inline-select cur-inline earned-cur" id="currency" aria-label="View currency">
         <option value="USD">$ USD</option>
         <option value="UAH">₴ UAH</option>
@@ -1140,6 +1169,12 @@
   function syncMonthUI(){
     var ys=document.getElementById("yearJump"), ms=document.getElementById("monthJump");
     if(!ys||!ms) return;
+    var ly=document.getElementById("lgYear"), lm=document.getElementById("lgMonth");
+    if(ly && lm){
+      if(ly.innerHTML !== ys.innerHTML) ly.innerHTML = ys.innerHTML;     // same year list (+ All time)
+      if(ui.month){ ly.value=ui.month.slice(0,4); lm.value=ui.month.slice(5); lm.disabled=false; }
+      else { ly.value="all"; lm.disabled=true; }
+    }
     if(ui.month){ ys.value=ui.month.slice(0,4); ms.value=ui.month.slice(5); ms.disabled=false; }
     else { ys.value="all"; ms.disabled=true; }
   }
@@ -2184,6 +2219,27 @@
     statsBtn.onclick = function(){ backToCurrentMonth(); setPanel("stats"); renderAll(); };
 
     document.getElementById("monthJump").onchange = applyMonthYear;
+    // month / year right in the money panel header
+    function setMonthFromPanel(){
+      var y=document.getElementById("lgYear").value, m=document.getElementById("lgMonth").value;
+      ui.month = (y==="all") ? null : (y + "-" + m);
+      syncMonthUI(); renderAll();
+    }
+    document.getElementById("lgMonth").onchange = setMonthFromPanel;
+    document.getElementById("lgYear").onchange = setMonthFromPanel;
+    function stepMonth(d){
+      ui.month = shiftMonth(ui.month || currentYM(), d);
+      var y = ui.month.slice(0,4), ys = document.getElementById("yearJump");
+      if(![].some.call(ys.options, function(o){ return o.value===y; })){   // add a year that has no projects yet
+        ys.insertAdjacentHTML("afterbegin", '<option value="'+y+'">'+y+'</option>');
+        [].slice.call(ys.options).filter(function(o){ return o.value!=="all"; })
+          .sort(function(a,b){ return b.value.localeCompare(a.value); })
+          .forEach(function(o){ ys.insertBefore(o, ys.querySelector('option[value="all"]')); });
+      }
+      syncMonthUI(); renderAll();
+    }
+    document.getElementById("lgPrev").onclick = function(){ stepMonth(-1); };
+    document.getElementById("lgNext").onclick = function(){ stepMonth(1); };
     document.getElementById("yearJump").onchange = applyMonthYear;
 
     document.getElementById("statsPanel").addEventListener("click", function(e){
