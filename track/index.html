@@ -254,6 +254,52 @@
   .paid-toggle .k#paidLabel{color:var(--white)}
   .paid-toggle.unpaid .k#paidLabel{color:var(--red)}
 
+  /* ---------- MONEY PANEL (v3: one hero number, explained cards) ---------- */
+  .lg-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .lg-hero{margin-top:14px}
+  .lg-k{font-size:12px;color:var(--muted);letter-spacing:.04em}
+  .lg-hero .earned{margin-top:6px}
+  .lg-sub{margin-top:10px;font-size:13px;color:var(--ink);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .lg-sub .chg{font-size:11px;padding:2px 8px;border-radius:99px;font-variant-numeric:tabular-nums}
+  .lg-sub .chg.up{color:var(--green);background:var(--green-soft)}
+  .lg-sub .chg.down{color:var(--red);background:var(--red-soft)}
+  .lg-hero .fx{margin-top:6px;font-size:12px;opacity:.75}
+  .lg-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:24px}
+  .lg-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;cursor:pointer;
+    background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;font:inherit;color:inherit;
+    transition:border-color .2s var(--ease),background .2s var(--ease)}
+  .lg-card:hover{border-color:#3a3a40;background:#0e0e10}
+  .lg-ck{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--ink)}
+  .lg-ck .dot{width:7px;height:7px}
+  .lg-cv{font-family:var(--display);font-weight:600;font-size:22px;color:var(--white);font-variant-numeric:tabular-nums;line-height:1.1}
+  .lg-cs{font-size:11.5px;line-height:1.4;color:var(--muted)}
+  .lg-card.muted .lg-cv{color:var(--muted)}
+  .lg-card.zero .lg-cv{color:#4a4a50}
+  .lg-card.alert{border-color:rgba(217,108,97,.45)}
+  .lg-card.alert .lg-cs{color:var(--red)}
+  .lg-flow{margin-top:22px}
+  .lg-flow[hidden]{display:none}
+  .lg-flow .distbar{margin-top:0;height:10px;border-radius:99px}
+  .lg-flow .distbar span{min-width:6px}
+  .lg-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+  .lg-legend span{display:inline-flex;align-items:center;gap:6px}
+  .lg-legend b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  .lg-legend .dot{width:7px;height:7px}
+  .lg-foot{display:flex;justify-content:space-between;gap:16px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+  .lg-fi{display:flex;flex-direction:column;gap:3px}
+  .lg-right{text-align:right;align-items:flex-end}
+  .lg-fk{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .lg-fv{font-family:var(--display);font-weight:700;font-size:20px;color:var(--white);font-variant-numeric:tabular-nums}
+  .lg-fs{font-size:11px;color:#5a5a60}
+  @media (max-width:760px){ .lg-cards{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:600px){
+    .lg-cards{gap:8px;margin-top:18px}
+    .lg-card{padding:11px}
+    .lg-cv{font-size:18px}
+    .lg-cs{font-size:10.5px}
+    .lg-fv{font-size:17px}
+  }
+
   /* ---------- KPIS ---------- */
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
   .kpis[hidden]{display:none}
@@ -283,6 +329,8 @@
   .search-input::placeholder{color:#5a5a60}
   .search-hint{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
   .search-hint:empty{display:none}
+  .focus-x{background:none;border:0;color:var(--white);font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;padding:0 0 0 4px}
+  .focus-x:hover{text-decoration:underline}
 
   /* ---------- NEEDS ATTENTION ---------- */
   .attention{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px 8px;margin-bottom:18px}
@@ -660,12 +708,8 @@
   </div>
 
   <div class="ledger" id="ledger" hidden>
-    <div class="ledger-top-line">
-      <div class="lbl">Earned (received)</div>
-      <span class="earned-period" id="earnedPeriod"></span>
-    </div>
-    <div class="earned-line">
-      <div class="earned" id="earned">—</div>
+    <div class="lg-head">
+      <span class="lbl">Money · <span id="earnedPeriod"></span></span>
       <select class="inline-select cur-inline earned-cur" id="currency" aria-label="View currency">
         <option value="USD">$ USD</option>
         <option value="UAH">₴ UAH</option>
@@ -673,50 +717,52 @@
         <option value="GBP">£ GBP</option>
       </select>
     </div>
-    <div class="fx" id="fx"></div>
-    <div class="ledger-details">
-      <div class="rule"></div>
-      <div class="ledger-figs">
-        <div class="subfigs">
-          <div class="subfig">
-            <div class="k" style="color:var(--amber)">Planned</div>
-            <div class="v" id="planned">—</div>
-            <div class="fx-sub" id="fxPlanned"></div>
-          </div>
-          <div class="subfig">
-            <div class="k" style="color:var(--blue)">In progress</div>
-            <div class="v" id="pipeline">—</div>
-            <div class="fx-sub" id="fxPipeline"></div>
-          </div>
-          <div class="subfig">
-            <div class="k" style="color:var(--violet)">Expected</div>
-            <div class="v" id="expected">—</div>
-            <div class="fx-sub" id="fxExpected"></div>
-          </div>
-          <div class="subfig">
-            <div class="k" style="color:var(--emerald)">Completed</div>
-            <div class="v" id="awaiting">—</div>
-            <div class="fx-sub" id="fxAwaiting"></div>
-          </div>
-        </div>
-        <div class="avg-fee paid-toggle" id="paidToggle" role="button" tabindex="0" title="Click to switch Paid / Unpaid">
-          <div class="k" id="paidLabel">Paid</div>
-          <div class="v" id="kPaid">—</div>
-          <div class="fx-sub" id="fxPaid"></div>
-        </div>
-      </div>
+
+    <div class="lg-hero">
+      <div class="lg-k">Received</div>
+      <div class="earned" id="earned">—</div>
+      <div class="lg-sub" id="earnedSub"></div>
+      <div class="fx" id="fx"></div>
+    </div>
+
+    <div class="lg-cards" id="lgCards">
+      <button class="lg-card c-owed" data-go="owed">
+        <span class="lg-ck"><i class="dot" style="background:var(--emerald)"></i>Awaiting payment</span>
+        <span class="lg-cv" id="awaiting">—</span>
+        <span class="lg-cs" id="awaitingSub"></span>
+      </button>
+      <button class="lg-card c-work" data-go="work">
+        <span class="lg-ck"><i class="dot" style="background:var(--blue)"></i>In progress</span>
+        <span class="lg-cv" id="pipeline">—</span>
+        <span class="lg-cs" id="pipelineSub"></span>
+      </button>
+      <button class="lg-card c-def muted" data-go="deferred">
+        <span class="lg-ck"><i class="dot" style="background:var(--violet)"></i>Deferred</span>
+        <span class="lg-cv" id="expected">—</span>
+        <span class="lg-cs" id="expectedSub"></span>
+      </button>
+      <button class="lg-card c-plan muted" data-go="planned">
+        <span class="lg-ck"><i class="dot" style="background:var(--amber)"></i>Planned</span>
+        <span class="lg-cv" id="planned">—</span>
+        <span class="lg-cs" id="plannedSub"></span>
+      </button>
+    </div>
+
+    <div class="lg-flow" id="lgFlow">
       <div class="distbar" id="distbar" aria-hidden="true"></div>
-      <div class="distbar-total">
-        <div class="dt-item">
-          <span class="dt-k">Total value</span>
-          <span class="dt-v" id="total">—</span>
-          <span class="fx-sub" id="fxTotal"></span>
-        </div>
-        <div class="dt-item dt-right">
-          <span class="dt-k">Avg. fee</span>
-          <span class="dt-v" id="kAvg">—</span>
-          <span class="fx-sub" id="fxAvg"></span>
-        </div>
+      <div class="lg-legend" id="lgLegend"></div>
+    </div>
+
+    <div class="lg-foot">
+      <div class="lg-fi">
+        <span class="lg-fk">Month total</span>
+        <span class="lg-fv" id="total">—</span>
+        <span class="lg-fs">received + awaiting + in progress</span>
+      </div>
+      <div class="lg-fi lg-right">
+        <span class="lg-fk">Avg. fee</span>
+        <span class="lg-fv" id="kAvg">—</span>
+        <span class="lg-fs" id="kAvgSub">per project</span>
       </div>
     </div>
   </div>
@@ -980,7 +1026,7 @@
     short:"Short", show:"Show", series:"Series"};
 
   var state = {currency:"USD", projects:[], crewList:{client:[], director:[], dop:[], producer:[]}};
-  var ui = {q:"", stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
+  var ui = {focus:null, q:"", stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
   var editingId = null;
   var pendingDelete = null;
   var started = false;
@@ -1317,13 +1363,15 @@
   function stats(){
     var src = state.projects.filter(inMonth);
     var earned=0, awaiting=0, planned=0, inprog=0, expected=0, active=0, done=0, paidCount=0, claimedCount=0;
+    var nAwait=0, nWork=0, nExp=0, nPlan=0, oldestWait=0, today=todayStr();
     src.forEach(function(p){
       var a = projAmt(p);
       if(p.paid){ earned += a; paidCount++; claimedCount++; }
-      else if(p.expected){ expected += a; }   // deferred payment — not counted in the total
-      else if(p.status==="done"){ awaiting += a; claimedCount++; }
-      else if(p.status==="in_progress"){ inprog += a; claimedCount++; }
-      else { planned += a; }   // planned money is NOT counted
+      else if(p.expected){ expected += a; nExp++; }   // deferred payment — not counted in the total
+      else if(p.status==="done"){ awaiting += a; claimedCount++; nAwait++;
+        if(p.doneAt){ var w = daysBetween(p.doneAt, today); if(w>oldestWait) oldestWait = w; } }
+      else if(p.status==="in_progress"){ inprog += a; claimedCount++; nWork++; }
+      else { planned += a; nPlan++; }   // planned money is NOT counted
       if(p.status==="in_progress") active++;
       if(p.status==="done") done++;
     });
@@ -1331,7 +1379,8 @@
     var total = inprog + awaiting + earned;
     return {earned:earned, awaiting:awaiting, planned:planned, inprog:inprog, expected:expected,
       pipeline:inprog, total:total,
-      count:src.length, claimedCount:claimedCount, active:active, done:done, paidCount:paidCount};
+      count:src.length, claimedCount:claimedCount, active:active, done:done, paidCount:paidCount,
+      nAwait:nAwait, nWork:nWork, nExp:nExp, nPlan:nPlan, oldestWait:oldestWait};
   }
 
   function renderStats(){
@@ -1341,31 +1390,43 @@
     earnedEl.classList.toggle("locked", !revealed);
     var epEl = document.getElementById("earnedPeriod");
     if(epEl) epEl.textContent = monthLabelText(ui.month);
-    document.getElementById("planned").textContent = showMoney(s.planned);
-    document.getElementById("pipeline").textContent = showMoney(s.inprog);
-    document.getElementById("awaiting").textContent = showMoney(s.awaiting);
-    document.getElementById("expected").textContent = showMoney(s.expected);
-    document.getElementById("total").textContent = showMoney(s.total);
     document.getElementById("kCount").textContent = s.count;
     document.getElementById("kActive").textContent = s.active;
     document.getElementById("kDone").textContent = s.done;
+
+    function plural(n, one, many){ return n + " " + (n===1 ? one : many); }
+    // hero line: how many payments + change vs the previous month
+    var sub = s.paidCount ? plural(s.paidCount, "payment", "payments") : "No payments yet";
+    var chg = "";
+    if(ui.month){
+      var prevYM = shiftMonth(ui.month, -1), prev = 0;
+      state.projects.forEach(function(p){ if(p.paid && projMonth(p)===prevYM) prev += projAmt(p); });
+      if(prev > 0 && s.earned > 0){
+        var pct = Math.round((s.earned - prev)/prev*100);
+        var mname = new Date(+prevYM.slice(0,4), +prevYM.slice(5,7)-1, 1).toLocaleDateString("en-US",{month:"long"});
+        chg = '<span class="chg '+(pct>=0?"up":"down")+'">'+(pct>=0?"+":"")+pct+'% vs '+esc(mname)+'</span>';
+      }
+    }
+    document.getElementById("earnedSub").innerHTML = esc(sub) + chg;
+
+    // the four cards — each says what it means
+    function card(id, val, n, text, zeroText){
+      document.getElementById(id).textContent = showMoney(val);
+      document.getElementById(id+"Sub").textContent = n ? text : zeroText;
+      document.getElementById(id).closest(".lg-card").classList.toggle("zero", !n);
+    }
+    card("awaiting", s.awaiting, s.nAwait,
+      plural(s.nAwait, "project", "projects") + " finished, not paid yet" + (s.oldestWait ? " · oldest " + s.oldestWait + "d" : ""),
+      "Nothing owed — all finished work is paid");
+    document.getElementById("awaiting").closest(".lg-card").classList.toggle("alert", s.oldestWait >= PAY_WAIT_DAYS);
+    card("pipeline", s.inprog, s.nWork, plural(s.nWork, "project", "projects") + " in work — paid when done", "Nothing in work right now");
+    card("expected", s.expected, s.nExp, plural(s.nExp, "project", "projects") + " · paid later, not in totals", "No deferred payments");
+    card("planned", s.planned, s.nPlan, plural(s.nPlan, "project", "projects") + " ahead · not in totals yet", "Nothing planned");
+
+    // totals
+    document.getElementById("total").textContent = showMoney(s.total);
     document.getElementById("kAvg").textContent = !s.claimedCount ? "—" : showMoney(s.total/s.claimedCount);
-
-    // Paid / Unpaid toggle (top-right) — Unpaid = claimed but not yet paid (In progress + Completed)
-    var unpaid = s.awaiting + s.inprog;
-    var isUnpaid = ui.paidView === "unpaid";
-    var pv = isUnpaid ? unpaid : s.earned;
-    document.getElementById("paidLabel").textContent = isUnpaid ? "Unpaid" : "Paid";
-    document.getElementById("kPaid").textContent = showMoney(pv);
-    document.getElementById("paidToggle").classList.toggle("unpaid", isUnpaid);
-    setFxSub("fxPaid", pv);
-
-    setFxSub("fxPlanned", s.planned);
-    setFxSub("fxPipeline", s.inprog);
-    setFxSub("fxAwaiting", s.awaiting);
-    setFxSub("fxExpected", s.expected);
-    setFxSub("fxTotal", s.total);
-    setFxSub("fxAvg", s.claimedCount ? s.total/s.claimedCount : 0);
+    document.getElementById("kAvgSub").textContent = s.claimedCount ? "over " + plural(s.claimedCount, "project", "projects") : "per project";
 
     // Yearly — received (paid) income summed across the selected year
     var yearForView = String(ui.yearView);
@@ -1379,20 +1440,17 @@
     document.getElementById("yearly").textContent = showMoney(yearly);
     setFxSub("fxYearly", yearly);
 
-    var bar = document.getElementById("distbar");
-    var sum = s.inprog + s.awaiting + s.earned;   // claimed only — planned excluded
-    if(sum>0 && revealed){
-      function seg(color, val, extra, minpx){
-        if(val<=0) return '';
-        var w = val/sum*100;
-        var mw = ';min-width:'+(minpx||58)+'px';
-        return '<span style="background:'+color+';width:'+w+'%'+mw+'"><em>'+esc(chartMoney(val)+(extra||""))+'</em></span>';
-      }
-      bar.innerHTML =
-        seg('var(--blue)', s.inprog, '') +
-        seg('var(--emerald)', s.awaiting, '') +
-        seg('var(--white)', s.earned, '  ·  '+s.paidCount+'×', 72);
-    } else { bar.innerHTML=""; }
+    // flow bar: where this month's money is — received / awaiting / in progress
+    var bar = document.getElementById("distbar"), legend = document.getElementById("lgLegend"), flow = document.getElementById("lgFlow");
+    var sum = s.inprog + s.awaiting + s.earned;
+    if(sum > 0){
+      var parts = [["Received", s.earned, "var(--white)"], ["Awaiting", s.awaiting, "var(--emerald)"], ["In progress", s.inprog, "var(--blue)"]];
+      bar.innerHTML = parts.map(function(x){ return x[1]>0 ? '<span style="background:'+x[2]+';width:'+(x[1]/sum*100)+'%"></span>' : ''; }).join("");
+      legend.innerHTML = parts.map(function(x){
+        return x[1]>0 ? '<span><i class="dot" style="background:'+x[2]+'"></i>'+x[0]+' <b>'+esc(revealed ? chartMoney(x[1]) : maskFig())+'</b> · '+Math.round(x[1]/sum*100)+'%</span>' : '';
+      }).join("");
+      flow.hidden = false;
+    } else { bar.innerHTML = ""; legend.innerHTML = ""; flow.hidden = true; }
 
     renderFx(s.earned);
     renderStatsPanel();
@@ -1598,7 +1656,7 @@
     }).join("   ·   ");
   }
   function setFxSub(id, valCur){
-    var el = document.getElementById(id); if(el) el.textContent = revealed ? fxOthers(valCur) : "";
+    var el = document.getElementById(id); if(el) el.textContent = (revealed && Number(valCur)) ? fxOthers(valCur) : "";
   }
   function renderFx(earnedCur){
     if(earnedCur==null) earnedCur = stats().earned;
@@ -1612,6 +1670,13 @@
         var hay = [projName(p), p.client, p.director, p.dop, p.producer, p.notes].join(" ").toLowerCase();
         if(hay.indexOf(q) === -1) return false;
       } else if(!inMonth(p)) return false;
+      if(ui.focus){   // a money card was clicked — show exactly that group
+        var open = !p.paid && !p.expected;
+        if(ui.focus==="owed" && !(open && p.status==="done")) return false;
+        if(ui.focus==="work" && !(open && p.status==="in_progress")) return false;
+        if(ui.focus==="planned" && !(open && p.status==="planned")) return false;
+        if(ui.focus==="deferred" && !(!p.paid && p.expected)) return false;
+      }
       if(ui.stage!=="all" && p.status!==ui.stage) return false;
       if(ui.pay==="paid" && !p.paid) return false;
       if(ui.pay==="unpaid" && p.paid) return false;
@@ -1744,7 +1809,11 @@
     var list = document.getElementById("list");
     var items = filtered();
     var hint = document.getElementById("searchHint");
-    if(hint) hint.textContent = ui.q.trim() ? (items.length + (items.length===1?" match":" matches") + " · all months") : "";
+    var FOCUS = {owed:"Awaiting payment", work:"In progress", deferred:"Deferred", planned:"Planned"};
+    if(hint){
+      if(ui.focus) hint.innerHTML = 'Showing: '+FOCUS[ui.focus]+' · '+items.length+' <button class="focus-x" id="focusClear" title="Show all">× show all</button>';
+      else hint.textContent = ui.q.trim() ? (items.length + (items.length===1?" match":" matches") + " · all months") : "";
+    }
     renderAttention();
     var foot = document.getElementById("footCount");
 
@@ -2144,6 +2213,18 @@
       if(!pop.hidden && !pop.contains(e.target) && !e.target.closest('[data-act="session-edit"],[data-act="date-edit"],[data-act="due-set"]')) closeSessionPicker();
     });
     window.addEventListener("resize", closeSessionPicker);
+    document.getElementById("lgCards").addEventListener("click", function(e){
+      var c = e.target.closest(".lg-card[data-go]"); if(!c) return;
+      ui.focus = (ui.focus === c.dataset.go) ? null : c.dataset.go;
+      ui.stage = "all"; ui.pay = "all";
+      [].forEach.call(document.querySelectorAll("#stageChips .chip"), function(x){ x.classList.toggle("on", x.dataset.stage==="all"); });
+      [].forEach.call(document.querySelectorAll("#payChips .chip"), function(x){ x.classList.remove("on"); });
+      renderList();
+      var sb = document.querySelector(".searchbar"); if(sb && ui.focus) sb.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+    document.getElementById("searchHint").addEventListener("click", function(e){
+      if(e.target.closest("#focusClear")){ ui.focus = null; renderList(); }
+    });
     document.getElementById("attention").addEventListener("click", function(e){
       if(e.target.closest("#attToggle")){ attOpen = !attOpen; renderAttention(); return; }
       var it = e.target.closest(".att-item[data-id]"); if(!it) return;
@@ -2151,14 +2232,14 @@
     });
     document.getElementById("stageChips").addEventListener("click", function(e){
       var b = e.target.closest(".chip"); if(!b) return;
-      ui.stage = b.dataset.stage;
+      ui.stage = b.dataset.stage; ui.focus = null;
       [].forEach.call(this.querySelectorAll(".chip"), function(c){ c.classList.toggle("on", c===b); });
       renderList();
     });
     document.getElementById("payChips").addEventListener("click", function(e){
       var b = e.target.closest(".chip"); if(!b) return;
       var v = b.dataset.pay;
-      ui.pay = (ui.pay===v) ? "all" : v;
+      ui.pay = (ui.pay===v) ? "all" : v; ui.focus = null;
       [].forEach.call(this.querySelectorAll(".chip"), function(c){ c.classList.toggle("on", c.dataset.pay===ui.pay); });
       renderList();
     });
