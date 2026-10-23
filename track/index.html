@@ -71,6 +71,16 @@
   .brand h1{font-family:var(--display);font-weight:600;font-size:30px;letter-spacing:.01em;text-transform:uppercase;margin:0;line-height:1.05;color:var(--white)}
   .brand p{margin:8px 0 0;color:var(--muted);font-size:11px;letter-spacing:.24em;text-transform:uppercase}
   .top-actions{display:flex;align-items:center;gap:10px}
+  .topbar{position:relative}
+  .now-clock{position:absolute;top:-10px;right:0;display:flex;align-items:baseline;gap:10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .now-clock .nc-time{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.04em;color:var(--white);font-variant-numeric:tabular-nums}
+  .now-clock .nc-sep{color:#3a3a40}
+  .topbar{padding-top:4px}
+  @media (max-width:600px){
+    .now-clock{gap:7px;font-size:10px;letter-spacing:.14em;flex-direction:column;align-items:flex-end;gap:3px}
+    .now-clock .nc-sep{display:none}
+    .now-clock .nc-time{font-size:15px}
+  }
   select,input,textarea{font-family:inherit;color:var(--ink)}
   .cur-select{
     appearance:none;-webkit-appearance:none;background:var(--surface);border:1px solid var(--line);
@@ -195,7 +205,12 @@
   .sess-btn .dt-disp{max-width:220px;overflow:hidden;text-overflow:ellipsis}
   /* sessions editor */
   .sess-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-  .sess-row{display:grid;grid-template-columns:1.3fr .9fr .9fr 1.4fr auto;gap:6px;align-items:center}
+  .sess-row{display:grid;grid-template-columns:1.1fr .8fr 1.5fr .8fr 1.2fr auto;gap:6px;align-items:center}
+  .sess-tz{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.45;padding:0 2px}
+  .sess-tz:empty{display:none}
+  .sess-tz b{color:var(--ink);font-weight:600}
+  .tz-warn{display:block;color:var(--amber);margin-top:2px}
+  .tz-note{color:var(--muted);font-weight:400}
   .sess-row input,.sess-row select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
     padding:9px 9px;font-size:13.5px;color:var(--ink);color-scheme:dark;font-family:inherit}
   .sess-row select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:26px;
@@ -209,8 +224,8 @@
   .sess-add{width:100%;border-style:dashed}
   .sess-hint{font-size:11.5px;color:#5a5a60;margin-top:10px}
   @media (max-width:600px){
-    .sess-row{grid-template-columns:1fr 1fr auto;grid-template-areas:"d t x" "m n n";padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
-    .sess-row .f-d{grid-area:d}.sess-row .f-t{grid-area:t}.sess-row .f-m{grid-area:m}.sess-row .f-n{grid-area:n}.sess-row .sess-x{grid-area:x}
+    .sess-row{grid-template-columns:1fr 1fr auto;grid-template-areas:"d t x" "z z z" "m n n" "h h h";padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+    .sess-row .f-d{grid-area:d}.sess-row .f-t{grid-area:t}.sess-row .f-z{grid-area:z}.sess-row .f-m{grid-area:m}.sess-row .f-n{grid-area:n}.sess-row .sess-x{grid-area:x}.sess-row .sess-tz{grid-area:h}
   }
   /* session picker */
   button.session-when{-webkit-appearance:none;appearance:none;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit}
@@ -780,6 +795,7 @@
       <h1>Projects</h1>
       <p>Work · Payments · Earnings</p>
     </div>
+    <div class="now-clock" id="nowClock" aria-live="off"></div>
     <div class="top-actions">
       <span class="saving" id="saving">Saved</span>
       <button class="btn" id="statsToggle" aria-expanded="false">Statistics</button>
@@ -1095,11 +1111,11 @@
 
 <!-- Sessions of a project: edit several, apply on Save -->
 <div class="overlay" id="sessOverlay">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sessTitle" style="max-width:620px">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sessTitle" style="max-width:820px">
     <h2 id="sessTitle">Sessions</h2>
     <div class="sess-list" id="sessList"></div>
     <button type="button" class="btn sess-add" id="sessAdd">+ Add session</button>
-    <div class="sess-hint">Each session gets its own calendar event with reminders 8 h and 1 h before.</div>
+    <div class="sess-hint">Date and time are yours (Kyiv). Client abroad? Pick their time zone — their time is worked out automatically for that exact date, clock changes included. Each session gets its own calendar event with reminders 8 h and 1 h before.</div>
     <div class="modal-actions">
       <button class="btn" id="sessCancel">Cancel</button>
       <button class="btn btn-primary" id="sessSave">Save</button>
@@ -1423,7 +1439,9 @@
     pending[id] = {op:"delete", v:++pendingVer}; savePending(); flushPending();
   }
   function rowFromSession(x){
-    return { id:x.id, project_id:x.projectId, starts_at:x.startsAt, mode:x.mode==="offline"?"offline":"online", note:x.note||"" };
+    var tz = isClientTz(x.tz) ? x.tz : null;
+    return { id:x.id, project_id:x.projectId, starts_at:x.startsAt, mode:x.mode==="offline"?"offline":"online", note:x.note||"",
+      tz: tz, tz_at: tz ? (x.tzAt||null) : null };
   }
   function cloudUpsertSession(x){ pending["s:"+x.id] = {op:"upsert", v:++pendingVer}; savePending(); flushPending(); }
   function cloudDeleteSession(id){ pending["s:"+id] = {op:"delete", v:++pendingVer}; savePending(); flushPending(); }
@@ -1490,10 +1508,16 @@
   }
   function loadSessionsFromCloud(){
     if(!sb || !session) return;
-    sb.from("project_sessions").select("id,project_id,starts_at,mode,note").order("starts_at",{ascending:true}).then(function(res){
+    sb.from("project_sessions").select("id,project_id,starts_at,mode,note,tz,tz_at").order("starts_at",{ascending:true}).then(function(res){
       if(res.error){ console.error("load sessions", res.error); return; }
       var local = {}; state.sessions.forEach(function(x){ local[x.id]=x; });
-      var cloud = (res.data||[]).map(function(r){ return {id:r.id, projectId:r.project_id, startsAt:r.starts_at, mode:r.mode, note:r.note||""}; });
+      var cloud = (res.data||[]).map(function(r){ return {id:r.id, projectId:r.project_id, startsAt:r.starts_at, mode:r.mode, note:r.note||"", tz:r.tz||"", tzAt:r.tz_at||""}; });
+      // your Kyiv time is the anchor; the client's time is derived from it (fixes itself if zone rules change)
+      cloud.forEach(function(x){
+        if(!isClientTz(x.tz) || pending["s:"+x.id]) return;
+        var c = tzConvert(x.startsAt, KYIV_TZ, x.tz);
+        if(c && c !== x.tzAt){ x.tzAt = c; local[x.id] = x; cloudUpsertSession(x); }
+      });
       var merged = cloud.filter(function(x){ var k=pending["s:"+x.id]; return !(k && k.op==="delete"); })
         .map(function(x){ var k=pending["s:"+x.id]; return (k && k.op==="upsert" && local[x.id]) ? local[x.id] : x; });
       Object.keys(pending).forEach(function(k){
@@ -1918,6 +1942,86 @@
     return dt.toLocaleString("en-US",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false});
   }
   function isMobileWidth(){ return window.innerWidth <= 600; }
+
+  /* ---------- clock in the corner: where you are now (device time zone) ---------- */
+  var TZ_CC = "AD:Europe/Andorra|AE:Asia/Dubai|AF:Asia/Kabul|AG:America/Antigua|AI:America/Anguilla|AL:Europe/Tirane|AM:Asia/Yerevan|AO:Africa/Luanda|AQ:Antarctica/McMurdo,Antarctica/Casey,Antarctica/Davis,Antarctica/DumontDUrville,Antarctica/Mawson,Antarctica/Palmer,Antarctica/Rothera,Antarctica/Syowa,Antarctica/Troll,Antarctica/Vostok|AR:America/Argentina/Buenos_Aires,America/Argentina/Cordoba,America/Argentina/Salta,America/Argentina/Jujuy,America/Argentina/Tucuman,America/Argentina/Catamarca,America/Argentina/La_Rioja,America/Argentina/San_Juan,America/Argentina/Mendoza,America/Argentina/San_Luis,America/Argentina/Rio_Gallegos,America/Argentina/Ushuaia,America/Buenos_Aires|AS:Pacific/Pago_Pago|AT:Europe/Vienna|AU:Australia/Lord_Howe,Antarctica/Macquarie,Australia/Hobart,Australia/Melbourne,Australia/Sydney,Australia/Broken_Hill,Australia/Brisbane,Australia/Lindeman,Australia/Adelaide,Australia/Darwin,Australia/Perth,Australia/Eucla|AW:America/Aruba|AX:Europe/Mariehamn|AZ:Asia/Baku|BA:Europe/Sarajevo|BB:America/Barbados|BD:Asia/Dhaka|BE:Europe/Brussels|BF:Africa/Ouagadougou|BG:Europe/Sofia|BH:Asia/Bahrain|BI:Africa/Bujumbura|BJ:Africa/Porto-Novo|BL:America/St_Barthelemy|BM:Atlantic/Bermuda|BN:Asia/Brunei|BO:America/La_Paz|BQ:America/Kralendijk|BR:America/Noronha,America/Belem,America/Fortaleza,America/Recife,America/Araguaina,America/Maceio,America/Bahia,America/Sao_Paulo,America/Campo_Grande,America/Cuiaba,America/Santarem,America/Porto_Velho,America/Boa_Vista,America/Manaus,America/Eirunepe,America/Rio_Branco|BS:America/Nassau|BT:Asia/Thimphu|BW:Africa/Gaborone|BY:Europe/Minsk|BZ:America/Belize|CA:America/St_Johns,America/Halifax,America/Glace_Bay,America/Moncton,America/Goose_Bay,America/Blanc-Sablon,America/Toronto,America/Iqaluit,America/Atikokan,America/Winnipeg,America/Resolute,America/Rankin_Inlet,America/Regina,America/Swift_Current,America/Edmonton,America/Cambridge_Bay,America/Inuvik,America/Vancouver,America/Creston,America/Dawson_Creek,America/Fort_Nelson,America/Whitehorse,America/Dawson|CC:Indian/Cocos|CD:Africa/Kinshasa,Africa/Lubumbashi|CF:Africa/Bangui|CG:Africa/Brazzaville|CH:Europe/Zurich|CI:Africa/Abidjan|CK:Pacific/Rarotonga|CL:America/Santiago,America/Coyhaique,America/Punta_Arenas,Pacific/Easter|CM:Africa/Douala|CN:Asia/Shanghai,Asia/Urumqi|CO:America/Bogota|CR:America/Costa_Rica|CU:America/Havana|CV:Atlantic/Cape_Verde|CW:America/Curacao|CX:Indian/Christmas|CY:Asia/Nicosia,Asia/Famagusta|CZ:Europe/Prague|DE:Europe/Berlin,Europe/Busingen|DJ:Africa/Djibouti|DK:Europe/Copenhagen|DM:America/Dominica|DO:America/Santo_Domingo|DZ:Africa/Algiers|EC:America/Guayaquil,Pacific/Galapagos|EE:Europe/Tallinn|EG:Africa/Cairo|EH:Africa/El_Aaiun|ER:Africa/Asmara|ES:Europe/Madrid,Africa/Ceuta,Atlantic/Canary|ET:Africa/Addis_Ababa|FI:Europe/Helsinki|FJ:Pacific/Fiji|FK:Atlantic/Stanley|FM:Pacific/Chuuk,Pacific/Pohnpei,Pacific/Kosrae|FO:Atlantic/Faroe|FR:Europe/Paris|GA:Africa/Libreville|GB:Europe/London,GB|GD:America/Grenada|GE:Asia/Tbilisi|GF:America/Cayenne|GG:Europe/Guernsey|GH:Africa/Accra|GI:Europe/Gibraltar|GL:America/Nuuk,America/Danmarkshavn,America/Scoresbysund,America/Thule|GM:Africa/Banjul|GN:Africa/Conakry|GP:America/Guadeloupe|GQ:Africa/Malabo|GR:Europe/Athens|GS:Atlantic/South_Georgia|GT:America/Guatemala|GU:Pacific/Guam|GW:Africa/Bissau|GY:America/Guyana|HK:Asia/Hong_Kong|HN:America/Tegucigalpa|HR:Europe/Zagreb|HT:America/Port-au-Prince|HU:Europe/Budapest|ID:Asia/Jakarta,Asia/Pontianak,Asia/Makassar,Asia/Jayapura|IE:Europe/Dublin|IL:Asia/Jerusalem|IM:Europe/Isle_of_Man|IN:Asia/Kolkata,Asia/Calcutta|IO:Indian/Chagos|IQ:Asia/Baghdad|IR:Asia/Tehran|IS:Atlantic/Reykjavik|IT:Europe/Rome|JE:Europe/Jersey|JM:America/Jamaica|JO:Asia/Amman|JP:Asia/Tokyo|KE:Africa/Nairobi|KG:Asia/Bishkek|KH:Asia/Phnom_Penh|KI:Pacific/Tarawa,Pacific/Kanton,Pacific/Kiritimati|KM:Indian/Comoro|KN:America/St_Kitts|KP:Asia/Pyongyang|KR:Asia/Seoul|KW:Asia/Kuwait|KY:America/Cayman|KZ:Asia/Almaty,Asia/Qyzylorda,Asia/Qostanay,Asia/Aqtobe,Asia/Aqtau,Asia/Atyrau,Asia/Oral|LA:Asia/Vientiane|LB:Asia/Beirut|LC:America/St_Lucia|LI:Europe/Vaduz|LK:Asia/Colombo|LR:Africa/Monrovia|LS:Africa/Maseru|LT:Europe/Vilnius|LU:Europe/Luxembourg|LV:Europe/Riga|LY:Africa/Tripoli|MA:Africa/Casablanca|MC:Europe/Monaco|MD:Europe/Chisinau|ME:Europe/Podgorica|MF:America/Marigot|MG:Indian/Antananarivo|MH:Pacific/Majuro,Pacific/Kwajalein|MK:Europe/Skopje|ML:Africa/Bamako|MM:Asia/Yangon,Asia/Rangoon|MN:Asia/Ulaanbaatar,Asia/Hovd|MO:Asia/Macau|MP:Pacific/Saipan|MQ:America/Martinique|MR:Africa/Nouakchott|MS:America/Montserrat|MT:Europe/Malta|MU:Indian/Mauritius|MV:Indian/Maldives|MW:Africa/Blantyre|MX:America/Mexico_City,America/Cancun,America/Merida,America/Monterrey,America/Matamoros,America/Chihuahua,America/Ciudad_Juarez,America/Ojinaga,America/Mazatlan,America/Bahia_Banderas,America/Hermosillo,America/Tijuana|MY:Asia/Kuala_Lumpur,Asia/Kuching|MZ:Africa/Maputo|NA:Africa/Windhoek|NC:Pacific/Noumea|NE:Africa/Niamey|NF:Pacific/Norfolk|NG:Africa/Lagos|NI:America/Managua|NL:Europe/Amsterdam|NO:Europe/Oslo|NP:Asia/Kathmandu,Asia/Katmandu|NR:Pacific/Nauru|NU:Pacific/Niue|NZ:Pacific/Auckland,Pacific/Chatham|OM:Asia/Muscat|PA:America/Panama|PE:America/Lima|PF:Pacific/Tahiti,Pacific/Marquesas,Pacific/Gambier|PG:Pacific/Port_Moresby,Pacific/Bougainville|PH:Asia/Manila|PK:Asia/Karachi|PL:Europe/Warsaw|PM:America/Miquelon|PN:Pacific/Pitcairn|PR:America/Puerto_Rico|PS:Asia/Gaza,Asia/Hebron|PT:Europe/Lisbon,Atlantic/Madeira,Atlantic/Azores|PW:Pacific/Palau|PY:America/Asuncion|QA:Asia/Qatar|RE:Indian/Reunion|RO:Europe/Bucharest|RS:Europe/Belgrade|RU:Europe/Kaliningrad,Europe/Moscow,Europe/Kirov,Europe/Volgograd,Europe/Astrakhan,Europe/Saratov,Europe/Ulyanovsk,Europe/Samara,Asia/Yekaterinburg,Asia/Omsk,Asia/Novosibirsk,Asia/Barnaul,Asia/Tomsk,Asia/Novokuznetsk,Asia/Krasnoyarsk,Asia/Irkutsk,Asia/Chita,Asia/Yakutsk,Asia/Khandyga,Asia/Vladivostok,Asia/Ust-Nera,Asia/Magadan,Asia/Sakhalin,Asia/Srednekolymsk,Asia/Kamchatka,Asia/Anadyr|RW:Africa/Kigali|SA:Asia/Riyadh|SB:Pacific/Guadalcanal|SC:Indian/Mahe|SD:Africa/Khartoum|SE:Europe/Stockholm|SG:Asia/Singapore|SH:Atlantic/St_Helena|SI:Europe/Ljubljana|SJ:Arctic/Longyearbyen|SK:Europe/Bratislava|SL:Africa/Freetown|SM:Europe/San_Marino|SN:Africa/Dakar|SO:Africa/Mogadishu|SR:America/Paramaribo|SS:Africa/Juba|ST:Africa/Sao_Tome|SV:America/El_Salvador|SX:America/Lower_Princes|SY:Asia/Damascus|SZ:Africa/Mbabane|TC:America/Grand_Turk|TD:Africa/Ndjamena|TF:Indian/Kerguelen|TG:Africa/Lome|TH:Asia/Bangkok|TJ:Asia/Dushanbe|TK:Pacific/Fakaofo|TL:Asia/Dili|TM:Asia/Ashgabat|TN:Africa/Tunis|TO:Pacific/Tongatapu|TR:Europe/Istanbul|TT:America/Port_of_Spain|TV:Pacific/Funafuti|TW:Asia/Taipei|TZ:Africa/Dar_es_Salaam|UA:Europe/Simferopol,Europe/Kyiv,Europe/Kiev|UG:Africa/Kampala|UM:Pacific/Midway,Pacific/Wake|US:America/New_York,America/Detroit,America/Kentucky/Louisville,America/Kentucky/Monticello,America/Indiana/Indianapolis,America/Indiana/Vincennes,America/Indiana/Winamac,America/Indiana/Marengo,America/Indiana/Petersburg,America/Indiana/Vevay,America/Chicago,America/Indiana/Tell_City,America/Indiana/Knox,America/Menominee,America/North_Dakota/Center,America/North_Dakota/New_Salem,America/North_Dakota/Beulah,America/Denver,America/Boise,America/Phoenix,America/Los_Angeles,America/Anchorage,America/Juneau,America/Sitka,America/Metlakatla,America/Yakutat,America/Nome,America/Adak,Pacific/Honolulu,US/Eastern,US/Pacific,US/Central,US/Mountain|UY:America/Montevideo|UZ:Asia/Samarkand,Asia/Tashkent|VA:Europe/Vatican|VC:America/St_Vincent|VE:America/Caracas|VG:America/Tortola|VI:America/St_Thomas|VN:Asia/Ho_Chi_Minh,Asia/Saigon|VU:Pacific/Efate|WF:Pacific/Wallis|WS:Pacific/Apia|YE:Asia/Aden|YT:Indian/Mayotte|ZA:Africa/Johannesburg|ZM:Africa/Lusaka|ZW:Africa/Harare";
+  function placeOfTz(tz){
+    var city = String(tz||"").split("/").pop().replace(/_/g," ");
+    var OLD = {"Europe/Kiev":"Kyiv","Asia/Calcutta":"Kolkata","Asia/Saigon":"Ho Chi Minh","Asia/Katmandu":"Kathmandu","Asia/Rangoon":"Yangon","US/Eastern":"New York","US/Pacific":"Los Angeles","US/Central":"Chicago","US/Mountain":"Denver","GB":"London"};
+    if(OLD[tz]) city = OLD[tz];
+    var code = "";
+    TZ_CC.split("|").some(function(g){ var i = g.indexOf(":"); if(("," + g.slice(i+1) + ",").indexOf("," + tz + ",") >= 0){ code = g.slice(0,i); return true; } });
+    var country = code;
+    try{ if(code) country = new Intl.DisplayNames(["en"],{type:"region"}).of(code) || code; }catch(e){}
+    return city ? city + (country ? ", " + country : "") : (country || "");
+  }
+  function renderClock(){
+    var el = document.getElementById("nowClock"); if(!el) return;
+    var tz = ""; try{ tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; }catch(e){}
+    var d = new Date();
+    var date = d.toLocaleDateString("en-GB",{weekday:"short", day:"numeric", month:"short", year:"numeric"});
+    var time = String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+    var place = placeOfTz(tz);
+    el.innerHTML = (place ? '<span class="nc-place">'+esc(place)+'</span><span class="nc-sep">·</span>' : '') +
+      '<span class="nc-date">'+esc(date)+'</span><span class="nc-sep">·</span><span class="nc-time">'+time+'</span>';
+    el.title = tz;
+  }
+  renderClock();
+  setTimeout(function(){ renderClock(); setInterval(renderClock, 60000); }, (60 - new Date().getSeconds()) * 1000 + 50);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) renderClock(); });
+
+  /* ---------- time zones: a session can be agreed in the client's zone ----------
+     starts_at is always Kyiv time (sorting, schedule, reminders); tz + tzAt keep what was agreed with the client.
+     Offsets are taken for the session's own date, so daylight-saving switches (EU / US / none) are handled. */
+  var KYIV_TZ = (function(){ try{ new Intl.DateTimeFormat("en",{timeZone:"Europe/Kyiv"}); return "Europe/Kyiv"; }catch(e){ return "Europe/Kiev"; } })();
+  var TZ_COMMON = [
+    ["Europe/London","London"],["Europe/Lisbon","Lisbon"],["Europe/Berlin","Berlin · Paris · Warsaw"],
+    ["Europe/Istanbul","Istanbul"],["Asia/Tbilisi","Tbilisi"],["Asia/Dubai","Dubai"],
+    ["America/New_York","New York · Toronto"],["America/Chicago","Chicago"],["America/Denver","Denver"],["America/Los_Angeles","Los Angeles"],
+    ["America/Mexico_City","Mexico City"],["America/Sao_Paulo","São Paulo"],
+    ["Asia/Singapore","Singapore"],["Asia/Tokyo","Tokyo"],["Australia/Sydney","Sydney"]
+  ];
+  var _tzFmt = {};
+  function tzValid(tz){ try{ new Intl.DateTimeFormat("en",{timeZone:tz}); return true; }catch(e){ return false; } }
+  function isClientTz(tz){ return !!tz && tz!=="Europe/Kyiv" && tz!=="Europe/Kiev" && tzValid(tz); }
+  function tzParts(tz, ms){
+    var f = _tzFmt[tz] || (_tzFmt[tz] = new Intl.DateTimeFormat("en-US",{timeZone:tz, hourCycle:"h23",
+      year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit"}));
+    var o = {}; f.formatToParts(new Date(ms)).forEach(function(p){ o[p.type] = p.value; });
+    return {y:+o.year, m:+o.month, d:+o.day, h:(+o.hour)%24, mi:+o.minute};
+  }
+  function tzOffsetMin(tz, ms){ var p = tzParts(tz, ms); return Math.round((Date.UTC(p.y,p.m-1,p.d,p.h,p.mi) - Math.floor(ms/60000)*60000)/60000); }
+  function wallToMs(naive, tz){
+    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(naive||""); if(!m) return NaN;
+    var g = Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5]);
+    var o1 = tzOffsetMin(tz, g), t = g - o1*60000, o2 = tzOffsetMin(tz, t);
+    return o2===o1 ? t : g - o2*60000;
+  }
+  function msToWall(ms, tz){ var p = tzParts(tz, ms); return p.y+"-"+String(p.m).padStart(2,"0")+"-"+String(p.d).padStart(2,"0")+"T"+String(p.h).padStart(2,"0")+":"+String(p.mi).padStart(2,"0"); }
+  function tzConvert(naive, fromTz, toTz){ var ms = wallToMs(naive, fromTz); return isNaN(ms) ? "" : msToWall(ms, toTz); }
+  function tzLabel(tz){
+    for(var i=0;i<TZ_COMMON.length;i++) if(TZ_COMMON[i][0]===tz) return TZ_COMMON[i][1].split(" · ")[0];
+    return String(tz||"").split("/").pop().replace(/_/g," ");
+  }
+  // client hours relative to Kyiv at a moment: +2 = client is 2 h ahead
+  function tzDiffH(tz, ms){ return (tzOffsetMin(tz, ms) - tzOffsetMin(KYIV_TZ, ms)) / 60; }
+  function fmtDiff(h){ var a = Math.abs(h), s = (a%1 ? a.toFixed(1) : String(a)) + " h"; return h===0 ? "same time as Kyiv" : s + (h<0 ? " behind Kyiv" : " ahead of Kyiv"); }
+  var _tzOptions = null;
+  function tzOptionsHtml(){
+    if(_tzOptions) return _tzOptions;
+    var h = '<option value="">Kyiv</option><optgroup label="Client time zone">';
+    TZ_COMMON.forEach(function(z){ h += '<option value="'+z[0]+'">'+esc(z[1])+'</option>'; });
+    h += '</optgroup>';
+    try{
+      var all = Intl.supportedValuesOf("timeZone"), common = {};
+      TZ_COMMON.forEach(function(z){ common[z[0]] = 1; });
+      h += '<optgroup label="All time zones">';
+      all.forEach(function(z){ if(!common[z] && z!=="Europe/Kyiv" && z!=="Europe/Kiev") h += '<option value="'+esc(z)+'">'+esc(z.replace(/_/g," "))+'</option>'; });
+      h += '</optgroup>';
+    }catch(e){}
+    return (_tzOptions = h);
+  }
+  function clientTimeNote(x){ return isClientTz(x.tz) && x.tzAt ? x.tzAt.slice(11,16) + " " + tzLabel(x.tz) : ""; }
   /* ---------- sessions (several per project) ---------- */
   function sessionsOf(pid){
     return state.sessions.filter(function(x){ return x.projectId===pid; })
@@ -2063,7 +2167,7 @@
       html += '<button class="sched-row" data-id="'+esc(p.id)+'">'+
         '<span class="sched-time">'+esc(x.startsAt.slice(11,16))+'</span>'+
         '<span class="sched-mode '+(off?'off':'on')+'"><i class="dot" style="background:'+(off?'var(--amber)':'var(--violet)')+'"></i>'+(off?'Offline':'Online')+'</span>'+
-        '<span class="sched-what"><b>'+esc(projName(p)||"Untitled")+'</b>'+(x.note?' <i>· '+esc(x.note)+'</i>':'')+'</span>'+
+        '<span class="sched-what"><b>'+esc(projName(p)||"Untitled")+'</b>'+(x.note?' <i>· '+esc(x.note)+'</i>':'')+(clientTimeNote(x)?' <span class="tz-note">· '+esc(clientTimeNote(x))+'</span>':'')+'</span>'+
         '<span class="sched-client">'+esc(p.client||TYPE_LABEL[p.type]||"")+'</span>'+
       '</button>';
     });
@@ -2094,7 +2198,7 @@
       sessionsOf(p.id).forEach(function(x){
         if(x.startsAt >= nowLocal && x.startsAt <= limitLocal){
           items.push({k:"session", sort:"2"+x.startsAt, id:p.id,
-            html:'<b>'+name+'</b> — '+(x.mode==="offline"?"offline":"online")+' session'+(x.note?' ('+esc(x.note)+')':'')+' '+esc(fmtSessionDateTime(x.startsAt))});
+            html:'<b>'+name+'</b> — '+(x.mode==="offline"?"offline":"online")+' session'+(x.note?' ('+esc(x.note)+')':'')+' '+esc(fmtSessionDateTime(x.startsAt))+(clientTimeNote(x)?' · client '+esc(clientTimeNote(x)):'')});
         }
       });
     });
@@ -2269,40 +2373,98 @@
   var sessEditPid = null, sessDraft = [];
   function openSessions(p){
     sessEditPid = p.id;
-    sessDraft = sessionsOf(p.id).map(function(x){ return {id:x.id, startsAt:x.startsAt, mode:x.mode, note:x.note||""}; });
+    sessDraft = sessionsOf(p.id).map(function(x){ return {id:x.id, startsAt:x.startsAt, mode:x.mode, note:x.note||"",
+      tz: isClientTz(x.tz) ? x.tz : "", tzAt: isClientTz(x.tz) ? tzConvert(x.startsAt, KYIV_TZ, x.tz) : ""}; });
     if(!sessDraft.length) sessDraft.push(newSessionDraft());
     document.getElementById("sessTitle").textContent = "Sessions · " + (projName(p)||"Untitled");
     renderSessDraft();
     showOverlay("sessOverlay");
   }
+  // the zone this client's sessions were agreed in last time (other projects of the same client count too)
+  function clientDefaultTz(pid){
+    var p = state.projects.find(function(y){ return y.id===pid; }), cl = p && (p.client||"").trim().toLowerCase();
+    var own = state.sessions.filter(function(x){ return x.projectId===pid && isClientTz(x.tz); });
+    if(own.length) return own[own.length-1].tz;
+    if(!cl) return "";
+    var ids = {}; state.projects.forEach(function(y){ if((y.client||"").trim().toLowerCase()===cl) ids[y.id]=1; });
+    var hits = state.sessions.filter(function(x){ return ids[x.projectId] && isClientTz(x.tz); })
+      .sort(function(a,b){ return a.startsAt < b.startsAt ? -1 : 1; });
+    return hits.length ? hits[hits.length-1].tz : "";
+  }
   function newSessionDraft(){
-    var last = sessDraft[sessDraft.length-1], base;
-    if(last && last.startsAt){ var d = new Date(last.startsAt); d.setDate(d.getDate()+1);
-      base = localDateStr(d) + "T" + last.startsAt.slice(11,16); }
+    var last = sessDraft[sessDraft.length-1], base, tz = last ? (last.tz||"") : clientDefaultTz(sessEditPid);
+    var lastWall = last ? last.startsAt : "";
+    if(lastWall){ var d = new Date(lastWall.slice(0,10)+"T00:00:00"); d.setDate(d.getDate()+1);
+      base = localDateStr(d) + "T" + lastWall.slice(11,16); }
     else { var t = new Date(); t.setDate(t.getDate()+1); base = localDateStr(t) + "T12:00"; }
-    return {id:uid(), startsAt:base, mode: last ? last.mode : "online", note:"", isNew:true};
+    var x = {id:uid(), mode: last ? last.mode : "online", note:"", isNew:true, tz:tz, tzAt:"", startsAt:base};
+    if(isClientTz(tz)) x.tzAt = tzConvert(base, KYIV_TZ, tz);
+    return x;
+  }
+  function tzSelectHtml(tz){
+    var h = tzOptionsHtml(), v = isClientTz(tz) ? tz : "";
+    var needle = 'value="'+esc(v)+'"';
+    if(h.indexOf(needle) < 0) h += '<option '+needle+'>'+esc(tzLabel(v))+'</option>';
+    return '<select class="f-z" data-k="z" aria-label="Client time zone" title="Client time zone — their time is calculated from yours">'+h.replace(needle, needle+' selected')+'</select>';
+  }
+  function sessHintHtml(wall, tz){
+    if(!isClientTz(tz) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(wall||"")) return "";
+    var ms = wallToMs(wall, KYIV_TZ); if(isNaN(ms)) return "";
+    var cl = msToWall(ms, tz), dayDiff = tzDiffH(tz, ms), nowDiff = tzDiffH(tz, Date.now());
+    var h = 'Kyiv: <b>'+esc(fmtSessionDateTime(wall))+'</b> → '+esc(tzLabel(tz))+': <b>'+esc(fmtSessionDateTime(cl))+'</b> · '+esc(tzLabel(tz))+' is '+esc(fmtDiff(dayDiff));
+    if(dayDiff !== nowDiff && ms > Date.now()){
+      h += '<span class="tz-warn">Clocks change before this session: the difference is '+esc(Math.abs(nowDiff)+' h')+' today and '+
+        esc(Math.abs(dayDiff)+' h')+' on that day. The '+esc(tzLabel(tz))+' time above already accounts for it.</span>';
+    }
+    return h;
   }
   function renderSessDraft(){
     var box = document.getElementById("sessList"), now = nowLocalInput();
     if(!sessDraft.length){ box.innerHTML = '<div class="sess-empty">No sessions — add one below.</div>'; return; }
     box.innerHTML = sessDraft.map(function(x, i){
+      var wall = x.startsAt||"";
       return '<div class="sess-row'+(x.startsAt && x.startsAt < now ? ' past' : '')+'" data-i="'+i+'">'+
-        '<input class="f-d" type="date" data-k="d" value="'+esc(x.startsAt.slice(0,10))+'" aria-label="Date">'+
-        '<input class="f-t" type="time" data-k="t" step="300" value="'+esc(x.startsAt.slice(11,16))+'" aria-label="Time">'+
+        '<input class="f-d" type="date" data-k="d" value="'+esc(wall.slice(0,10))+'" aria-label="Date">'+
+        '<input class="f-t" type="time" data-k="t" step="300" value="'+esc(wall.slice(11,16))+'" aria-label="Time">'+
+        tzSelectHtml(x.tz)+
         '<select class="f-m" data-k="m" aria-label="Online or offline"><option value="online"'+(x.mode!=="offline"?" selected":"")+'>Online</option><option value="offline"'+(x.mode==="offline"?" selected":"")+'>Offline</option></select>'+
         '<input class="f-n" type="text" data-k="n" maxlength="60" placeholder="first look / review / final" value="'+esc(x.note||"")+'" aria-label="Note">'+
         '<button type="button" class="sess-x" data-k="x" title="Remove session" aria-label="Remove session">×</button>'+
+        '<div class="sess-tz" data-k="h">'+sessHintHtml(wall, x.tz)+'</div>'+
       '</div>';
     }).join("");
+    [].forEach.call(box.querySelectorAll(".sess-row"), labelTzSelect);
+  }
+  function readSessRow(row, x){
+    var d = row.querySelector('[data-k="d"]').value, t = row.querySelector('[data-k="t"]').value || "12:00";
+    var wall = d ? (d + "T" + t.slice(0,5)) : "", tz = row.querySelector('[data-k="z"]').value;
+    x.startsAt = wall;
+    if(isClientTz(tz)){ x.tz = tz; x.tzAt = wall ? tzConvert(wall, KYIV_TZ, tz) : ""; }
+    else { x.tz = ""; x.tzAt = ""; }
+    x.mode = row.querySelector('[data-k="m"]').value;
+    x.note = row.querySelector('[data-k="n"]').value.trim();
+    return wall;
   }
   function readSessDraft(){
     [].forEach.call(document.querySelectorAll("#sessList .sess-row"), function(row){
-      var x = sessDraft[+row.dataset.i]; if(!x) return;
-      var d = row.querySelector('[data-k="d"]').value, t = row.querySelector('[data-k="t"]').value || "12:00";
-      x.startsAt = d ? (d + "T" + t.slice(0,5)) : "";
-      x.mode = row.querySelector('[data-k="m"]').value;
-      x.note = row.querySelector('[data-k="n"]').value.trim();
+      var x = sessDraft[+row.dataset.i]; if(x) readSessRow(row, x);
     });
+  }
+  function labelTzSelect(row){
+    var sel = row.querySelector('[data-k="z"]'); if(!sel) return;
+    var d = row.querySelector('[data-k="d"]').value, t = row.querySelector('[data-k="t"]').value;
+    [].forEach.call(sel.options, function(o){ if(o.dataset.l==null) o.dataset.l = o.text; o.text = o.dataset.l; });
+    var o = sel.options[sel.selectedIndex];
+    if(o && o.value && isClientTz(o.value) && d && t){
+      var c = tzConvert(d + "T" + t.slice(0,5), KYIV_TZ, o.value);
+      if(c) o.text = o.dataset.l.split(" · ")[0] + " · " + c.slice(11,16) + (c.slice(0,10)!==d ? (c.slice(0,10)>d ? " (+1 day)" : " (−1 day)") : "");
+    }
+  }
+  function refreshSessHint(row){
+    labelTzSelect(row);
+    var x = sessDraft[+row.dataset.i]; if(!x) return;
+    var wall = readSessRow(row, x), tz = row.querySelector('[data-k="z"]').value;
+    row.querySelector('[data-k="h"]').innerHTML = sessHintHtml(wall, tz);
   }
   function saveSessions(){
     readSessDraft();
@@ -2313,8 +2475,8 @@
       keepIds[x.id] = 1;
       var cur = state.sessions.find(function(y){ return y.id===x.id; });
       if(!cur){ cur = {id:x.id, projectId:pid}; state.sessions.push(cur); }
-      var changed = cur.startsAt!==x.startsAt || cur.mode!==x.mode || (cur.note||"")!==x.note;
-      cur.startsAt = x.startsAt; cur.mode = x.mode; cur.note = x.note;
+      var changed = cur.startsAt!==x.startsAt || cur.mode!==x.mode || (cur.note||"")!==x.note || (cur.tz||"")!==(x.tz||"") || (cur.tzAt||"")!==(x.tzAt||"");
+      cur.startsAt = x.startsAt; cur.mode = x.mode; cur.note = x.note; cur.tz = x.tz||""; cur.tzAt = x.tzAt||"";
       if(changed) cloudUpsertSession(cur);
     });
     before.forEach(function(x){
@@ -2498,6 +2660,11 @@
     document.getElementById("sessList").addEventListener("click", function(e){
       var x = e.target.closest('[data-k="x"]'); if(!x) return;
       readSessDraft(); sessDraft.splice(+x.closest(".sess-row").dataset.i, 1); renderSessDraft();
+    });
+    ["input","change"].forEach(function(ev){
+      document.getElementById("sessList").addEventListener(ev, function(e){
+        var row = e.target.closest(".sess-row"); if(row) refreshSessHint(row);
+      });
     });
     document.getElementById("sessSave").addEventListener("click", saveSessions);
     document.getElementById("sessCancel").addEventListener("click", function(){ hideOverlay("sessOverlay"); sessEditPid = null; });
