@@ -158,13 +158,15 @@
         <a class="mail" href="mailto:eugeniymoroz.colorist@gmail.com">eugeniymoroz.colorist@gmail.com</a><br>
         <a class="mail" href="tel:+380636320636">+380 63 632 0636</a>
       </div>
-      <div class="party" id="billTo" contenteditable>
+      <div class="party">
         <div class="lbl">Bill to</div>
+        <div id="billTo" contenteditable>
         <span class="strong fill">[ Client / Company name ]</span><br>
         <span class="fill">[ Contact person ]</span><br>
         <span class="fill">[ Street address ]</span><br>
         <span class="fill">[ City, Country ]</span><br>
         <span class="fill">[ Email ]</span>
+        </div>
       </div>
     </div>
 
@@ -261,6 +263,56 @@
     var n = sel.anchorNode, el = (n.nodeType===1 ? n : n.parentElement);
     var f = el && el.closest(".fill"); if(f) f.classList.remove("fill");
   });
+  // pasted text (from mail, sites, docs) comes in as plain text in the invoice's own style — no white/grey colours or foreign fonts
+  function plainInsert(e, t){
+    if(t==null) return;
+    e.preventDefault();
+    t = String(t).replace(/\r\n?/g, "\n").replace(/ /g, " ").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    var sel = window.getSelection(); if(!sel || !sel.rangeCount) return;
+    var r = sel.getRangeAt(0); r.deleteContents();
+    var frag = document.createDocumentFragment(), last = null;
+    t.split("\n").forEach(function(line, i){ if(i) frag.appendChild(document.createElement("br")); last = document.createTextNode(line); frag.appendChild(last); });
+    r.insertNode(frag); if(last){ r.setStartAfter(last); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+    var ed = r.startContainer.nodeType===1 ? r.startContainer : r.startContainer.parentElement;
+    if(ed) ed.dispatchEvent(new Event("input", {bubbles:true}));
+    if(ed) fixFills(ed.closest("[contenteditable]") || ed);
+    boldFirstLine(document.getElementById("billTo"));
+  }
+  document.addEventListener("paste", function(e){
+    if(!e.target.closest || !e.target.closest("[contenteditable]")) return;
+    plainInsert(e, (e.clipboardData || window.clipboardData).getData("text/plain"));
+  });
+  document.addEventListener("drop", function(e){
+    if(!e.target.closest || !e.target.closest("[contenteditable]") || !e.dataTransfer) return;
+    var t = e.dataTransfer.getData("text/plain"); if(t) plainInsert(e, t);
+  });
+  // anything that still sneaks in a colour/font (autofill, older saved payment details) is cleaned
+  function stripLook(root){
+    if(!root || !root.querySelectorAll) return;
+    [].forEach.call(root.querySelectorAll("[style],[color],[face],[bgcolor],font"), function(n){
+      n.removeAttribute("style"); n.removeAttribute("color"); n.removeAttribute("face"); n.removeAttribute("bgcolor");
+    });
+  }
+  // Bill to: the first line (company) stays bold like your own name, even after pasting the whole block
+  function boldFirstLine(ed){
+    if(!ed) return;
+    var st = ed.querySelector(".strong");
+    if(st && st.textContent.trim()) return;
+    if(st && !st.textContent.trim()) st.parentNode.removeChild(st);
+    var n = ed.firstChild;
+    while(n && !(n.nodeType===3 && n.textContent.trim()) && !(n.nodeType===1 && n.tagName!=="BR" && n.textContent.trim())) n = n.nextSibling;
+    if(!n) return;
+    var sp = document.createElement("span"); sp.className = "strong";
+    ed.insertBefore(sp, n); sp.appendChild(n);
+  }
+  // a grey placeholder that now holds real text turns into normal text (and is kept in the PDF)
+  function isPlaceholder(t){ t = (t||"").trim(); return !t || /^\[.*\]$/.test(t) || /^[—\-\/\s]+$/.test(t); }
+  function fixFills(ed){
+    if(!ed) return;
+    [].forEach.call(ed.querySelectorAll(".fill"), function(n){ if(!isPlaceholder(n.textContent)) n.classList.remove("fill"); });
+    if(ed.classList.contains("fill") && !isPlaceholder(ed.textContent)) ed.classList.remove("fill");
+  }
+  document.addEventListener("input", function(e){ var ed = e.target.closest && e.target.closest("[contenteditable]"); if(ed){ stripLook(ed); fixFills(ed); } });
   var q = new URLSearchParams(location.search);
   function $(id){ return document.getElementById(id); }
   function pad(n){ return (n<10?"0":"")+n; }
@@ -273,7 +325,7 @@
   setText($("invDue"), fmt(due));
 
   var payKey = "invoice:pay:v2";
-  try{ var saved = localStorage.getItem(payKey); if(saved) $("payGrid").innerHTML = saved; }catch(e){}
+  try{ var saved = localStorage.getItem(payKey); if(saved){ $("payGrid").innerHTML = saved; stripLook($("payGrid")); } }catch(e){}
   function keepPay(){ try{ localStorage.setItem(payKey, $("payGrid").innerHTML); }catch(e){} }
   $("payGrid").addEventListener("input", keepPay);
   $("payGrid").addEventListener("blur", keepPay);
