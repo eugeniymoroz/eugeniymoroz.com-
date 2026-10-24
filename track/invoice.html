@@ -269,7 +269,27 @@
     e.preventDefault();
     t = String(t).replace(/\r\n?/g, "\n").replace(/ /g, " ").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
     var sel = window.getSelection(); if(!sel || !sel.rangeCount) return;
-    var r = sel.getRangeAt(0); r.deleteContents();
+    var r = sel.getRangeAt(0);
+    // pasting into (or across) a grey placeholder replaces the whole placeholder
+    var sn = r.startContainer.nodeType===1 ? r.startContainer : r.startContainer.parentElement;
+    var ph = sn && sn.closest && sn.closest(".fill");
+    if(ph && ph.closest("[contenteditable]") && isPlaceholder(ph.textContent)){
+      // several lines pasted into one placeholder: the first fills it (keeps bold for the company), the rest follow as plain lines
+      var lines = t.split("\n");
+      if(lines.length > 1 && ph.tagName === "SPAN"){
+        ph.textContent = lines[0]; ph.classList.remove("fill");
+        var after = ph.nextSibling, par = ph.parentNode, lastNode = ph;
+        lines.slice(1).forEach(function(line){
+          var br = document.createElement("br"), tx = document.createTextNode(line);
+          par.insertBefore(br, after); par.insertBefore(tx, after); lastNode = tx;
+        });
+        var rr = document.createRange(); rr.setStartAfter(lastNode); rr.collapse(true); sel.removeAllRanges(); sel.addRange(rr);
+        par.dispatchEvent(new Event("input", {bubbles:true}));
+        return;
+      }
+      r = document.createRange(); r.selectNodeContents(ph); sel.removeAllRanges(); sel.addRange(r);
+    }
+    r.deleteContents();
     var frag = document.createDocumentFragment(), last = null;
     t.split("\n").forEach(function(line, i){ if(i) frag.appendChild(document.createElement("br")); last = document.createTextNode(line); frag.appendChild(last); });
     r.insertNode(frag); if(last){ r.setStartAfter(last); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
@@ -313,6 +333,15 @@
     if(ed.classList.contains("fill") && !isPlaceholder(ed.textContent)) ed.classList.remove("fill");
   }
   document.addEventListener("input", function(e){ var ed = e.target.closest && e.target.closest("[contenteditable]"); if(ed){ stripLook(ed); fixFills(ed); } });
+  // clicking a grey placeholder selects all of it, so pasting or typing replaces it instead of mixing with "[ … ]"
+  function selectPlaceholder(e){
+    var f = e.target && e.target.closest && e.target.closest(".fill");
+    if(!f || !f.closest("[contenteditable]") || !isPlaceholder(f.textContent)) return;
+    var r = document.createRange(); r.selectNodeContents(f);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  }
+  document.addEventListener("mouseup", function(e){ setTimeout(function(){ selectPlaceholder(e); }, 0); });
+  document.addEventListener("focusin", function(e){ if(e.target.classList && e.target.classList.contains("fill")) selectPlaceholder(e); });
   var q = new URLSearchParams(location.search);
   function $(id){ return document.getElementById(id); }
   function pad(n){ return (n<10?"0":"")+n; }
@@ -386,6 +415,16 @@
   function makePdf(){
     if(!window.html2pdf) return Promise.reject(new Error("PDF library didn't load — check your connection."));
     document.body.classList.add("exporting");
+    // unfilled "[ … ]" lines are left out of the PDF without leaving empty gaps
+    var bill = $("billTo"), billHtml = bill.innerHTML;
+    [].forEach.call(bill.querySelectorAll(".fill"), function(n){
+      var tt = (n.textContent||"").trim(); if(tt && !/^\[.*\]$/.test(tt)) return;
+      var nx = n.nextSibling; while(nx && nx.nodeType===3 && !nx.textContent.trim()) nx = nx.nextSibling;
+      if(nx && nx.tagName==="BR") nx.parentNode.removeChild(nx);
+      else { var pv = n.previousSibling; while(pv && pv.nodeType===3 && !pv.textContent.trim()) pv = pv.previousSibling; if(pv && pv.tagName==="BR") pv.parentNode.removeChild(pv); }
+      n.parentNode.removeChild(n);
+    });
+    function restore(){ bill.innerHTML = billHtml; document.body.classList.remove("exporting"); }
     var el = document.querySelector(".sheet");
     var opt = {
       margin: 0, filename: fileName(),
@@ -399,9 +438,9 @@
       .then(function(pdf){
         var n = pdf.internal.getNumberOfPages();
         for(var i=n; i>1; i--) pdf.deletePage(i);          // always one A4 page
-        document.body.classList.remove("exporting");
+        restore();
         return pdf;
-      }, function(e){ document.body.classList.remove("exporting"); throw e; });
+      }, function(e){ restore(); throw e; });
   }
   function busy(on){ $("savePdf").disabled = on; $("sendPdf").disabled = on; }
 
