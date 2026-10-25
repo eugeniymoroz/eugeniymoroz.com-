@@ -213,6 +213,18 @@
   /* sessions editor */
   .sess-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
   .sess-row{display:grid;grid-template-columns:1.1fr .8fr 1.5fr .8fr 1.2fr auto;gap:6px;align-items:center}
+  .tzp{position:relative;min-width:0}
+  .sess-row .tzp-in{padding-right:62px}
+  .tzp-t{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:600;color:var(--white);font-variant-numeric:tabular-nums;pointer-events:none;white-space:nowrap}
+  .tzp-list{position:fixed;z-index:130;background:var(--surface-hi);border:1px solid var(--line);border-radius:8px;
+    box-shadow:0 16px 44px rgba(0,0,0,.65);padding:4px;max-height:286px;overflow:auto}
+  .tzp-list[hidden]{display:none}
+  .tzp-opt{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n t" "w t";column-gap:10px;padding:7px 10px;border-radius:5px;cursor:pointer}
+  .tzp-opt b{grid-area:n;font-weight:500;color:var(--white);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tzp-opt span{grid-area:w;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tzp-opt em{grid-area:t;align-self:center;font-style:normal;font-size:12.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .tzp-opt.on,.tzp-opt:hover{background:rgba(255,255,255,.07)}
+  .tzp-empty{padding:9px 10px;font-size:12px;color:var(--muted)}
   .sess-tz{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.45;padding:0 2px}
   .sess-tz:empty{display:none}
   .sess-tz b{color:var(--ink);font-weight:600}
@@ -1199,7 +1211,7 @@
     <h2 id="sessTitle">Sessions</h2>
     <div class="sess-list" id="sessList"></div>
     <button type="button" class="btn sess-add" id="sessAdd">+ Add session</button>
-    <div class="sess-hint">Date and time are yours (Kyiv). Client abroad? Pick their time zone — their time is worked out automatically for that exact date, clock changes included. Each session gets its own calendar event with reminders 8 h and 1 h before.</div>
+    <div class="sess-hint">Date and time are yours (Kyiv). Client abroad? Start typing the city they live in — their time is worked out automatically for that exact date, clock changes included. Each session gets its own calendar event with reminders 8 h and 1 h before.</div>
     <div class="modal-actions">
       <button class="btn" id="sessCancel">Cancel</button>
       <button class="btn btn-primary" id="sessSave">Save</button>
@@ -1525,7 +1537,7 @@
   function rowFromSession(x){
     var tz = isClientTz(x.tz) ? x.tz : null;
     return { id:x.id, project_id:x.projectId, starts_at:x.startsAt, mode:x.mode==="offline"?"offline":"online", note:x.note||"",
-      tz: tz, tz_at: tz ? (x.tzAt||null) : null };
+      tz: tz, tz_at: tz ? (x.tzAt||null) : null, tz_city: tz ? (x.tzCity||null) : null };
   }
   function cloudUpsertSession(x){ pending["s:"+x.id] = {op:"upsert", v:++pendingVer}; savePending(); flushPending(); }
   function cloudDeleteSession(id){ pending["s:"+id] = {op:"delete", v:++pendingVer}; savePending(); flushPending(); }
@@ -1592,10 +1604,10 @@
   }
   function loadSessionsFromCloud(){
     if(!sb || !session) return;
-    sb.from("project_sessions").select("id,project_id,starts_at,mode,note,tz,tz_at").order("starts_at",{ascending:true}).then(function(res){
+    sb.from("project_sessions").select("id,project_id,starts_at,mode,note,tz,tz_at,tz_city").order("starts_at",{ascending:true}).then(function(res){
       if(res.error){ console.error("load sessions", res.error); return; }
       var local = {}; state.sessions.forEach(function(x){ local[x.id]=x; });
-      var cloud = (res.data||[]).map(function(r){ return {id:r.id, projectId:r.project_id, startsAt:r.starts_at, mode:r.mode, note:r.note||"", tz:r.tz||"", tzAt:r.tz_at||""}; });
+      var cloud = (res.data||[]).map(function(r){ return {id:r.id, projectId:r.project_id, startsAt:r.starts_at, mode:r.mode, note:r.note||"", tz:r.tz||"", tzAt:r.tz_at||"", tzCity:r.tz_city||""}; });
       // your Kyiv time is the anchor; the client's time is derived from it (fixes itself if zone rules change)
       cloud.forEach(function(x){
         if(!isClientTz(x.tz) || pending["s:"+x.id]) return;
@@ -2106,7 +2118,7 @@
     }catch(e){}
     return (_tzOptions = h);
   }
-  function clientTimeNote(x){ return isClientTz(x.tz) && x.tzAt ? x.tzAt.slice(11,16) + " " + tzLabel(x.tz) : ""; }
+  function clientTimeNote(x){ return isClientTz(x.tz) && x.tzAt ? x.tzAt.slice(11,16) + " " + (x.tzCity || tzLabel(x.tz)) : ""; }
   /* ---------- sessions (several per project) ---------- */
   function sessionsOf(pid){
     return state.sessions.filter(function(x){ return x.projectId===pid; })
@@ -2628,7 +2640,7 @@
   function openSessions(p){
     sessEditPid = p.id;
     sessDraft = sessionsOf(p.id).map(function(x){ return {id:x.id, startsAt:x.startsAt, mode:x.mode, note:x.note||"",
-      tz: isClientTz(x.tz) ? x.tz : "", tzAt: isClientTz(x.tz) ? tzConvert(x.startsAt, KYIV_TZ, x.tz) : ""}; });
+      tz: isClientTz(x.tz) ? x.tz : "", tzAt: isClientTz(x.tz) ? tzConvert(x.startsAt, KYIV_TZ, x.tz) : "", tzCity: isClientTz(x.tz) ? (x.tzCity||"") : ""}; });
     if(!sessDraft.length) sessDraft.push(newSessionDraft());
     document.getElementById("sessTitle").textContent = "Sessions · " + (projName(p)||"Untitled");
     renderSessDraft();
@@ -2638,37 +2650,176 @@
   function clientDefaultTz(pid){
     var p = state.projects.find(function(y){ return y.id===pid; }), cl = p && (p.client||"").trim().toLowerCase();
     var own = state.sessions.filter(function(x){ return x.projectId===pid && isClientTz(x.tz); });
-    if(own.length) return own[own.length-1].tz;
-    if(!cl) return "";
+    if(own.length) return {tz: own[own.length-1].tz, city: own[own.length-1].tzCity || ""};
+    if(!cl) return {tz:"", city:""};
     var ids = {}; state.projects.forEach(function(y){ if((y.client||"").trim().toLowerCase()===cl) ids[y.id]=1; });
     var hits = state.sessions.filter(function(x){ return ids[x.projectId] && isClientTz(x.tz); })
       .sort(function(a,b){ return a.startsAt < b.startsAt ? -1 : 1; });
-    return hits.length ? hits[hits.length-1].tz : "";
+    return hits.length ? {tz: hits[hits.length-1].tz, city: hits[hits.length-1].tzCity || ""} : {tz:"", city:""};
   }
   function newSessionDraft(){
-    var last = sessDraft[sessDraft.length-1], base, tz = last ? (last.tz||"") : clientDefaultTz(sessEditPid);
+    var last = sessDraft[sessDraft.length-1], base, def = last ? {tz: last.tz||"", city: last.tzCity||""} : clientDefaultTz(sessEditPid), tz = def.tz;
     var lastWall = last ? last.startsAt : "";
     if(lastWall){ var d = new Date(lastWall.slice(0,10)+"T00:00:00"); d.setDate(d.getDate()+1);
       base = localDateStr(d) + "T" + lastWall.slice(11,16); }
     else { var t = new Date(); t.setDate(t.getDate()+1); base = localDateStr(t) + "T12:00"; }
-    var x = {id:uid(), mode: last ? last.mode : "online", note:"", isNew:true, tz:tz, tzAt:"", startsAt:base};
+    var x = {id:uid(), mode: last ? last.mode : "online", note:"", isNew:true, tz:tz, tzCity: isClientTz(tz) ? def.city : "", tzAt:"", startsAt:base};
     if(isClientTz(tz)) x.tzAt = tzConvert(base, KYIV_TZ, tz);
     return x;
   }
-  function tzSelectHtml(tz){
-    var h = tzOptionsHtml(), v = isClientTz(tz) ? tz : "";
-    var needle = 'value="'+esc(v)+'"';
-    if(h.indexOf(needle) < 0) h += '<option '+needle+'>'+esc(tzLabel(v))+'</option>';
-    return '<select class="f-z" data-k="z" aria-label="Client time zone" title="Client time zone — their time is calculated from yours">'+h.replace(needle, needle+' selected')+'</select>';
+  /* client city → time zone: type a city (Latin or Cyrillic), pick it, the zone and time follow */
+  var CITIES = null, citiesLoading = null;
+  function loadCities(){
+    if(CITIES) return Promise.resolve(CITIES);
+    if(window.__CITIES){ CITIES = prepCities(window.__CITIES); return Promise.resolve(CITIES); }
+    if(!citiesLoading) citiesLoading = fetch("cities.json").then(function(r){ return r.json(); }).then(function(d){ CITIES = prepCities(d); return CITIES; })
+      .catch(function(e){ citiesLoading = null; throw e; });
+    return citiesLoading;
   }
-  function sessHintHtml(wall, tz){
+  function normCity(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zа-яёіїєґ0-9]/g, ""); }
+  function prepCities(d){
+    var names = {};
+    function cname(cc){
+      if(names[cc]) return names[cc];
+      var o = {en: cc, all: cc.toLowerCase()};
+      ["en","ru","uk"].forEach(function(l){ try{ var n = new Intl.DisplayNames([l], {type:"region"}).of(cc); if(n){ if(l==="en") o.en = n; o.all += " " + normCity(n); } }catch(e){} });
+      return (names[cc] = o);
+    }
+    return d.c.map(function(row){
+      var f = row.split("|"), cc = f[1].split("-")[0], st = f[1].split("-")[1] || "";
+      var alts = f[4] ? f[4].split(";") : [];
+      return {name:f[0], cc:cc, st:st, tz:d.tz[+f[2]], pop:+f[3], n:normCity(f[0]), a:alts.map(normCity), country:cname(cc)};
+    });
+  }
+  function searchCities(q){
+    var nq = normCity(q); if(!nq || !CITIES) return [];
+    var out = [];
+    for(var i=0;i<CITIES.length;i++){
+      var c = CITIES[i], sc = 0;
+      if(c.n === nq) sc = 6;
+      else if(c.n.indexOf(nq) === 0) sc = 5;
+      else if(c.a.some(function(a){ return a.indexOf(nq) === 0; })) sc = 4;
+      else if(nq.length >= 3 && c.n.indexOf(nq) > 0) sc = 2;
+      else if(nq.length >= 3 && (" " + c.country.all).indexOf(" " + nq) >= 0) sc = 1;
+      if(sc) out.push({c:c, sc:sc});
+    }
+    out.sort(function(a,b){ return b.sc - a.sc || b.c.pop - a.c.pop; });
+    return out.slice(0, 8).map(function(o){ return o.c; });
+  }
+  // cities you've already used for clients, newest first — shown before you type
+  function recentCities(){
+    var seen = {}, out = [];
+    state.sessions.slice().sort(function(a,b){ return a.startsAt < b.startsAt ? 1 : -1; }).forEach(function(x){
+      if(!isClientTz(x.tz)) return;
+      var name = x.tzCity || tzLabel(x.tz), k = name + "|" + x.tz;
+      if(!seen[k] && out.length < 5){ seen[k] = 1; out.push({name:name, tz:x.tz, recent:true}); }
+    });
+    return out;
+  }
+  function cityLabel(x){ return isClientTz(x.tz) ? (x.tzCity || tzLabel(x.tz)) : ""; }
+  function tzPickerHtml(x){
+    var on = isClientTz(x.tz);
+    return '<div class="f-z tzp">'+
+      '<input type="hidden" data-k="z" value="'+esc(on ? x.tz : "")+'" data-city="'+esc(on ? (x.tzCity||"") : "")+'">'+
+      '<input type="text" class="tzp-in" data-k="zc" value="'+esc(cityLabel(x))+'" placeholder="Client city (Kyiv if empty)" autocomplete="off" spellcheck="false" aria-label="Client city" title="Type the city your client lives in">'+
+      '<span class="tzp-t" data-k="zt"></span>'+
+      '<div class="tzp-list" role="listbox" hidden></div></div>';
+  }
+  function tzpRowTime(row, tz){
+    var d = row.querySelector('[data-k="d"]').value, t = row.querySelector('[data-k="t"]').value;
+    if(!isClientTz(tz) || !d || !t) return "";
+    var c = tzConvert(d + "T" + t.slice(0,5), KYIV_TZ, tz); if(!c) return "";
+    return c.slice(11,16) + (c.slice(0,10)!==d ? (c.slice(0,10)>d ? " +1d" : " −1d") : "");
+  }
+  function labelTzSelect(row){
+    var z = row.querySelector('[data-k="z"]'), tag = row.querySelector('[data-k="zt"]'); if(!z || !tag) return;
+    tag.textContent = tzpRowTime(row, z.value);
+  }
+  function tzpOpen(wrap, items, emptyMsg){
+    var list = wrap.querySelector(".tzp-list"), row = wrap.closest(".sess-row");
+    if(!items.length){ list.innerHTML = emptyMsg ? '<div class="tzp-empty">'+esc(emptyMsg)+'</div>' : ""; list.hidden = !emptyMsg; wrap._items = []; return; }
+    wrap._items = items; wrap._sel = 0;
+    list.innerHTML = items.map(function(c, i){
+      var tm = tzpRowTime(row, c.tz), where = c.recent ? "recent" : (c.country.en + (c.st ? " · " + c.st : ""));
+      return '<div class="tzp-opt'+(i===0?' on':'')+'" role="option" data-i="'+i+'"><b>'+esc(c.name)+'</b><span>'+esc(where)+'</span><em>'+esc(tm)+'</em></div>';
+    }).join("");
+    list.hidden = false;
+    tzpPlace(wrap);
+  }
+  // the list floats above the dialog (fixed), below the field — or above it when there's no room
+  function tzpPlace(wrap){
+    var list = wrap.querySelector(".tzp-list"), r = wrap.querySelector(".tzp-in").getBoundingClientRect();
+    var w = Math.max(r.width, 270), left = Math.min(r.left, window.innerWidth - w - 8);
+    list.style.position = "fixed"; list.style.left = Math.max(8, left) + "px"; list.style.width = w + "px";
+    var below = window.innerHeight - r.bottom - 12, h = Math.min(286, list.scrollHeight);
+    if(below >= Math.min(h, 200) || below >= r.top){ list.style.top = (r.bottom + 4) + "px"; list.style.bottom = "auto"; list.style.maxHeight = Math.max(120, below) + "px"; }
+    else { list.style.top = "auto"; list.style.bottom = (window.innerHeight - r.top + 4) + "px"; list.style.maxHeight = Math.max(120, r.top - 12) + "px"; }
+  }
+  function tzpClose(wrap){ var l = wrap.querySelector(".tzp-list"); l.hidden = true; wrap._items = []; }
+  function tzpPick(wrap, c){
+    var z = wrap.querySelector('[data-k="z"]'), inp = wrap.querySelector(".tzp-in");
+    if(!c){ z.value = ""; z.dataset.city = ""; inp.value = ""; }
+    else { z.value = c.tz; z.dataset.city = c.name; inp.value = c.name; }
+    tzpClose(wrap);
+    refreshSessHint(wrap.closest(".sess-row"));
+  }
+  function tzpSearch(wrap){
+    var q = wrap.querySelector(".tzp-in").value.trim();
+    if(!q){ tzpOpen(wrap, recentCities()); return; }
+    loadCities().then(function(){
+      if(wrap.querySelector(".tzp-in").value.trim() !== q) return;
+      var res = searchCities(q);
+      tzpOpen(wrap, res, res.length ? "" : "No city found — try the nearest big city");
+    }, function(){ tzpOpen(wrap, [], "Couldn't load the city list — check the connection"); });
+  }
+  function bindTzPicker(box){
+    box.addEventListener("focusin", function(e){ if(e.target.classList.contains("tzp-in")){ e.target.select(); tzpSearch(e.target.closest(".tzp")); } });
+    box.addEventListener("input", function(e){ if(e.target.classList.contains("tzp-in")) tzpSearch(e.target.closest(".tzp")); });
+    box.addEventListener("mousedown", function(e){
+      var o = e.target.closest(".tzp-opt"); if(!o) return;
+      e.preventDefault();
+      var w = o.closest(".tzp"); tzpPick(w, w._items[+o.dataset.i]);
+    });
+    box.addEventListener("keydown", function(e){
+      if(!e.target.classList.contains("tzp-in")) return;
+      var w = e.target.closest(".tzp"), items = w._items || [], list = w.querySelector(".tzp-list");
+      if(e.key==="ArrowDown" || e.key==="ArrowUp"){
+        if(!items.length) return; e.preventDefault();
+        w._sel = (w._sel + (e.key==="ArrowDown" ? 1 : items.length - 1)) % items.length;
+        [].forEach.call(list.querySelectorAll(".tzp-opt"), function(n, i){ n.classList.toggle("on", i===w._sel); });
+      } else if(e.key==="Enter"){
+        e.preventDefault(); e.stopPropagation();
+        if(!e.target.value.trim()) tzpPick(w, null);
+        else if(items.length) tzpPick(w, items[w._sel||0]);
+      } else if(e.key==="Escape" && !list.hidden){
+        e.preventDefault(); e.stopPropagation(); tzpClose(w);
+      }
+    });
+    box.addEventListener("focusout", function(e){
+      if(!e.target.classList.contains("tzp-in")) return;
+      var w = e.target.closest(".tzp"), z = w.querySelector('[data-k="z"]');
+      setTimeout(function(){
+        if(!w.isConnected) return;
+        var v = e.target.value.trim();
+        if(!v) tzpPick(w, null);                                       // emptied → Kyiv
+        else if(normCity(v) !== normCity(z.dataset.city || (z.value ? tzLabel(z.value) : ""))){
+          // typed but didn't pick: take the best match, or go back to what it was
+          var best = CITIES ? searchCities(v)[0] : null;
+          if(best && normCity(best.name) === normCity(v)) tzpPick(w, best);
+          else { e.target.value = z.value ? (z.dataset.city || tzLabel(z.value)) : ""; tzpClose(w); }
+        } else tzpClose(w);
+      }, 120);
+    });
+  }
+  function sessHintHtml(wall, tz, city){
     if(!isClientTz(tz) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(wall||"")) return "";
+    var place = city || tzLabel(tz);
     var ms = wallToMs(wall, KYIV_TZ); if(isNaN(ms)) return "";
     var cl = msToWall(ms, tz), dayDiff = tzDiffH(tz, ms), nowDiff = tzDiffH(tz, Date.now());
-    var h = 'Kyiv: <b>'+esc(fmtSessionDateTime(wall))+'</b> → '+esc(tzLabel(tz))+': <b>'+esc(fmtSessionDateTime(cl))+'</b> · '+esc(tzLabel(tz))+' is '+esc(fmtDiff(dayDiff));
+    var h = 'Kyiv: <b>'+esc(fmtSessionDateTime(wall))+'</b> → '+esc(place)+': <b>'+esc(fmtSessionDateTime(cl))+'</b> · '+esc(place)+' is '+esc(fmtDiff(dayDiff));
     if(dayDiff !== nowDiff && ms > Date.now()){
       h += '<span class="tz-warn">Clocks change before this session: the difference is '+esc(Math.abs(nowDiff)+' h')+' today and '+
-        esc(Math.abs(dayDiff)+' h')+' on that day. The '+esc(tzLabel(tz))+' time above already accounts for it.</span>';
+        esc(Math.abs(dayDiff)+' h')+' on that day. The '+esc(place)+' time above already accounts for it.</span>';
     }
     return h;
   }
@@ -2680,21 +2831,21 @@
       return '<div class="sess-row'+(x.startsAt && x.startsAt < now ? ' past' : '')+'" data-i="'+i+'">'+
         '<input class="f-d" type="date" data-k="d" value="'+esc(wall.slice(0,10))+'" aria-label="Date">'+
         '<input class="f-t" type="time" data-k="t" step="300" value="'+esc(wall.slice(11,16))+'" aria-label="Time">'+
-        tzSelectHtml(x.tz)+
+        tzPickerHtml(x)+
         '<select class="f-m" data-k="m" aria-label="Online or offline"><option value="online"'+(x.mode!=="offline"?" selected":"")+'>Online</option><option value="offline"'+(x.mode==="offline"?" selected":"")+'>Offline</option></select>'+
         '<input class="f-n" type="text" data-k="n" maxlength="60" placeholder="first look / review / final" value="'+esc(x.note||"")+'" aria-label="Note">'+
         '<button type="button" class="sess-x" data-k="x" title="Remove session" aria-label="Remove session">×</button>'+
-        '<div class="sess-tz" data-k="h">'+sessHintHtml(wall, x.tz)+'</div>'+
+        '<div class="sess-tz" data-k="h">'+sessHintHtml(wall, x.tz, x.tzCity)+'</div>'+
       '</div>';
     }).join("");
     [].forEach.call(box.querySelectorAll(".sess-row"), labelTzSelect);
   }
   function readSessRow(row, x){
     var d = row.querySelector('[data-k="d"]').value, t = row.querySelector('[data-k="t"]').value || "12:00";
-    var wall = d ? (d + "T" + t.slice(0,5)) : "", tz = row.querySelector('[data-k="z"]').value;
+    var zEl = row.querySelector('[data-k="z"]'), wall = d ? (d + "T" + t.slice(0,5)) : "", tz = zEl.value;
     x.startsAt = wall;
-    if(isClientTz(tz)){ x.tz = tz; x.tzAt = wall ? tzConvert(wall, KYIV_TZ, tz) : ""; }
-    else { x.tz = ""; x.tzAt = ""; }
+    if(isClientTz(tz)){ x.tz = tz; x.tzCity = zEl.dataset.city || ""; x.tzAt = wall ? tzConvert(wall, KYIV_TZ, tz) : ""; }
+    else { x.tz = ""; x.tzCity = ""; x.tzAt = ""; }
     x.mode = row.querySelector('[data-k="m"]').value;
     x.note = row.querySelector('[data-k="n"]').value.trim();
     return wall;
@@ -2704,21 +2855,11 @@
       var x = sessDraft[+row.dataset.i]; if(x) readSessRow(row, x);
     });
   }
-  function labelTzSelect(row){
-    var sel = row.querySelector('[data-k="z"]'); if(!sel) return;
-    var d = row.querySelector('[data-k="d"]').value, t = row.querySelector('[data-k="t"]').value;
-    [].forEach.call(sel.options, function(o){ if(o.dataset.l==null) o.dataset.l = o.text; o.text = o.dataset.l; });
-    var o = sel.options[sel.selectedIndex];
-    if(o && o.value && isClientTz(o.value) && d && t){
-      var c = tzConvert(d + "T" + t.slice(0,5), KYIV_TZ, o.value);
-      if(c) o.text = o.dataset.l.split(" · ")[0] + " · " + c.slice(11,16) + (c.slice(0,10)!==d ? (c.slice(0,10)>d ? " (+1 day)" : " (−1 day)") : "");
-    }
-  }
   function refreshSessHint(row){
     labelTzSelect(row);
     var x = sessDraft[+row.dataset.i]; if(!x) return;
-    var wall = readSessRow(row, x), tz = row.querySelector('[data-k="z"]').value;
-    row.querySelector('[data-k="h"]').innerHTML = sessHintHtml(wall, tz);
+    var wall = readSessRow(row, x);
+    row.querySelector('[data-k="h"]').innerHTML = sessHintHtml(wall, x.tz, x.tzCity);
   }
   function saveSessions(){
     readSessDraft();
@@ -2729,8 +2870,8 @@
       keepIds[x.id] = 1;
       var cur = state.sessions.find(function(y){ return y.id===x.id; });
       if(!cur){ cur = {id:x.id, projectId:pid}; state.sessions.push(cur); }
-      var changed = cur.startsAt!==x.startsAt || cur.mode!==x.mode || (cur.note||"")!==x.note || (cur.tz||"")!==(x.tz||"") || (cur.tzAt||"")!==(x.tzAt||"");
-      cur.startsAt = x.startsAt; cur.mode = x.mode; cur.note = x.note; cur.tz = x.tz||""; cur.tzAt = x.tzAt||"";
+      var changed = cur.startsAt!==x.startsAt || cur.mode!==x.mode || (cur.note||"")!==x.note || (cur.tz||"")!==(x.tz||"") || (cur.tzAt||"")!==(x.tzAt||"") || (cur.tzCity||"")!==(x.tzCity||"");
+      cur.startsAt = x.startsAt; cur.mode = x.mode; cur.note = x.note; cur.tz = x.tz||""; cur.tzAt = x.tzAt||""; cur.tzCity = x.tzCity||"";
       if(changed) cloudUpsertSession(cur);
     });
     before.forEach(function(x){
@@ -2925,6 +3066,10 @@
     document.getElementById("sessList").addEventListener("click", function(e){
       var x = e.target.closest('[data-k="x"]'); if(!x) return;
       readSessDraft(); sessDraft.splice(+x.closest(".sess-row").dataset.i, 1); renderSessDraft();
+    });
+    bindTzPicker(document.getElementById("sessList"));
+    document.querySelector("#sessOverlay .modal").addEventListener("scroll", function(){
+      [].forEach.call(document.querySelectorAll("#sessList .tzp"), function(w){ if(!w.querySelector(".tzp-list").hidden) tzpPlace(w); });
     });
     ["input","change"].forEach(function(ev){
       document.getElementById("sessList").addEventListener(ev, function(e){
