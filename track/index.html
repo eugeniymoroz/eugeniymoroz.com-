@@ -829,7 +829,7 @@
     .row{grid-template-columns:auto 1fr auto;
       grid-template-areas:
         "controls controls tools"
-        "num      name     name"
+        "name     name     num"
         "crew     crew     crew"
         "stages   stages   paid"
         "deadline deadline amount";
@@ -842,7 +842,8 @@
     .head-controls .session .dt-wrap{width:auto;display:inline-flex}
     .head-controls .session .dt-disp{width:auto;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;text-align:center}
     .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
-    .row-num{grid-area:num;align-self:center;margin-right:0;font-size:11px;padding:1px 6px}
+    .head-controls .sess-btn .dt-disp{display:none}      /* phone: date only inside the session details */
+    .row-num{grid-area:num;align-self:center;justify-self:end;margin:0 7px 0 0;font-size:12px;padding:2px 8px;vertical-align:0}
     .row-name{grid-area:name;align-self:center;min-width:0;max-width:100%;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
     .row-crew{grid-area:crew;align-self:center;margin-top:-4px;gap:4px 12px}
@@ -2172,7 +2173,7 @@
     return '<button type="button" class="session sess-btn '+cls+(past?' s-past':'')+'" data-act="sessions" title="'+(info.count===1?"1 session":info.count+" sessions")+' — click to manage">'+
       '<span class="session-top"><span class="session-dot"></span><span class="sess-mode">'+lbl+'</span>'+
         (more>0 ? '<span class="sess-more">+'+more+'</span>' : '')+'</span>'+
-      '<span class="dt-disp">'+esc((past?"last · ":"")+fmtNumericDateTime(x.startsAt))+(x.note?' · '+esc(x.note):'')+'</span>'+
+      '<span class="dt-disp">'+esc(fmtNumericDateTime(x.startsAt))+'</span>'+
     '</button>';
   }
 
