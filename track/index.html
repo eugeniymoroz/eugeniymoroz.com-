@@ -71,6 +71,13 @@
   .brand h1{font-family:var(--display);font-weight:600;font-size:30px;letter-spacing:.01em;text-transform:uppercase;margin:0;line-height:1.05;color:var(--white)}
   .brand p{margin:8px 0 0;color:var(--muted);font-size:11px;letter-spacing:.24em;text-transform:uppercase}
   .top-actions{display:flex;align-items:center;gap:10px}
+  .brand h1{display:flex;align-items:center;gap:16px}
+  .add-fab{flex:none;width:38px;height:38px;border-radius:50%;border:0;padding:0;cursor:pointer;display:grid;place-items:center;
+    background:var(--white);color:#000;box-shadow:0 0 0 6px rgba(255,255,255,.06);transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+  .add-fab svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .add-fab:hover{transform:rotate(90deg);box-shadow:0 0 0 9px rgba(255,255,255,.09)}
+  .add-fab:active{transform:rotate(90deg) scale(.92)}
+  .add-fab:focus-visible{outline:2px solid var(--grey);outline-offset:4px}
   .topbar{position:relative}
   .now-clock{position:absolute;top:-10px;right:0;display:flex;align-items:baseline;gap:10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
   .now-clock .nc-time{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.04em;color:var(--white);font-variant-numeric:tabular-nums}
@@ -323,6 +330,60 @@
   .sched-empty{color:var(--muted);font-size:13px;padding:18px 0 6px}
   .sched-count{font-size:10px;font-weight:600;background:var(--white);color:#000;border-radius:99px;padding:1px 6px;margin-left:4px}
   .sched-count:empty{display:none}
+  /* ---------- calendar: the week — sessions, deadlines, payments + Google Calendar ---------- */
+  .calp{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px 24px;margin-bottom:18px}
+  .calp[hidden]{display:none}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .cal-head .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .cal-week{font-family:var(--display);font-weight:600;font-size:19px;color:var(--white);margin-top:4px;letter-spacing:.01em}
+  .cal-nav{display:flex;align-items:center;gap:8px}
+  .cal-nav .chip{padding:5px 12px;font-size:11px}
+  .cal-nav .chip:disabled{opacity:.4;cursor:default}
+  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .cal-legend span{display:inline-flex;align-items:center;gap:6px}
+  .cal-legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .cal-scroll{overflow-x:auto;border:1px solid var(--line-soft);border-radius:6px}
+  .cal-grid{display:grid;grid-template-columns:48px repeat(7,minmax(96px,1fr));min-width:730px}
+  .cal-dh{padding:9px 8px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:baseline;gap:6px;border-left:1px solid var(--line-soft);border-bottom:1px solid var(--line)}
+  .cal-corner{border-bottom:1px solid var(--line)}
+  .cal-dh b{font-family:var(--display);font-size:16px;letter-spacing:0;color:var(--ink);font-weight:600}
+  .cal-dh.today{color:var(--white)} .cal-dh.today b{color:#000;background:var(--white);border-radius:4px;padding:0 5px}
+  .cal-adl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#5a5a60;padding:6px 6px 0 0;text-align:right;border-bottom:1px solid var(--line)}
+  .cal-ad{border-left:1px solid var(--line-soft);border-bottom:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:3px;min-height:30px}
+  .cal-chip{display:block;width:100%;text-align:left;font:inherit;font-size:11px;line-height:1.3;border:0;border-radius:3px;padding:3px 6px;cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);background:var(--slate-soft)}
+  .cal-chip.due{background:var(--red-soft);color:#f0b2ab}
+  .cal-chip.due.done{background:var(--slate-soft);color:var(--muted);text-decoration:line-through}
+  .cal-chip.pay{background:var(--amber-soft);color:#ecc98a}
+  .cal-chip.pay.late{background:var(--red-soft);color:#f0b2ab}
+  .cal-chip.g{background:var(--blue-soft);color:#b6cdec}
+  .cal-axis{position:sticky;left:0;z-index:2;background:var(--surface)}
+  .cal-corner,.cal-adl{position:sticky;left:0;z-index:2;background:var(--surface)}
+  .cal-item.short{flex-direction:row;align-items:center;gap:5px;padding:2px 6px}
+  .cal-item.short span{flex:none;order:-1}
+  .cal-item.short b{min-width:0}
+  .cal-axis div{position:absolute;right:8px;font-size:10.5px;color:#5a5a60;font-variant-numeric:tabular-nums;transform:translateY(-6px)}
+  .cal-axis div:first-child{transform:translateY(3px)}
+  .cal-day{position:relative;border-left:1px solid var(--line-soft);
+    background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 43px,var(--line-soft) 43px,var(--line-soft) 44px)}
+  .cal-day.past{background-color:rgba(0,0,0,.22)}
+  .cal-now{position:absolute;left:0;right:0;height:0;border-top:1px solid var(--red);z-index:3;pointer-events:none}
+  .cal-now::before{content:"";position:absolute;left:-4px;top:-4px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+  .cal-item{position:absolute;z-index:1;border-radius:4px;padding:4px 6px;overflow:hidden;text-align:left;cursor:pointer;font:inherit;color:var(--ink);
+    display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;
+    background:color-mix(in srgb,var(--c) 20%,var(--surface));border:0;border-left:3px solid var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+  .cal-item:hover{background:color-mix(in srgb,var(--c) 30%,var(--surface))}
+  .cal-item b{display:block;font-size:11.5px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-item span{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+  .cal-item.g{background:color-mix(in srgb,var(--blue) 12%,var(--surface));border-left:3px solid #5d7ea8}
+  .cal-item.g b{color:#c9d8ec;font-weight:500}
+  .cal-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:#5a5a60}
+  .cal-foot button{background:none;border:0;color:var(--muted);font:inherit;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+  .cal-foot .err{color:var(--amber)}
+  @media (max-width:760px){
+    .calp{padding:18px 14px}
+    .cal-head{align-items:flex-start}
+  }
   @media (max-width:600px){
     .schedule{padding:16px 13px}
     .sched-row{grid-template-columns:48px 1fr;grid-template-areas:"t w" "t m";row-gap:3px}
@@ -664,7 +725,7 @@
     .top-actions .saving{display:none}
     .cur-select{flex:0 0 auto}
     .top-actions{flex-wrap:wrap}
-    .top-actions .btn:not(.btn-primary){flex:1 1 0;padding:10px 8px;font-size:12px;white-space:nowrap}
+    .top-actions .btn:not(.btn-primary){flex:1 1 calc(50% - 4px);padding:10px 8px;font-size:12px;white-space:nowrap}
     .top-actions .btn-primary{flex:1 0 100%;text-align:center}
     .ledger{padding:20px 18px}
     .earned{font-size:clamp(34px,13vw,52px)}
@@ -792,7 +853,7 @@
 
   <div class="topbar">
     <div class="brand">
-      <h1>Projects</h1>
+      <h1>Projects <button type="button" class="add-fab" id="addBtn" title="New project (N)" aria-label="New project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h1>
       <p>Work · Payments · Earnings</p>
     </div>
     <div class="now-clock" id="nowClock" aria-live="off"></div>
@@ -801,7 +862,7 @@
       <button class="btn" id="statsToggle" aria-expanded="false">Statistics</button>
       <button class="btn" id="earnToggle" aria-expanded="false">Earned (received)</button>
       <button class="btn" id="schedToggle" aria-expanded="false">Sessions <span class="sched-count" id="schedCount"></span></button>
-      <button class="btn btn-primary" id="addBtn">+ New project</button>
+      <button class="btn" id="calToggle" aria-expanded="false">Calendar</button>
     </div>
   </div>
 
@@ -815,6 +876,29 @@
       </div>
     </div>
     <div class="sched-body" id="schedBody"></div>
+  </div>
+
+  <div class="calp" id="calPanel" hidden>
+    <div class="cal-head">
+      <div>
+        <span class="lbl">Calendar</span>
+        <div class="cal-week" id="calWeekLabel"></div>
+      </div>
+      <div class="cal-nav">
+        <button class="ynav" id="calPrev" aria-label="Previous week">‹</button>
+        <button class="chip" id="calToday">This week</button>
+        <button class="ynav" id="calNext" aria-label="Next week">›</button>
+      </div>
+      <div class="cal-legend">
+        <span><i style="background:var(--violet)"></i>Online session</span>
+        <span><i style="background:var(--amber)"></i>Offline session</span>
+        <span><i style="background:var(--red)"></i>Deadline</span>
+        <span><i style="background:#ecc98a"></i>Payment</span>
+        <span><i style="background:#5d7ea8"></i>Google Calendar</span>
+      </div>
+    </div>
+    <div class="cal-scroll"><div class="cal-grid" id="calGrid"></div></div>
+    <div class="cal-foot"><span id="calStatus"></span><span>Click a session, deadline or payment to open the project; a Google event opens in Google Calendar.</span></div>
   </div>
 
   <div class="ledger" id="ledger" hidden>
@@ -1526,6 +1610,7 @@
       });
       state.sessions = merged;
       save(); renderAll();
+      if(!document.getElementById("calPanel").hidden) loadCalendarWeek();   // reopened on the Calendar tab
     });
   }
 
@@ -2132,7 +2217,7 @@
     foot.textContent = (function(n){return n+(n===1?" project":" projects");})(state.projects.filter(inMonth).length);
   }
 
-  function renderAll(){ renderStats(); renderList(); renderSchedule(); }
+  function renderAll(){ renderStats(); renderList(); renderSchedule(); renderCalendar(); }
 
   /* ---------- schedule: every upcoming session across projects, by day ---------- */
   ui.schedDays = "7";
@@ -2369,6 +2454,175 @@
     else applyDatePicker(d);
   }
 
+  /* ---------- calendar tab: one week — tracker sessions, deadlines, payment reminders + Google Calendar ---------- */
+  var CAL_H = 44, CAL_DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], CAL_PAY_DAYS = 14;
+  var calG = {};                                   // Google events by week key: {at, events, error}
+  function calMonday(d){ var x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+  function calAddDays(d, n){ var x = new Date(d); x.setDate(x.getDate()+n); return x; }
+  function calParse(s){ var m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s||""); return m ? new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0)) : null; }
+  function calHM(d){ return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
+  ui.calWeek = calMonday(new Date());
+  function calKey(){ return localDateStr(ui.calWeek); }
+  function calWeekLabel(mon){
+    var sun = calAddDays(mon, 6);
+    return mon.toLocaleDateString("en-GB", {day:"numeric", month:"short"}) + " – " + sun.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"});
+  }
+  // the same rule the calendar sync uses: a reminder 14 days after "Completed", or today if that has passed
+  function calPayDate(p){
+    if(p.status!=="done" || p.paid || p.expected || !/^\d{4}-\d{2}-\d{2}$/.test(p.doneAt||"")) return null;
+    var d = addDays(p.doneAt, CAL_PAY_DAYS), t = todayStr();
+    return {date: d < t ? t : d, late: d < t};
+  }
+  function calCollect(mon){
+    var end = calAddDays(mon, 7), first = localDateStr(mon), last = localDateStr(calAddDays(mon, 6));
+    var timed = [], allday = [];
+    var byId = {}; state.projects.forEach(function(p){ byId[p.id] = p; });
+    state.sessions.forEach(function(x){
+      var p = byId[x.projectId]; if(!p) return;
+      var s = calParse(x.startsAt); if(!s || x.startsAt.length < 16) return;
+      var e = new Date(s.getTime() + 36e5); if(e <= mon || s >= end) return;
+      var off = x.mode==="offline";
+      timed.push({kind:"session", id:x.id, pid:p.id, c: off ? "var(--amber)" : "var(--violet)",
+        title: projName(p) || "Session", sub: (off ? "Offline" : "Online") + (x.note ? " · " + x.note : "") + (clientTimeNote(x) ? " · " + clientTimeNote(x) : ""), s:s, e:e});
+    });
+    state.projects.forEach(function(p){
+      if(p.due && p.due >= first && p.due <= last)
+        allday.push({kind:"due", pid:p.id, date:p.due, title:"Deadline · " + (projName(p)||"Untitled"), done: p.status==="done" || p.paid});
+      var pay = calPayDate(p);
+      if(pay && pay.date >= first && pay.date <= last)
+        allday.push({kind:"pay", pid:p.id, date:pay.date, late:pay.late, title:(pay.late ? "Payment late · " : "Payment · ") + (projName(p)||"Untitled") + (revealed ? " · " + moneyNative(p.amount, p.amountCur||"USD") : "")});
+    });
+    var g = calG[localDateStr(mon)];
+    (g && g.events || []).forEach(function(ev){
+      if(ev.allDay){
+        // all-day events end the day after; show on each day they cover in this week
+        var d = calParse(ev.start), stop = calParse(ev.end) || calAddDays(d, 1);
+        for(var x = new Date(d); x < stop; x = calAddDays(x, 1)){
+          var ds = localDateStr(x); if(ds >= first && ds <= last) allday.push({kind:"g", date:ds, title:ev.title, link:ev.link});
+        }
+      } else {
+        var s = new Date(ev.start), e = new Date(ev.end);
+        if(isNaN(+s) || isNaN(+e) || e <= mon || s >= end) return;
+        timed.push({kind:"g", id:ev.id, link:ev.link, title:ev.title, sub: ev.location || "", s:s, e:e});
+      }
+    });
+    return {timed: timed.sort(function(a,b){ return a.s - b.s; }), allday: allday};
+  }
+  function renderCalendar(){
+    var panel = document.getElementById("calPanel"); if(!panel || panel.hidden) return;
+    var mon = ui.calWeek, end = calAddDays(mon, 7), now = new Date(), today = todayStr();
+    document.getElementById("calWeekLabel").textContent = calWeekLabel(mon);
+    document.getElementById("calToday").disabled = +mon === +calMonday(now);
+    var data = calCollect(mon);
+    var h0 = 9, h1 = 20;
+    data.timed.forEach(function(it){
+      var sameDay = localDateStr(it.s) === localDateStr(new Date(it.e - 1));
+      if(!sameDay){ h0 = 0; h1 = 24; return; }
+      h0 = Math.min(h0, it.s.getHours()); h1 = Math.max(h1, it.e.getHours() + (it.e.getMinutes() ? 1 : 0) || 24);
+    });
+    var height = (h1 - h0) * CAL_H;
+    var html = '<div class="cal-corner"></div>';
+    for(var i=0;i<7;i++){
+      var d = calAddDays(mon, i), ds = localDateStr(d);
+      html += '<div class="cal-dh'+(ds===today?' today':'')+'">'+CAL_DAYS[i]+' <b>'+d.getDate()+'</b></div>';
+    }
+    // all-day row: deadlines, payment reminders, all-day Google events
+    html += '<div class="cal-adl">All day</div>';
+    for(var a=0;a<7;a++){
+      var dsa = localDateStr(calAddDays(mon, a));
+      var chips = data.allday.filter(function(x){ return x.date===dsa; }).sort(function(x,y){ var o={due:0,pay:1,g:2}; return o[x.kind]-o[y.kind]; });
+      html += '<div class="cal-ad">' + chips.map(function(x){
+        var cls = "cal-chip " + x.kind + (x.done ? " done" : "") + (x.late ? " late" : "");
+        return '<button type="button" class="'+cls+'" title="'+esc(x.title)+'" '+(x.pid ? 'data-cal-pid="'+esc(x.pid)+'"' : '')+(x.link ? ' data-cal-link="'+esc(x.link)+'"' : '')+'>'+esc(x.title)+'</button>';
+      }).join("") + '</div>';
+    }
+    html += '<div class="cal-axis" style="height:'+height+'px">';
+    for(var h=h0; h<h1; h++) html += '<div style="top:'+((h-h0)*CAL_H)+'px">'+String(h).padStart(2,"0")+':00</div>';
+    html += '</div>';
+    for(var j=0;j<7;j++){
+      var dStart = calAddDays(mon, j), dEnd = calAddDays(mon, j+1), dstr = localDateStr(dStart), inner = "";
+      var di = data.timed.filter(function(it){ return it.s < dEnd && it.e > dStart; }).map(function(it){
+        var s = Math.max(+it.s, +dStart), e = Math.min(+it.e, +dEnd);
+        return {it:it, a:(s - dStart)/6e4, b:(e - dStart)/6e4};
+      }).sort(function(x,y){ return x.a - y.a || y.b - x.b; });
+      // overlapping items sit side by side
+      var lanesEnd = [], group = [], gEnd = -1;
+      var flush = function(){ var n = Math.max.apply(null, group.map(function(g){ return g.lane; })) + 1; group.forEach(function(g){ g.n = n; }); group = []; lanesEnd = []; };
+      di.forEach(function(g){
+        if(g.a >= gEnd && group.length) flush();
+        var lane = 0; while(lanesEnd[lane] > g.a) lane++;
+        lanesEnd[lane] = g.b; g.lane = lane; group.push(g); gEnd = Math.max(gEnd, g.b);
+      });
+      if(group.length) flush();
+      di.forEach(function(g){
+        var it = g.it, top = (g.a - h0*60) / 60 * CAL_H, hgt = Math.max(22, (g.b - g.a) / 60 * CAL_H - 2), w = 100 / g.n, left = g.lane * w;
+        var when = calHM(it.s) + "–" + calHM(it.e);
+        var short = hgt < 34;
+        inner += '<button type="button" class="cal-item'+(it.kind==="g"?' g':'')+(short?' short':'')+'" '+
+          (it.kind==="session" ? 'data-cal-sess="'+esc(it.id)+'"' : 'data-cal-link="'+esc(it.link||"")+'"')+
+          ' style="'+(it.c ? '--c:'+it.c+';' : '')+'top:'+top+'px;height:'+hgt+'px;left:calc('+left+'% + 2px);width:calc('+w+'% - 4px)"'+
+          ' title="'+esc(it.title + (it.sub ? " — " + it.sub : "") + " · " + when)+'"><b>'+esc(it.title)+'</b><span>'+(short ? calHM(it.s) : when+(it.sub ? ' · '+esc(it.sub) : ''))+'</span></button>';
+      });
+      if(dstr === today){
+        var nm = now.getHours()*60 + now.getMinutes();
+        if(nm >= h0*60 && nm <= h1*60) inner += '<div class="cal-now" style="top:'+((nm - h0*60)/60*CAL_H)+'px"></div>';
+      }
+      html += '<div class="cal-day'+(dstr < today ? ' past' : '')+'" style="height:'+height+'px">'+inner+'</div>';
+    }
+    document.getElementById("calGrid").innerHTML = html;
+    var sc = document.querySelector("#calPanel .cal-scroll"), tcol = document.querySelectorAll("#calGrid .cal-dh")[(now.getDay()+6)%7];
+    // narrow screen: on this week jump to today, on other weeks start from Monday
+    if(sc && sc.dataset.week !== localDateStr(mon)){
+      sc.dataset.week = localDateStr(mon);
+      sc.scrollLeft = (tcol && +mon === +calMonday(now) && sc.scrollWidth > sc.clientWidth + 4) ? Math.max(0, tcol.offsetLeft - 56) : 0;
+    }
+    calStatus();
+  }
+  function calStatus(){
+    var el = document.getElementById("calStatus"); if(!el) return;
+    var g = calG[calKey()];
+    if(!sb || !session){ el.textContent = "Google Calendar shows up when you're signed in."; return; }
+    if(!g || g.loading){ el.textContent = "Loading Google Calendar…"; return; }
+    if(g.error){ el.innerHTML = '<span class="err">Google Calendar: '+esc(g.error)+'</span> · <button type="button" id="calRetry">Try again</button>'; return; }
+    var n = (g.events||[]).length;
+    el.innerHTML = 'Google Calendar · '+n+' event'+(n===1?'':'s')+' this week · updated '+calHM(new Date(g.at))+' · <button type="button" id="calRetry">Refresh</button>';
+  }
+  function loadCalendarWeek(force){
+    var key = calKey(), g = calG[key];
+    if(!sb || !session){ calStatus(); return; }
+    if(g && !force && (g.loading || (Date.now() - g.at < 5*60e3 && !g.error))){ return; }
+    var mon = ui.calWeek, end = calAddDays(mon, 7);
+    calG[key] = {loading:true, at:Date.now(), events: g ? g.events : []};
+    calStatus();
+    sb.functions.invoke("calendar-week", {body:{from: mon.toISOString(), to: end.toISOString()}}).then(function(res){
+      var err = res.error ? (res.error.message || "couldn't load") : (res.data && res.data.error) || "";
+      calG[key] = err ? {error: err, at: Date.now(), events: g ? g.events : []} : {events: res.data.events || [], at: Date.now()};
+      if(calKey() === key) renderCalendar();
+    }, function(e){
+      calG[key] = {error: (e && e.message) || "offline", at: Date.now(), events: g ? g.events : []};
+      if(calKey() === key) renderCalendar();
+    });
+  }
+  function calGo(mon){ ui.calWeek = mon; renderCalendar(); loadCalendarWeek(); }
+  function bindCalendar(){
+    document.getElementById("calPrev").onclick = function(){ calGo(calAddDays(ui.calWeek, -7)); };
+    document.getElementById("calNext").onclick = function(){ calGo(calAddDays(ui.calWeek, 7)); };
+    document.getElementById("calToday").onclick = function(){ calGo(calMonday(new Date())); };
+    document.getElementById("calPanel").addEventListener("click", function(e){
+      if(e.target.id === "calRetry"){ loadCalendarWeek(true); return; }
+      var t = e.target.closest("[data-cal-sess],[data-cal-pid],[data-cal-link]"); if(!t) return;
+      if(t.dataset.calSess){
+        var sx = state.sessions.find(function(x){ return x.id===t.dataset.calSess; });
+        var p = sx && state.projects.find(function(y){ return y.id===sx.projectId; });
+        if(p) openSessions(p);
+      } else if(t.dataset.calPid){
+        var pp = state.projects.find(function(y){ return y.id===t.dataset.calPid; }); if(pp) openEdit(pp);
+      } else if(t.dataset.calLink){
+        window.open(t.dataset.calLink, "_blank", "noopener");
+      }
+    });
+  }
+
   /* ---------- sessions editor ---------- */
   var sessEditPid = null, sessDraft = [];
   function openSessions(p){
@@ -2541,6 +2795,13 @@
 
   function bind(){
     document.getElementById("addBtn").onclick = addProject;
+    document.addEventListener("keydown", function(e){       // N = new project (not while typing or in a dialog)
+      if((e.key!=="n" && e.key!=="N" && e.key!=="т" && e.key!=="Т") || e.metaKey || e.ctrlKey || e.altKey) return;
+      var t = e.target, tag = t && t.tagName;
+      if(tag==="INPUT" || tag==="TEXTAREA" || tag==="SELECT" || (t && t.isContentEditable)) return;
+      if(document.querySelector(".overlay.show")) return;
+      e.preventDefault(); addProject();
+    });
     setupAutocomplete("fClient","acClient","client");
     setupAutocomplete("fDirector","acDirector","director");
     setupAutocomplete("fDop","acDop","dop");
@@ -2583,14 +2844,16 @@
     var statsEl  = document.getElementById("statsPanel");
     var earnBtn  = document.getElementById("earnToggle");
     var statsBtn = document.getElementById("statsToggle");
-    var activePanel = null;
-    try{ activePanel = localStorage.getItem("tracker:panel") || null; }catch(e){}
+    var activePanel = "sched";          // the tracker always opens on Sessions
     var schedEl = document.getElementById("schedPanel"), schedBtn = document.getElementById("schedToggle");
+    var calEl = document.getElementById("calPanel"), calBtn = document.getElementById("calToggle");
     function applyPanels(){
       ledgerEl.hidden = activePanel!=="earn";
       statsEl.hidden  = activePanel!=="stats";
       schedEl.hidden  = activePanel!=="sched";
       schedBtn.setAttribute("aria-expanded", activePanel==="sched" ? "true" : "false");
+      calEl.hidden = activePanel!=="cal";
+      calBtn.setAttribute("aria-expanded", activePanel==="cal" ? "true" : "false");
       var kpisEl = document.getElementById("kpis");
       if(kpisEl) kpisEl.hidden = activePanel==="stats";   // counters belong to Earned view only
       earnBtn.setAttribute("aria-expanded", activePanel==="earn" ? "true" : "false");
@@ -2600,12 +2863,14 @@
     function setPanel(name){
       activePanel = (activePanel===name) ? null : name;
       applyPanels();
-      try{ localStorage.setItem("tracker:panel", activePanel || ""); }catch(e){}
     }
     function backToCurrentMonth(){ ui.month = currentYM(); syncMonthUI(); populateYearJump(); }
     earnBtn.onclick  = function(){ backToCurrentMonth(); setPanel("earn"); renderAll(); };
     statsBtn.onclick = function(){ backToCurrentMonth(); setPanel("stats"); renderAll(); };
     schedBtn.onclick = function(){ setPanel("sched"); renderSchedule(); };
+    calBtn.onclick = function(){ setPanel("cal"); renderCalendar(); if(!calEl.hidden) loadCalendarWeek(); };
+    bindCalendar();
+
     document.getElementById("schedRange").addEventListener("click", function(e){
       var c = e.target.closest(".chip[data-days]"); if(!c) return;
       ui.schedDays = c.dataset.days;
