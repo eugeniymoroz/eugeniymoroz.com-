@@ -301,6 +301,7 @@
   .amount-fx{margin-top:4px;text-align:right}
   .amount-fx:empty{display:none}
   /* inline editing of name / amount right in the card */
+  .row-num{font-family:var(--display);font-size:12px;font-weight:500;letter-spacing:.08em;color:var(--muted);font-variant-numeric:tabular-nums;margin-right:10px;padding:2px 7px;border:1px solid var(--line);border-radius:4px;vertical-align:3px;white-space:nowrap}
   .row-name.editable,.amount.editable{cursor:text}
   .row-name.editable:hover,.amount.editable:hover{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--grey)}
   .inline-input{font:inherit;background:var(--bg);border:1px solid var(--grey);border-radius:4px;color:var(--ink);padding:2px 6px;max-width:100%}
@@ -828,7 +829,7 @@
     .row{grid-template-columns:auto 1fr auto;
       grid-template-areas:
         "controls controls tools"
-        "name     name     name"
+        "num      name     name"
         "crew     crew     crew"
         "stages   stages   paid"
         "deadline deadline amount";
@@ -841,6 +842,7 @@
     .head-controls .session .dt-wrap{width:auto;display:inline-flex}
     .head-controls .session .dt-disp{width:auto;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;text-align:center}
     .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
+    .row-num{grid-area:num;align-self:center;margin-right:0;font-size:11px;padding:1px 6px}
     .row-name{grid-area:name;align-self:center;min-width:0;max-width:100%;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
     .row-crew{grid-area:crew;align-self:center;margin-top:-4px;gap:4px 12px}
@@ -1049,7 +1051,7 @@
   <div class="attention" id="attention" hidden></div>
 
   <div class="searchbar">
-    <input class="search-input" id="search" type="search" placeholder="Search project, client, director, producer…" autocomplete="off" aria-label="Search projects">
+    <input class="search-input" id="search" type="search" placeholder="Search project, #number, client, director, producer…" autocomplete="off" aria-label="Search projects">
     <span class="search-hint" id="searchHint"></span>
   </div>
 
@@ -1337,6 +1339,16 @@
   function todayStr(){ return localDateStr(new Date()); }
   function nowLocalInput(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
   function projName(p){ return p.project || p.name || ""; }
+  /* project numbers: #001, #002 … in order of creation. The next one comes after the highest existing project,
+     so deleting the latest project (cancelled, no invoice) frees its number. A number that was on an invoice is
+     never given out again — the database remembers it (project_counters.last_num) and the trigger enforces it. */
+  function fmtNum(n){ return n ? String(n).padStart(3,"0") : ""; }
+  function reservedNum(){ try{ return +localStorage.getItem("tracker:reservedNum") || 0; }catch(e){ return 0; } }
+  function reserveNum(n){ try{ if(n > reservedNum()) localStorage.setItem("tracker:reservedNum", String(n)); }catch(e){} }
+  function nextProjectNum(){
+    var max = 0; state.projects.forEach(function(p){ if(p.num > max) max = p.num; });
+    return Math.max(max, reservedNum()) + 1;
+  }
 
   /* ---------- month helpers ---------- */
   function pad2(n){ return (n<10?"0":"")+n; }
@@ -1513,7 +1525,7 @@
       due:p.due||"", paid:!!p.paid, notes:p.notes||"",
       planned_at:p.plannedAt||null, progress_at:p.progressAt||null, done_at:p.doneAt||null,
       paid_at:p.paidAt||null,
-      expected:!!p.expected, client:p.client||"", paid_fx:p.paidFx||null, invoice_no:p.invoiceNo||null };
+      expected:!!p.expected, client:p.client||"", paid_fx:p.paidFx||null, invoice_no:p.invoiceNo||null, num:p.num||null };
   }
   /* ---------- reliable cloud sync ----------
      Every change goes into a small "outbox" kept in this browser first,
@@ -1599,16 +1611,22 @@
           due:r.due||"", paid:!!r.paid, notes:r.notes||"", createdAt:new Date(r.created_at).getTime(),
           plannedAt:r.planned_at||"", progressAt:r.progress_at||"", doneAt:r.done_at||"", paidAt:r.paid_at||"",
           sessionAt:r.session_at||"", sessionMode:r.session_mode||"", expected:!!r.expected,
-          client:r.client||"", paidFx:r.paid_fx||null, invoiceNo:r.invoice_no||"" };
+          client:r.client||"", paidFx:r.paid_fx||null, invoiceNo:r.invoice_no||"", num:r.num||null };
       });
       // unsent local edits win over the cloud copy; unsent deletes stay deleted
       var merged = cloud.filter(function(p){ return !(pending[p.id] && pending[p.id].op==="delete"); })
-        .map(function(p){ return (pending[p.id] && pending[p.id].op==="upsert" && local[p.id]) ? local[p.id] : p; });
+        .map(function(p){
+          if(pending[p.id] && pending[p.id].op==="upsert" && local[p.id]){ if(p.num) local[p.id].num = p.num; return local[p.id]; }   // the database's number wins
+          return p;
+        });
       Object.keys(pending).forEach(function(id){
         if(pending[id].op==="upsert" && local[id] && !merged.some(function(p){ return p.id===id; })) merged.push(local[id]);
       });
       state.projects = merged;
       save(); populateYearJump(); buildDatalists(); renderAll(); flushPending();
+      sb.from("project_counters").select("last_num").maybeSingle().then(function(r){
+        if(r && r.data){ try{ localStorage.setItem("tracker:reservedNum", String(+r.data.last_num || 0)); }catch(e){} }
+      });
       loadSessionsFromCloud();
     });
   }
@@ -1944,7 +1962,9 @@
     var arr = state.projects.filter(function(p){
       if(q){   // search looks across all months
         var hay = [projName(p), p.client, p.director, p.dop, p.producer, p.notes].join(" ").toLowerCase();
-        if(hay.indexOf(q) === -1) return false;
+        var qn = q.replace(/^#/, "");
+        var numHit = /^\d+$/.test(qn) && p.num && (+qn === p.num);          // "194" or "#194" finds project #194
+        if(hay.indexOf(q) === -1 && !numHit) return false;
       } else if(!inMonth(p)) return false;
       if(ui.focus){   // a money card was clicked — show exactly that group
         var open = !p.paid && !p.expected;
@@ -2207,6 +2227,7 @@
       '<div class="row" data-id="'+p.id+'">'+
         '<div class="row-main">'+
           '<div class="row-head">'+
+            (p.num ? '<span class="row-num" title="Project number">#'+fmtNum(p.num)+'</span>' : '')+
             '<span class="row-name editable" data-act="editname" title="Click to rename">'+esc(projName(p)||"Untitled")+'</span>'+
           '</div>'+
           crewMarkup(p)+
@@ -2326,7 +2347,7 @@
 
   /* ---------- quick add (no modal) + inline editing in the card ---------- */
   function quickAdd(){
-    var p = { id:uid(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
+    var p = { id:uid(), num:nextProjectNum(), createdAt:Date.now(), project:"", type:"commercial", status:"planned",
       paid:false, amount:0, amountCur:state.currency, client:"", director:"", dop:"", producer:"", due:"", notes:"",
       plannedAt:todayStr(), progressAt:"", doneAt:"", paidAt:"", sessionAt:"", sessionMode:"", expected:false };
     state.projects.push(p);
@@ -2911,6 +2932,7 @@
     });
     if(p.client) q.set("client", p.client);
     if(p.director) q.set("director", p.director);
+    if(p.num) q.set("pnum", fmtNum(p.num));
     var w = window.open("invoice.html?" + q.toString(), "_blank");
     if(!w) alert("Allow pop-ups for this page to open the invoice.");
   }
@@ -3189,6 +3211,8 @@
     document.getElementById("confirmOk").onclick = function(){
       if(pendingDelete){
         var delId = pendingDelete;
+        var delP = state.projects.find(function(x){ return x.id===delId; });
+        if(delP && delP.num && delP.invoiceNo) reserveNum(delP.num);     // it was on an invoice: keep the number taken
         state.projects = state.projects.filter(function(x){return x.id!==delId;});
         state.sessions = state.sessions.filter(function(x){
           if(x.projectId!==delId) return true;

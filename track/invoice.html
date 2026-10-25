@@ -140,6 +140,7 @@
         <div class="inv-title">Invoice</div>
         <table class="inv-meta">
           <tr><td>Invoice №</td><td class="ph-val" id="invNo" contenteditable>EM‑0001</td></tr>
+          <tr id="invProjRow" hidden><td>Project №</td><td id="invProj" contenteditable></td></tr>
           <tr><td>Issue date</td><td class="ph-val" id="invIssue" contenteditable>— / — / ——</td></tr>
           <tr><td>Due date</td><td class="ph-val" id="invDue" contenteditable>— / — / ——</td></tr>
           <tr><td>Currency</td><td id="invCur">USD ($)</td></tr>
@@ -368,6 +369,7 @@
   var project = q.get("project") || "Project", type = q.get("type") || "Project";
 
   if(q.get("no")) setText($("invNo"), q.get("no"));
+  if(q.get("pnum")){ $("invProj").textContent = q.get("pnum"); $("invProjRow").hidden = false; }
   setText($("invCur"), cur + " (" + (SYM[cur]||cur) + ")");
   document.title = "Invoice " + (q.get("no")||"") + " — " + project;
 
@@ -390,7 +392,7 @@
 
 <script>
 /* Save PDF / Send email.
-   File name: INVOICE_COLORIST_<PROJECT NAME>.pdf (taken from the description line, so edits count).
+   File name: INVOICE_COLORIST_<PROJECT №>_<PROJECT NAME>.pdf (from the Project № row and the description line, so edits count).
    Send email: shares the PDF to Mail where the browser can attach files (phones, Safari, Chrome on Mac);
    otherwise downloads the PDF and opens a ready e-mail to attach it to. */
 (function(){
@@ -404,7 +406,8 @@
   }
   function fileName(){
     var safe = projectName().toUpperCase().replace(/[\\\/:*?"<>|]+/g, "").replace(/\s+/g, "_");
-    return "INVOICE_COLORIST_" + safe + ".pdf";
+    var row = $("invProjRow"), num = (!row.hidden && ($("invProj").textContent || "").replace(/[^0-9A-Za-z\-]+/g, "")) || "";
+    return "INVOICE_COLORIST_" + (num ? num + "_" : "") + safe + ".pdf";
   }
   function clientEmail(){
     var m = ($("billTo").innerText || "").match(/[^\s@\[\]]+@[^\s@\[\]]+\.[a-z]{2,}/i);
