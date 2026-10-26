@@ -1082,6 +1082,7 @@
       <option value="short">Short</option>
       <option value="show">Show</option>
       <option value="series">Series</option>
+          <option value="corporate">Corporate</option>
     </select>
     <select class="sort-select" id="sort" aria-label="Sort">
       <option value="created">Newest</option>
@@ -1149,6 +1150,7 @@
           <option value="short">Short</option>
           <option value="show">Show</option>
           <option value="series">Series</option>
+          <option value="corporate">Corporate</option>
         </select>
       </div>
       <div class="field">
@@ -1259,7 +1261,7 @@
   var STAGE_BADGE = {planned:"b-planned", in_progress:"b-progress", done:"b-done"};
   var TYPE_LABEL = {commercial:"Commercial", music_video:"Music video", feature:"Feature",
     social:"Social", fashion:"Fashion", documentary:"Documentary", reels:"Reels",
-    short:"Short", show:"Show", series:"Series"};
+    short:"Short", show:"Show", series:"Series", corporate:"Corporate"};
 
   var state = {currency:"USD", projects:[], sessions:[], crewList:{client:[], director:[], dop:[], producer:[]}};
   var ui = {focus:null, q:"", stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
@@ -1757,7 +1759,7 @@
     var yr = String(ui.yearView);
     var lbl = document.getElementById("statsTypeLbl");
     if(lbl) lbl.textContent = "By project type · " + yr;
-    var order = ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series"];
+    var order = ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series","corporate"];
     var agg = {};
     state.projects.forEach(function(p){
       if(!p.paid && (p.expected || p.status==="planned")) return;   // planned / deferred aren't counted
@@ -2007,7 +2009,7 @@
 
   function typeSelect(p){
     return '<select class="inline-select type-select" data-field="type" title="Type">'+
-      ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series"].map(function(t){
+      ["commercial","music_video","feature","social","fashion","documentary","reels","short","show","series","corporate"].map(function(t){
         return '<option value="'+t+'"'+(t===p.type?" selected":"")+'>'+esc(TYPE_LABEL[t])+'</option>';
       }).join("")+'</select>';
   }
