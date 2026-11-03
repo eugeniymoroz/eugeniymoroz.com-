@@ -868,6 +868,89 @@
     .deadline-pill{grid-area:deadline;justify-self:start;align-self:end}
     .amount-wrap{grid-area:amount;align-items:flex-end}
   }
+  /* ---------- wide screens (≥1100px): horizontal layout ----------
+     week of sessions on top · Needs attention + counters side by side · projects as tiles (the phone card) */
+  .weekstrip{display:none}
+  @media (min-width:1100px){
+    .wrap{max-width:1400px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);column-gap:16px;
+      grid-template-areas:"top top" "week week" "sched sched" "cal cal" "ledger ledger" "stats stats" "att kpis" "month month" "search search" "filters filters" "list list" "footer footer"}
+    .wrap>.topbar{grid-area:top} .wrap>#weekStrip{grid-area:week} .wrap>#schedPanel{grid-area:sched} .wrap>#calPanel{grid-area:cal}
+    .wrap>#ledger{grid-area:ledger} .wrap>#statsPanel{grid-area:stats} .wrap>#attention{grid-area:att} .wrap>#kpis{grid-area:kpis}
+    .wrap>.monthbar{grid-area:month} .wrap>.searchbar{grid-area:search} .wrap>.filters{grid-area:filters} .wrap>#list{grid-area:list} .wrap>.footer{grid-area:footer}
+    .wrap>#kpis{grid-template-columns:1fr;gap:10px;align-self:start}
+    /* nothing needs attention → the counters take the whole row again */
+    .wrap:has(> #attention[hidden]){grid-template-areas:"top top" "week week" "sched sched" "cal cal" "ledger ledger" "stats stats" "kpis kpis" "month month" "search search" "filters filters" "list list" "footer footer"}
+    .wrap:has(> #attention[hidden])>#kpis{grid-template-columns:repeat(3,1fr)}
+    /* the Sessions tab shows the week strip here instead of the list */
+    #schedPanel{display:none!important}
+    .weekstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:16px;overflow:hidden}
+    .weekstrip[hidden]{display:none}
+    .wk-d{border-left:1px solid var(--line-soft);padding:12px 12px 14px;min-height:140px;min-width:0}
+    .wk-d:first-child{border-left:0}
+    .wk-h{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;gap:6px;align-items:baseline}
+    .wk-h b{font-family:var(--display);font-size:17px;letter-spacing:0;color:var(--ink);font-weight:600}
+    .wk-h small{margin-left:auto;font-size:10px;letter-spacing:.06em;text-transform:none;color:#5a5a60}
+    .wk-d.today .wk-h b{background:var(--white);color:#000;border-radius:4px;padding:0 5px}
+    .wk-d.weekend{background:rgba(255,255,255,.012)}
+    .wk-i{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;border:0;border-left:3px solid var(--c);
+      background:color-mix(in srgb,var(--c) 12%,var(--surface));border-radius:4px;padding:6px 8px;margin-bottom:6px}
+    .wk-i:hover{background:color-mix(in srgb,var(--c) 20%,var(--surface))}
+    .wk-i b{display:block;font-size:12.5px;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .wk-i span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .wk-e{font-size:11px;color:#4a4a50}
+    /* projects as tiles */
+    #list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+    #list>.empty{grid-column:1/-1}
+    #list .row{padding:11px 12px;gap:8px}
+    #list .row-head{gap:6px}
+    #list .row-name{font-size:15px}
+    #list .row-crew{font-size:11.5px;margin-top:6px;gap:12px}
+    #list .stages{margin-top:7px;gap:2px}
+    #list .stage{padding:3px 7px}
+    #list .row-meta{margin-top:8px}
+    #list .row-right{padding-top:10px;gap:6px}
+    #list .amount{font-size:17px}
+    #list .amount-fx{font-size:10px}
+    #list .deadline-pill{padding:3px 10px;gap:6px}
+    #list .deadline-lbl{font-size:9.5px}
+    #list .deadline-tag{display:none}
+    #list .session .dt-disp{font-size:9px;padding:1px 3px}
+    #list .row,#list .row-main,#list .row-head,#list .row-right,#list .pay-line,#list .amount-wrap{min-width:0}
+    #list .row-name{min-width:0;overflow-wrap:anywhere}
+    #list .session{white-space:normal;gap:2px}
+    #list .dt-disp{max-width:118px;overflow:hidden;text-overflow:ellipsis}
+    #list .row{grid-template-columns:auto 1fr auto;
+      grid-template-areas:
+        "controls controls tools"
+        "name     name     num"
+        "crew     crew     crew"
+        "stages   stages   paid"
+        "stages   stages   amount"
+        "deadline deadline amount";
+      align-items:center;column-gap:8px;row-gap:8px}
+    #list .row-main,#list .row-right,#list .pay-line,#list .tools-row,#list .row-head{display:contents}
+    #list .head-controls{grid-area:controls;display:flex;align-items:flex-start;gap:6px;min-width:0}
+    #list .head-controls .type-select{flex:0 0 auto;min-width:0}
+    #list .head-controls .session{flex:0 0 auto;min-width:0}
+    #list .head-controls .session-select{flex:0 0 auto}
+    #list .head-controls .session .dt-wrap{width:auto;display:inline-flex}
+    #list .head-controls .session .dt-disp{width:auto;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;text-align:center}
+    #list .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
+    #list .head-controls .sess-btn .dt-disp{display:none}
+    #list .row-num{grid-area:num;align-self:center;justify-self:end;margin:0 7px 0 0;font-size:12px;padding:2px 8px;vertical-align:0}
+    #list .row-name{grid-area:name;align-self:center;min-width:0;max-width:100%;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+    #list .row-crew{grid-area:crew;align-self:center;margin-top:-4px;gap:4px 12px}
+    #list .stages{grid-area:stages;margin-top:0;gap:2px;display:flex;flex-direction:column;align-items:flex-start;align-self:start}
+    #list .stages .stage{flex-direction:row;align-items:baseline;gap:8px;min-width:0}
+    #list .stage{padding:3px 6px}
+    #list .stage-name{font-size:9.5px}
+    #list .stages .stage-date{font-size:9px}
+    #list .pay-wrap{grid-area:paid;justify-self:end;align-self:start}
+    #list .deadline-pill{grid-area:deadline;justify-self:start;align-self:end}
+    #list .amount-wrap{grid-area:amount;align-items:flex-end}
+  }
+  @media (min-width:1380px){ #list{grid-template-columns:repeat(3,minmax(0,1fr))} }
 </style>
 </head>
 <body>
@@ -902,6 +985,8 @@
       <button class="btn" id="calToggle" aria-expanded="false">Calendar</button>
     </div>
   </div>
+
+  <div class="weekstrip" id="weekStrip" hidden aria-label="Sessions this week"></div>
 
   <div class="schedule" id="schedPanel" hidden>
     <div class="sched-head">
@@ -2285,7 +2370,27 @@
     foot.textContent = (function(n){return n+(n===1?" project":" projects");})(state.projects.filter(inMonth).length);
   }
 
-  function renderAll(){ renderStats(); renderList(); renderSchedule(); renderCalendar(); }
+  function renderAll(){ renderStats(); renderList(); renderSchedule(); renderWeekStrip(); renderCalendar(); }
+  /* wide screens: the next 7 days of sessions in one horizontal strip */
+  function renderWeekStrip(){
+    var box = document.getElementById("weekStrip"); if(!box) return;
+    var byId = {}; state.projects.forEach(function(p){ byId[p.id] = p; });
+    var html = "", t = new Date(); t.setHours(0,0,0,0);
+    for(var i=0;i<7;i++){
+      var d = new Date(t); d.setDate(t.getDate()+i); var ds = localDateStr(d), wd = d.getDay();
+      var it = state.sessions.filter(function(x){ return byId[x.projectId] && (x.startsAt||"").slice(0,10)===ds; })
+        .sort(function(a,b){ return a.startsAt < b.startsAt ? -1 : 1; });
+      html += '<div class="wk-d'+(i===0?' today':'')+(wd===0||wd===6?' weekend':'')+'"><div class="wk-h">'+
+        d.toLocaleDateString("en-GB",{weekday:"short"})+' <b>'+d.getDate()+'</b>'+(i===0?'<small>today</small>':i===1?'<small>tomorrow</small>':'')+'</div>'+
+        (it.length ? it.map(function(x){
+          var p = byId[x.projectId], md = sessMode(x);
+          return '<button type="button" class="wk-i" data-wk-pid="'+esc(p.id)+'" style="--c:'+MODE_COLOR[md]+'" title="'+esc(projName(p)+(x.note?" — "+x.note:""))+'">'+
+            '<b>'+esc(projName(p)||"Untitled")+'</b><span>'+(md==="remote" ? "All day" : esc(x.startsAt.slice(11,16)))+' · '+MODE_LABEL[md]+
+            (x.note ? ' · '+esc(x.note) : '')+(clientTimeNote(x) ? ' · '+esc(clientTimeNote(x)) : '')+'</span></button>';
+        }).join("") : '<div class="wk-e">Free</div>')+'</div>';
+    }
+    box.innerHTML = html;
+  }
 
   /* ---------- schedule: every upcoming session across projects, by day ---------- */
   ui.schedDays = "7";
@@ -3057,6 +3162,7 @@
       ledgerEl.hidden = activePanel!=="earn";
       statsEl.hidden  = activePanel!=="stats";
       schedEl.hidden  = activePanel!=="sched";
+      document.getElementById("weekStrip").hidden = activePanel!=="sched";
       schedBtn.setAttribute("aria-expanded", activePanel==="sched" ? "true" : "false");
       calEl.hidden = activePanel!=="cal";
       calBtn.setAttribute("aria-expanded", activePanel==="cal" ? "true" : "false");
@@ -3073,7 +3179,11 @@
     function backToCurrentMonth(){ ui.month = currentYM(); syncMonthUI(); populateYearJump(); }
     earnBtn.onclick  = function(){ backToCurrentMonth(); setPanel("earn"); renderAll(); };
     statsBtn.onclick = function(){ backToCurrentMonth(); setPanel("stats"); renderAll(); };
-    schedBtn.onclick = function(){ setPanel("sched"); renderSchedule(); };
+    schedBtn.onclick = function(){ setPanel("sched"); renderSchedule(); renderWeekStrip(); };
+    document.getElementById("weekStrip").addEventListener("click", function(e){
+      var b = e.target.closest("[data-wk-pid]"); if(!b) return;
+      var p = state.projects.find(function(x){ return x.id===b.dataset.wkPid; }); if(p) openSessions(p);
+    });
     calBtn.onclick = function(){ setPanel("cal"); renderCalendar(); if(!calEl.hidden) loadCalendarWeek(); };
     bindCalendar();
 
