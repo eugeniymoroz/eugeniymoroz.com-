@@ -872,7 +872,7 @@
      week of sessions on top · Needs attention + counters side by side · projects as tiles (the phone card) */
   .weekstrip{display:none}
   @media (min-width:1100px){
-    .wrap{max-width:1400px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);column-gap:16px;
+    .wrap{max-width:2600px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);column-gap:16px;
       grid-template-areas:"top top" "week week" "sched sched" "cal cal" "ledger ledger" "stats stats" "att kpis" "month month" "search search" "filters filters" "list list" "footer footer"}
     .wrap>.topbar{grid-area:top} .wrap>#weekStrip{grid-area:week} .wrap>#schedPanel{grid-area:sched} .wrap>#calPanel{grid-area:cal}
     .wrap>#ledger{grid-area:ledger} .wrap>#statsPanel{grid-area:stats} .wrap>#attention{grid-area:att} .wrap>#kpis{grid-area:kpis}
@@ -951,6 +951,9 @@
     #list .amount-wrap{grid-area:amount;align-items:flex-end}
   }
   @media (min-width:1380px){ #list{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  /* big monitors: use the whole width — more tiles per row instead of empty sides */
+  @media (min-width:1860px){ #list{grid-template-columns:repeat(4,minmax(0,1fr))} body{padding-left:36px;padding-right:36px} }
+  @media (min-width:2340px){ #list{grid-template-columns:repeat(5,minmax(0,1fr))} }
 </style>
 </head>
 <body>
