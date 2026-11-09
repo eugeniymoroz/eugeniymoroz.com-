@@ -250,7 +250,7 @@
   .hero-name {
     font-family: "Space Grotesk", sans-serif;
     font-weight: 600;
-    font-size: clamp(2rem, 11.5vw, 10rem);
+    font-size: clamp(2rem, 9.6vw, 8.4rem);
     line-height: 1;
     letter-spacing: 0.005em;
     text-transform: uppercase;
@@ -980,7 +980,13 @@
   .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
   .lenis [data-lenis-prevent] { overscroll-behavior: contain; }
   .lenis.lenis-smooth iframe { pointer-events: none; }
-  </style>
+  
+  /* wide portfolio: 2 large columns on desktop */
+  @media (min-width: 1100px) {
+    #work { max-width: 1680px; }
+    #work .gallery { grid-template-columns: repeat(2, 1fr); gap: 20px; --rows: 2; }
+  }
+</style>
 </head>
 <body>
   <div class="site-bg" aria-hidden="true">
@@ -1477,7 +1483,8 @@
       const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
       const colW = (gal.clientWidth - padX - (cols - 1) * gap) / cols;
       const tileH = colW * 9 / 16;
-      gal.style.maxHeight = Math.round(tileH * 3 + gap * 2 + padY) + "px";
+      const rows = parseInt(cs.getPropertyValue("--rows"), 10) || 3;
+      gal.style.maxHeight = Math.round(tileH * rows + gap * (rows - 1) + padY) + "px";
     }
     function applyLimit() {
       const cards = gal.querySelectorAll(".project");
