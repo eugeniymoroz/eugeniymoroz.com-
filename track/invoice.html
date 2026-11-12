@@ -81,6 +81,13 @@
   .pay-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;font-size:12.5px;margin-top:4px}
   .pay-grid .k{color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:10px;padding-top:2px}
   .pay-grid .v{font-weight:500;font-variant-numeric:tabular-nums}
+  .pay-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .pay-switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;gap:2px;margin-bottom:8px}
+  .pay-switch button{border:0;background:transparent;color:var(--muted);font:600 9.5px var(--display);letter-spacing:.14em;
+    text-transform:uppercase;padding:5px 11px;border-radius:999px;cursor:pointer}
+  .pay-switch button.on{background:var(--ink);color:#fff}
+  .exporting .pay-switch{display:none}
+  @media print{ .pay-switch{display:none} }
   .notes p{font-size:12.5px;color:#4d4f57;margin:0 0 8px;line-height:1.65}
 
   footer{position:absolute;left:22mm;right:22mm;bottom:16mm;display:flex;justify-content:space-between;
@@ -119,6 +126,7 @@
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.3/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
 </head>
 <body>
   <div class="bar"><span class="bar-hint">Click any text to edit · payment details are remembered on this device</span>
@@ -225,7 +233,12 @@
 
     <div class="lower">
       <div>
-        <div class="lbl">Payment details</div>
+        <div class="pay-head">
+          <div class="lbl">Payment details</div>
+          <div class="pay-switch" id="paySwitch" data-html2canvas-ignore="true" title="Not printed — choose how the client pays">
+            <button type="button" data-m="paypal">PayPal</button><button type="button" data-m="card">Card</button>
+          </div>
+        </div>
         <div class="pay-grid" id="payGrid" contenteditable>
           <div class="k">Method</div><div class="v">PayPal</div>
           <div class="k">Account holder</div><div class="v">Evgeniy Moroz</div>
@@ -254,7 +267,7 @@
 /* Fills this invoice from the tracker card:
    invoice.html?no=EM-2026-001&project=…&type=…&amount=…&cur=USD&client=…&director=…
    Without parameters it stays a blank template (dates = today / +14 days).
-   Contact e-mail: eugeniymoroz.colorist@gmail.com. Payment: PayPal eugeniymoroz@gmail.com by default; any edit is remembered.
+   Contact e-mail: eugeniymoroz.colorist@gmail.com. Payment: switch PayPal / Card (card details kept per currency: EUR card, USD card …); PayPal eugeniymoroz@gmail.com by default; any edit is remembered and synced to the tracker's Supabase (table invoice_payment) when signed in.
    Phone: +380 63 632 0636. */
 (function(){
   var SYM = {USD:"$", UAH:"₴", EUR:"€", GBP:"£"};
@@ -354,9 +367,71 @@
   setText($("invIssue"), fmt(issue));
   setText($("invDue"), fmt(due));
 
-  var payKey = "invoice:pay:v2";
-  try{ var saved = localStorage.getItem(payKey); if(saved){ $("payGrid").innerHTML = saved; stripLook($("payGrid")); } }catch(e){}
-  function keepPay(){ try{ localStorage.setItem(payKey, $("payGrid").innerHTML); }catch(e){} }
+  /* Payment method switch: PayPal or Card. The card has its own details per currency
+     (EUR card, USD card …), picked from the project's currency. Each variant remembers its edits. */
+  var payCur = (q.get("cur") || "USD").toUpperCase();
+  var PAY_DEFAULT = {
+    paypal: function(){ return '<div class="k">Method</div><div class="v">PayPal</div>' +
+      '<div class="k">Account holder</div><div class="v">Evgeniy Moroz</div>' +
+      '<div class="k">PayPal</div><div class="v">eugeniymoroz@gmail.com</div>'; },
+    card: function(c){ return '<div class="k">Method</div><div class="v">Bank card · ' + c + '</div>' +
+      '<div class="k">Card holder</div><div class="v">Evgeniy Moroz</div>' +
+      '<div class="k">Card number</div><div class="v fill">[ ' + c + ' card number ]</div>' +
+      '<div class="k">Bank</div><div class="v fill">[ Bank name ]</div>'; }
+  };
+  function payStoreKey(m){ return m === "card" ? "invoice:pay:v3:card-" + payCur : "invoice:pay:v3:paypal"; }
+  try{ if(!localStorage.getItem("invoice:pay:v3:paypal") && localStorage.getItem("invoice:pay:v2"))
+         localStorage.setItem("invoice:pay:v3:paypal", localStorage.getItem("invoice:pay:v2")); }catch(e){}
+  var payMethod = "paypal";
+  try{ payMethod = localStorage.getItem("invoice:pay:method") === "card" ? "card" : "paypal"; }catch(e){}
+  /* Synced copy: private table invoice_payment in the tracker's Supabase (only after sign-in on eugeniymoroz.com/track).
+     localStorage stays as the instant/offline cache. */
+  var sb = null, sbUser = null, payTimer = null, payTouched = false;
+  try{ if(window.supabase) sb = window.supabase.createClient("https://yiplmsffgfksxduaxchr.supabase.co", "sb_publishable_q6Z5rkBMVPzKvPYNg7aaWw_dBgqcQaG"); }catch(e){}
+  function variantOf(m){ return m === "card" ? "card-" + payCur : "paypal"; }
+  function pushPay(variant, html){
+    if(!sb || !sbUser) return;
+    sb.from("invoice_payment").upsert({user_id: sbUser, variant: variant, html: html, updated_at: new Date().toISOString()})
+      .then(function(r){ if(r.error) console.warn("payment sync:", r.error.message); });
+  }
+  function keepPay(){
+    var html = $("payGrid").innerHTML, variant = variantOf(payMethod);
+    payTouched = true;
+    try{ localStorage.setItem(payStoreKey(payMethod), html); }catch(e){}
+    clearTimeout(payTimer); payTimer = setTimeout(function(){ pushPay(variant, html); }, 600);
+  }
+  function pullPay(){
+    if(!sb) return;
+    sb.auth.getSession().then(function(r){
+      var ses = r && r.data && r.data.session; if(!ses) return;
+      sbUser = ses.user.id;
+      return sb.from("invoice_payment").select("variant,html").then(function(res){
+        if(res.error) return;
+        var have = {};
+        (res.data||[]).forEach(function(row){ have[row.variant] = 1;
+          try{ localStorage.setItem(row.variant === "paypal" ? "invoice:pay:v3:paypal" : "invoice:pay:v3:" + row.variant, row.html); }catch(e){} });
+        // first run: upload what this device already has
+        try{ for(var i=0;i<localStorage.length;i++){ var k = localStorage.key(i);
+          if(k && k.indexOf("invoice:pay:v3:") === 0){ var v = k.slice(15); if(!have[v]) pushPay(v, localStorage.getItem(k)); } } }catch(e){}
+        if(!payTouched && have[variantOf(payMethod)]) showPay(payMethod);
+      });
+    }).catch(function(){});
+  }
+  function showPay(m){
+    payMethod = m;
+    var html = null;
+    try{ html = localStorage.getItem(payStoreKey(m)); localStorage.setItem("invoice:pay:method", m); }catch(e){}
+    $("payGrid").innerHTML = html || PAY_DEFAULT[m](payCur);
+    stripLook($("payGrid"));
+    [].forEach.call($("paySwitch").querySelectorAll("button"), function(b){ b.classList.toggle("on", b.dataset.m === m); });
+    var cb = $("paySwitch").querySelector('[data-m="card"]'); cb.textContent = "Card · " + payCur;
+  }
+  $("paySwitch").addEventListener("click", function(e){
+    var b = e.target.closest("button"); if(!b || b.dataset.m === payMethod) return;
+    keepPay(); showPay(b.dataset.m);
+  });
+  showPay(payMethod);
+  pullPay();
   $("payGrid").addEventListener("input", keepPay);
   $("payGrid").addEventListener("blur", keepPay);
 
@@ -427,7 +502,13 @@
       else { var pv = n.previousSibling; while(pv && pv.nodeType===3 && !pv.textContent.trim()) pv = pv.previousSibling; if(pv && pv.tagName==="BR") pv.parentNode.removeChild(pv); }
       n.parentNode.removeChild(n);
     });
-    function restore(){ bill.innerHTML = billHtml; document.body.classList.remove("exporting"); }
+    var payG = $("payGrid"), payHtml = payG.innerHTML;
+    [].forEach.call(payG.querySelectorAll(".v"), function(v){
+      var tt = (v.textContent||"").trim(); if(tt && !/^\[.*\]$/.test(tt)) return;
+      var k = v.previousElementSibling; if(k && k.classList.contains("k")) k.remove();
+      v.remove();
+    });
+    function restore(){ bill.innerHTML = billHtml; payG.innerHTML = payHtml; document.body.classList.remove("exporting"); }
     var el = document.querySelector(".sheet");
     var opt = {
       margin: 0, filename: fileName(),
