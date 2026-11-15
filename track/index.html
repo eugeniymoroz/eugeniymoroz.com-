@@ -2357,7 +2357,7 @@
     }
     var x = info.next || info.last, past = !info.next;
     var md = sessMode(x), cls = md==="offline" ? "s-off" : md==="remote" ? "s-rem" : "s-on";
-    var more = info.next ? info.upcoming - 1 : 0;
+    var more = info.count - 1;            // every other session of the project, past ones included
     var lbl = mobile ? MODE_SHORT[md] : MODE_LABEL[md];
     return '<button type="button" class="session sess-btn '+cls+(past?' s-past':'')+'" data-act="sessions" title="'+(info.count===1?"1 session":info.count+" sessions")+' — click to manage">'+
       '<span class="session-top"><span class="session-dot"></span><span class="sess-mode">'+lbl+'</span>'+
