@@ -847,12 +847,15 @@
       align-items:center;column-gap:8px;row-gap:8px}
     .row-main,.row-right,.pay-line,.tools-row,.row-head{display:contents}
     .head-controls{grid-area:controls;display:flex;align-items:flex-start;gap:6px;min-width:0}
-    .head-controls .type-select{flex:0 0 auto;min-width:0}
+    .head-controls .type-select{flex:0 1 auto;min-width:88px;width:auto;max-width:100%;text-overflow:ellipsis;overflow:hidden}
+    /* first row: controls run the full width, the 4 icons sit over its right end */
+    .head-controls{grid-column:1 / -1;grid-row:1;padding-right:110px}
     .head-controls .session{flex:0 0 auto;min-width:0}
     .head-controls .session-select{flex:0 0 auto}
     .head-controls .session .dt-wrap{width:auto;display:inline-flex}
     .head-controls .session .dt-disp{width:auto;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;text-align:center}
-    .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0}
+    .row-tools{grid-area:tools;justify-self:end;align-self:center;margin-top:0;gap:0;margin-right:-6px}
+    .row-tools .icon-btn{width:27px}
     .head-controls .sess-btn .dt-disp{display:none}      /* phone: date only inside the session details */
     .row-num{grid-area:num;align-self:center;justify-self:end;margin:0 7px 0 0;font-size:12px;padding:2px 8px;vertical-align:0}
     .row-name{grid-area:name;align-self:center;min-width:0;max-width:100%;
@@ -954,6 +957,38 @@
   /* big monitors: use the whole width — more tiles per row instead of empty sides */
   @media (min-width:1860px){ #list{grid-template-columns:repeat(4,minmax(0,1fr))} body{padding-left:36px;padding-right:36px} }
   @media (min-width:2340px){ #list{grid-template-columns:repeat(5,minmax(0,1fr))} }
+
+  /* ---------- status button + card tint (15.11.2026) ---------- */
+  .row{transition:border-color .25s var(--ease),background .35s var(--ease),transform .2s var(--ease)}
+  .row.st-planned{border-color:rgba(215,164,72,.34);background:linear-gradient(135deg,rgba(215,164,72,.11),rgba(215,164,72,.025) 62%),var(--surface)}
+  .row.st-progress{border-color:rgba(109,157,215,.38);background:linear-gradient(135deg,rgba(109,157,215,.13),rgba(109,157,215,.03) 62%),var(--surface)}
+  .row.st-done{border-color:rgba(98,203,137,.34);background:linear-gradient(135deg,rgba(98,203,137,.11),rgba(98,203,137,.025) 62%),var(--surface)}
+  .row.st-planned:hover{border-color:rgba(215,164,72,.6)} .row.st-progress:hover{border-color:rgba(109,157,215,.65)} .row.st-done:hover{border-color:rgba(98,203,137,.6)}
+  .stages .stage.st-btn{flex-direction:row!important;align-items:center!important;gap:8px;padding:0!important;background:none!important;box-shadow:none!important}
+  .st-btn .stage-name{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 10px;border-radius:999px;
+    border:1px solid currentColor;font-size:10.5px!important;letter-spacing:.12em;text-transform:uppercase;font-weight:600;
+    transition:background .2s var(--ease),transform .12s var(--ease)}
+  .st-btn .stage-name:active{transform:scale(.95)}
+  .st-btn.s-planned .stage-name{color:var(--amber);background:var(--amber-soft)}
+  .st-btn.s-progress .stage-name{color:var(--blue);background:var(--blue-soft)}
+  .st-btn.s-done .stage-name{color:var(--green);background:var(--green-soft)}
+  .st-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;flex:none}
+  .st-btn .stage-date{font-size:10px!important}
+
+  /* ---------- history modal ---------- */
+  .hist-list{max-height:min(62vh,560px);overflow-y:auto;margin:6px -4px 0;padding:0 4px}
+  .h-item{display:grid;grid-template-columns:118px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .h-when{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+  .h-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);margin-bottom:4px}
+  .h-line{font-size:13px;color:var(--ink);line-height:1.55}
+  .h-line .h-k{color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
+  .h-line .h-old{color:#6d6d74;text-decoration:line-through;text-decoration-color:rgba(255,255,255,.18)}
+  .h-line .h-arr{color:var(--muted);margin:0 3px}
+  .h-line b{font-weight:500;color:var(--white)}
+  .h-created .h-title,.h-session_added .h-title{color:var(--green)}
+  .h-deleted .h-title,.h-session_removed .h-title{color:var(--red)}
+  .h-empty,.h-note{font-size:12.5px;color:var(--muted);padding:18px 0;text-align:center}
+  @media (max-width:560px){ .h-item{grid-template-columns:1fr;gap:4px} }
 </style>
 </head>
 <body>
@@ -1323,6 +1358,14 @@
 </div>
 
 <!-- Sessions of a project: edit several, apply on Save -->
+<div class="overlay" id="histOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="histTitle" style="max-width:620px">
+    <h2 id="histTitle">History</h2>
+    <div class="hist-list" id="histList"></div>
+    <div class="modal-actions"><button class="btn" id="histClose">Close</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="sessOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sessTitle" style="max-width:820px">
     <h2 id="sessTitle">Sessions</h2>
@@ -2143,21 +2186,20 @@
     var mi = parseInt(ym.slice(5,7),10)-1;
     return (MO[mi]||"") + " " + ym.slice(0,4);
   }
+  /* one status button: tap cycles Planned → In progress → Completed; the whole card takes the status colour */
+  var STAGE_ORDER = ["planned","in_progress","done"];
+  var STAGE_CLS = {planned:"s-planned", in_progress:"s-progress", done:"s-done"};
+  function stageRowCls(p){ return " st-" + (STAGE_CLS[p.status]||"s-planned").slice(2); }
   function stagesMarkup(p){
-    var order = ["planned","in_progress","done"];
-    var cls = {planned:"s-planned", in_progress:"s-progress", done:"s-done"};
-    var dates = {planned:p.plannedAt, in_progress:p.progressAt, done:p.doneAt};
-    var cur = order.indexOf(p.status);
-    return '<div class="stages">' + order.map(function(s,i){
-      var st = i===cur ? "is-active" : (i<cur ? "is-past" : "is-future");
-      var d = dates[s];
-      return '<div class="stage '+cls[s]+' '+st+'">'+
-        '<button class="stage-name" data-act="stage" data-stage="'+s+'">'+STAGE_LABEL[s]+'</button>'+
+    var s = STAGE_CLS[p.status] ? p.status : "planned";
+    var d = {planned:p.plannedAt, in_progress:p.progressAt, done:p.doneAt}[s];
+    var next = STAGE_ORDER[(STAGE_ORDER.indexOf(s)+1)%3];
+    return '<div class="stages"><div class="stage st-btn is-active '+STAGE_CLS[s]+'">'+
+        '<button class="stage-name" data-act="stage-next" title="Tap → '+STAGE_LABEL[next]+'"><i class="st-dot"></i>'+STAGE_LABEL[s]+'</button>'+
         '<button type="button" class="dt-wrap stage-dt" data-act="date-edit" data-field="'+s+'" title="Change date">'+
           '<span class="stage-date dt-disp">'+(d?esc(fmtShortDate(d)):"—")+'</span>'+
         '</button>'+
-      '</div>';
-    }).join("") + '</div>';
+      '</div></div>';
   }
 
   function stampStage(p){
@@ -2291,10 +2333,9 @@
 
   function crewMarkup(p){
     var parts=[];
-    if(p.client) parts.push('<span class="client-tag"><span class="role">Client</span> <b>'+esc(p.client)+'</b></span>');
+    // card shows only the director and the DOP; client and producer stay in the editor, search and invoice
     if(p.director) parts.push('<span><span class="role">Dir</span> <b>'+esc(p.director)+'</b></span>');
     if(p.dop) parts.push('<span><span class="role">DOP</span> <b>'+esc(p.dop)+'</b></span>');
-    if(p.producer) parts.push('<span><span class="role">Prod</span> <b>'+esc(p.producer)+'</b></span>');
     if(!parts.length) return "";
     return '<div class="row-crew">'+parts.join("")+'</div>';
   }
@@ -2337,7 +2378,7 @@
       '</div>';
       var typeBadge = typeSelect(p);
       return ''+
-      '<div class="row" data-id="'+p.id+'">'+
+      '<div class="row'+stageRowCls(p)+'" data-id="'+p.id+'">'+
         '<div class="row-main">'+
           '<div class="row-head">'+
             (p.num ? '<span class="row-num" title="Project number">#'+fmtNum(p.num)+'</span>' : '')+
@@ -2358,6 +2399,8 @@
           '<div class="tools-row">'+
             deadlineMarkup(p)+
             '<div class="row-tools">'+
+              '<button class="icon-btn" data-act="history" aria-label="History" title="History of changes">'+
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></button>'+
               '<button class="icon-btn" data-act="invoice" aria-label="Invoice" title="Make an invoice">'+
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></button>'+
               '<button class="icon-btn" data-act="edit" aria-label="Edit">'+
@@ -3078,6 +3121,54 @@
     if(!w) alert("Allow pop-ups for this page to open the invoice.");
   }
 
+  /* ---------- history of changes (table project_history, written by DB triggers) ---------- */
+  var HIST_FIELD = {project:"Name", type:"Type", status:"Status", client:"Client", director:"Director", dop:"DOP", producer:"Producer",
+    amount:"Amount", amount_cur:"Currency", due:"Deadline", paid:"Payment", paid_at:"Paid on", expected:"Deferred", expected_pay:"Expected payment",
+    notes:"Notes", planned_at:"Planned date", progress_at:"In progress date", done_at:"Completed date", invoice_no:"Invoice", num:"Number",
+    starts_at:"Date", mode:"Mode", note:"Note", tz_city:"Client city"};
+  function histVal(k, v){
+    if(v===null || v===undefined || v==="") return "—";
+    if(k==="status") return STAGE_LABEL[v] || v;
+    if(k==="paid") return v ? "Paid" : "Unpaid";
+    if(k==="expected") return v ? "Yes" : "No";
+    if(k==="mode") return MODE_LABEL[v] || v;
+    if(k==="type") return (typeof TYPE_LABEL!=="undefined" && TYPE_LABEL[v]) || v;
+    if(k==="starts_at") return fmtSessionDateTime(v) + " (Kyiv)";
+    if(/_at$/.test(k) || k==="due") return fmtShortDate(String(v).slice(0,10)) || v;
+    if(k==="num") return "#" + fmtNum(v);
+    return String(v);
+  }
+  function histEntry(h){
+    var c = h.changes || {}, lines = [];
+    var t = new Date(h.at), when = t.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) + " · " + t.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    function line(k){ var v = c[k]||[null,null];
+      return '<div class="h-line"><span class="h-k">'+esc(HIST_FIELD[k]||k)+'</span> <span class="h-old">'+esc(histVal(k,v[0]))+'</span> <span class="h-arr">→</span> <b>'+esc(histVal(k,v[1]))+'</b></div>'; }
+    var title = {created:"Project created", deleted:"Project deleted", changed:"Changed",
+      session_added:"Session added", session_removed:"Session removed", session_changed:"Session changed"}[h.kind] || h.kind;
+    if(h.kind==="created" || h.kind==="deleted"){ /* title says it */ }
+    else if(h.kind==="session_added" || h.kind==="session_removed"){
+      var i = h.kind==="session_added" ? 1 : 0, sv = function(k){ return (c[k]||[])[i]; };
+      lines.push('<div class="h-line"><b>'+esc(histVal("starts_at", sv("starts_at")))+'</b> · '+esc(histVal("mode", sv("mode")))+(sv("tz_city")?' · '+esc(sv("tz_city")):"")+'</div>');
+    } else {
+      Object.keys(c).forEach(function(k){ if(k!=="when") lines.push(line(k)); });
+    }
+    return '<div class="h-item h-'+esc(h.kind)+'"><div class="h-when">'+esc(when)+'</div><div class="h-body"><div class="h-title">'+title+'</div>'+lines.join("")+'</div></div>';
+  }
+  function openHistory(p){
+    var box = document.getElementById("histList");
+    document.getElementById("histTitle").textContent = "History · " + (projName(p)||"Untitled");
+    box.innerHTML = '<div class="h-empty">Loading…</div>';
+    showOverlay("histOverlay");
+    if(!sb){ box.innerHTML = '<div class="h-empty">History is available when you are signed in.</div>'; return; }
+    sb.from("project_history").select("at,kind,changes").eq("project_id", p.id).order("at",{ascending:false}).limit(300).then(function(res){
+      if(res.error){ box.innerHTML = '<div class="h-empty">Couldn’t load history — '+esc(res.error.message)+'</div>'; return; }
+      var rows = res.data || [];
+      box.innerHTML = rows.length ? rows.map(histEntry).join("") +
+          '<div class="h-note">History is recorded from 15 Nov 2026.</div>'
+        : '<div class="h-empty">No changes recorded yet. History is kept from 15 Nov 2026 — every edit from now on shows up here.</div>';
+    });
+  }
+
   function showOverlay(id){ document.getElementById(id).classList.add("show"); }
   function hideOverlay(id){ document.getElementById(id).classList.remove("show"); }
 
@@ -3262,6 +3353,8 @@
     });
     document.getElementById("sessSave").addEventListener("click", saveSessions);
     document.getElementById("sessCancel").addEventListener("click", function(){ hideOverlay("sessOverlay"); sessEditPid = null; });
+    document.getElementById("histClose").addEventListener("click", function(){ hideOverlay("histOverlay"); });
+    document.getElementById("histOverlay").addEventListener("click", function(e){ if(e.target.id==="histOverlay") hideOverlay("histOverlay"); });
     document.getElementById("sessOverlay").addEventListener("keydown", function(e){
       if(e.key==="Enter" && e.target.tagName!=="BUTTON"){ e.preventDefault(); saveSessions(); }
     });
@@ -3317,6 +3410,7 @@
       if(act==="editname"){ inlineEdit(actBtn, p, "project", {placeholder:"Project title"}); return; }
       if(act==="editamount"){ if(!revealed) return; inlineEdit(actBtn, p, "amount", {number:true}); return; }
       if(act==="stage"){ p.status = actBtn.dataset.stage; stampStage(p); renderAll(); save(); cloudUpsert(p); return; }
+      if(act==="stage-next"){ var si = STAGE_ORDER.indexOf(p.status); p.status = STAGE_ORDER[(si<0?0:si+1)%3]; stampStage(p); renderAll(); save(); cloudUpsert(p); return; }
       if(act==="session-dt" || act==="due-dt" || act==="stage-date" || act==="paid-date"){
         try{ if(actBtn.showPicker) actBtn.showPicker(); }catch(_e){}   // open the picker on the first click
         return;
@@ -3329,6 +3423,7 @@
       else if(act==="edit"){ openEdit(p); }
       else if(act==="session-edit" || act==="sessions"){ openSessions(p); }
       else if(act==="invoice"){ openInvoice(p); }
+      else if(act==="history"){ openHistory(p); }
       else if(act==="del"){
         pendingDelete = p.id;
         document.getElementById("confirmText").textContent = "“"+(projName(p)||"Untitled")+"” will be removed permanently.";
