@@ -117,11 +117,11 @@
   .btn-primary:hover{background:transparent;color:var(--white);border-color:var(--white)}
 
   /* ---------- LEDGER ---------- */
-  .ledger{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:28px 30px;margin-bottom:18px}
+  .ledger{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 30px;margin-bottom:18px}
   .ledger .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
   .btn[aria-expanded="true"]{border-color:var(--grey);color:var(--white)}
   /* statistics panel */
-  .statspanel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px 24px;margin-bottom:18px}
+  .statspanel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:18px}
   .statspanel .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:16px}
   .stats-head,.stats-row{display:grid;grid-template-columns:1.6fr .7fr 1fr 1fr;gap:12px;align-items:center}
   .stats-head{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--line)}
@@ -333,7 +333,7 @@
   .paid-toggle.unpaid .k#paidLabel{color:var(--red)}
 
   /* ---------- SCHEDULE: all upcoming sessions ---------- */
-  .schedule{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px 24px;margin-bottom:18px}
+  .schedule{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:18px}
   .schedule[hidden]{display:none}
   .sched-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
   .sched-head .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
@@ -358,7 +358,7 @@
   .sched-count{font-size:10px;font-weight:600;background:var(--white);color:#000;border-radius:99px;padding:1px 6px;margin-left:4px}
   .sched-count:empty{display:none}
   /* ---------- calendar: the week — sessions, deadlines, payments + Google Calendar ---------- */
-  .calp{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px 24px;margin-bottom:18px}
+  .calp{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:18px}
   .calp[hidden]{display:none}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
   .cal-head .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
@@ -448,7 +448,7 @@
   .lg-hero .fx{margin-top:6px;font-size:12px;opacity:.75}
   .lg-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:24px}
   .lg-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;cursor:pointer;
-    background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px;font:inherit;color:inherit;
+    background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;font:inherit;color:inherit;
     transition:border-color .2s var(--ease),background .2s var(--ease)}
   .lg-card:hover{border-color:#3a3a40;background:#0e0e10}
   .lg-ck{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--ink)}
@@ -485,7 +485,7 @@
   /* ---------- KPIS ---------- */
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
   .kpis[hidden]{display:none}
-  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
   .kpi .k{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
   .kpi .v{font-family:var(--display);font-weight:600;font-size:26px;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums;color:var(--white)}
 
@@ -515,7 +515,7 @@
   .focus-x:hover{text-decoration:underline}
 
   /* ---------- NEEDS ATTENTION ---------- */
-  .attention{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px 8px;margin-bottom:18px}
+  .attention{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px 8px;margin-bottom:18px}
   .attention[hidden]{display:none}
   .att-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .att-head .lbl{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
@@ -559,7 +559,7 @@
 
   /* ---------- LIST ---------- */
   .list{display:flex;flex-direction:column;gap:10px}
-  .row{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 18px;
+  .row{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 18px;
     display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;transition:border-color .2s var(--ease),transform .2s var(--ease)}
   .row:hover{border-color:#3a3a40}
   .row-main{min-width:0}
@@ -690,7 +690,7 @@
     .row{grid-template-columns:1fr}
   }
 
-  .empty{text-align:center;padding:64px 24px;border:1px dashed var(--line);border-radius:8px;background:var(--surface)}
+  .empty{text-align:center;padding:64px 24px;border:1px dashed var(--line);border-radius:18px;background:var(--surface)}
   .empty h3{font-family:var(--display);font-weight:600;font-size:20px;margin:0 0 8px;color:var(--white)}
   .empty p{color:var(--muted);margin:0 0 20px;font-size:14px}
 
@@ -705,7 +705,7 @@
   .overlay{position:fixed;inset:0;background:rgba(6,6,7,.72);backdrop-filter:blur(4px);display:none;
     align-items:center;justify-content:center;padding:20px;z-index:60}
   .overlay.show{display:flex}
-  .modal{background:var(--surface);border:1px solid var(--line);border-radius:10px;width:100%;max-width:500px;
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:20px;width:100%;max-width:500px;
     max-height:90vh;overflow-y:auto;padding:28px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
   .modal h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0 0 22px;color:var(--white);letter-spacing:.01em}
   .field{margin-bottom:15px}
@@ -818,7 +818,7 @@
     .session{white-space:normal;gap:2px}
     .dt-disp{max-width:118px;overflow:hidden;text-overflow:ellipsis}
     .field-row{grid-template-columns:1fr}
-    .modal{padding:22px 18px;border-radius:8px}
+    .modal{padding:22px 18px;border-radius:18px}
     .footer{gap:14px;row-gap:10px}
   }
   @media (max-width:380px){
@@ -886,7 +886,7 @@
     .wrap:has(> #attention[hidden])>#kpis{grid-template-columns:repeat(3,1fr)}
     /* the Sessions tab shows the week strip here instead of the list */
     #schedPanel{display:none!important}
-    .weekstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:16px;overflow:hidden}
+    .weekstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:18px;margin-bottom:16px;overflow:hidden}
     .weekstrip[hidden]{display:none}
     .wk-d{border-left:1px solid var(--line-soft);padding:12px 12px 14px;min-height:140px;min-width:0}
     .wk-d:first-child{border-left:0}
