@@ -1444,7 +1444,7 @@
     short:"Short", show:"Show", series:"Series", corporate:"Corporate"};
 
   var state = {currency:"USD", projects:[], sessions:[], crewList:{client:[], director:[], dop:[], producer:[]}};
-  var ui = {focus:null, q:"", stage:"all", pay:"all", type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
+  var ui = {focus:null, q:"", stages:[], pays:[], type:"all", sort:"created", month:null, yearView:new Date().getFullYear(), statSort:"count", chartMetric:"income", paidView:"paid"};
   var editingId = null;
   var pendingDelete = null;
   var started = false;
@@ -2156,9 +2156,9 @@
         if(ui.focus==="planned" && !(open && p.status==="planned")) return false;
         if(ui.focus==="deferred" && !(!p.paid && p.expected)) return false;
       }
-      if(ui.stage!=="all" && p.status!==ui.stage) return false;
-      if(ui.pay==="paid" && !p.paid) return false;
-      if(ui.pay==="unpaid" && p.paid) return false;
+      // multi-select: statuses OR'ed, payments OR'ed, the two groups AND'ed
+      if(ui.stages.length && ui.stages.indexOf(p.status)<0) return false;
+      if(ui.pays.length && ui.pays.indexOf(p.paid ? "paid" : "unpaid")<0) return false;
       if(ui.type!=="all" && p.type!==ui.type) return false;
       return true;
     });
@@ -3417,9 +3417,7 @@
     document.getElementById("lgCards").addEventListener("click", function(e){
       var c = e.target.closest(".lg-card[data-go]"); if(!c) return;
       ui.focus = (ui.focus === c.dataset.go) ? null : c.dataset.go;
-      ui.stage = "all"; ui.pay = "all";
-      [].forEach.call(document.querySelectorAll("#stageChips .chip"), function(x){ x.classList.toggle("on", x.dataset.stage==="all"); });
-      [].forEach.call(document.querySelectorAll("#payChips .chip"), function(x){ x.classList.remove("on"); });
+      ui.stages = []; ui.pays = []; syncFilterChips();
       renderList();
       var sb = document.querySelector(".searchbar"); if(sb && ui.focus) sb.scrollIntoView({behavior:"smooth", block:"start"});
     });
@@ -3431,18 +3429,23 @@
       var it = e.target.closest(".att-item[data-id]"); if(!it) return;
       var p = state.projects.find(function(x){ return x.id===it.dataset.id; }); if(p) openEdit(p);
     });
+    function syncFilterChips(){
+      var none = !ui.stages.length && !ui.pays.length;
+      [].forEach.call(document.querySelectorAll("#stageChips .chip"), function(c){
+        c.classList.toggle("on", c.dataset.stage==="all" ? none : ui.stages.indexOf(c.dataset.stage)>=0); });
+      [].forEach.call(document.querySelectorAll("#payChips .chip"), function(c){
+        c.classList.toggle("on", ui.pays.indexOf(c.dataset.pay)>=0); });
+    }
+    function toggleIn(arr, v){ var i = arr.indexOf(v); if(i<0) arr.push(v); else arr.splice(i,1); }
+    // chips are multi-select; "All" clears everything
     document.getElementById("stageChips").addEventListener("click", function(e){
       var b = e.target.closest(".chip"); if(!b) return;
-      ui.stage = b.dataset.stage; ui.focus = null;
-      [].forEach.call(this.querySelectorAll(".chip"), function(c){ c.classList.toggle("on", c===b); });
-      renderList();
+      if(b.dataset.stage==="all"){ ui.stages = []; ui.pays = []; } else toggleIn(ui.stages, b.dataset.stage);
+      ui.focus = null; syncFilterChips(); renderList();
     });
     document.getElementById("payChips").addEventListener("click", function(e){
       var b = e.target.closest(".chip"); if(!b) return;
-      var v = b.dataset.pay;
-      ui.pay = (ui.pay===v) ? "all" : v; ui.focus = null;
-      [].forEach.call(this.querySelectorAll(".chip"), function(c){ c.classList.toggle("on", c.dataset.pay===ui.pay); });
-      renderList();
+      toggleIn(ui.pays, b.dataset.pay); ui.focus = null; syncFilterChips(); renderList();
     });
 
     document.getElementById("list").addEventListener("click", function(e){
