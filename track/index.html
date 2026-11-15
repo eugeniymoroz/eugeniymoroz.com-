@@ -3260,7 +3260,7 @@
     var statsEl  = document.getElementById("statsPanel");
     var earnBtn  = document.getElementById("earnToggle");
     var statsBtn = document.getElementById("statsToggle");
-    var activePanel = "sched";          // the tracker always opens on Sessions
+    var activePanel = null;             // the tracker opens with no panel selected (15.11.2026)
     var schedEl = document.getElementById("schedPanel"), schedBtn = document.getElementById("schedToggle");
     var calEl = document.getElementById("calPanel"), calBtn = document.getElementById("calToggle");
     function applyPanels(){
