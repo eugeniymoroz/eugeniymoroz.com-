@@ -996,6 +996,36 @@
   .form-tabs button.on{color:var(--white);border-bottom-color:var(--white)}
   .form-tabs button:hover{color:var(--ink)}
   #formHist{max-height:min(62vh,600px)}
+
+  /* Paid / Unpaid / Expected — outlined pills like the status button (15.11.2026) */
+  .pay-wrap{gap:6px;align-items:flex-end}
+  .pay-wrap .badge.act{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 10px;border:1px solid currentColor;
+    font:600 10.5px var(--display);letter-spacing:.12em;text-transform:uppercase;box-shadow:none;transition:background .2s var(--ease),transform .12s var(--ease)}
+  .pay-wrap .badge.act::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;flex:none}
+  .pay-wrap .badge.act:hover{filter:none;background-color:rgba(255,255,255,.06)}
+  .pay-wrap .badge.act:active{transform:scale(.95)}
+  .pay-wrap .b-paid{color:var(--green);background:var(--green-soft)}
+  .pay-wrap .b-unpaid{color:var(--red);background:var(--red-soft)}
+  .pay-wrap .exp-badge{color:#6a6a70;background:transparent;border-style:dashed;border-color:#3a3a40}
+  .pay-wrap .exp-badge::before{background:#4a4a50;box-shadow:none}
+  .pay-wrap .exp-badge.on{color:var(--mist);background:var(--mist-soft);border:1px solid currentColor}
+  .pay-wrap .exp-badge.on::before{background:currentColor;box-shadow:0 0 8px currentColor}
+
+  /* Online / Offline / Remote — outlined pill with the dot inside, like the status and payment pills (15.11.2026) */
+  .sess-btn .session-top{gap:7px;padding:6px 12px 6px 10px;border:1px solid currentColor;border-radius:999px;
+    transition:background .2s var(--ease),transform .12s var(--ease)}
+  .sess-btn .sess-mode{border:0;padding:0;font:600 10.5px var(--display);letter-spacing:.12em;color:inherit}
+  .sess-btn:hover .sess-mode{color:inherit}
+  .sess-btn:active .session-top{transform:scale(.95)}
+  .session.s-on .session-top{color:var(--violet);background:color-mix(in srgb,var(--violet) 14%,transparent)}
+  .session.s-off .session-top{color:var(--cyan);background:color-mix(in srgb,var(--cyan) 14%,transparent)}
+  .session.s-rem .session-top{color:var(--rose);background:color-mix(in srgb,var(--rose) 14%,transparent)}
+  .session .session-dot{background:currentColor!important;box-shadow:0 0 8px currentColor!important}
+  .session.s-none .session-top{color:var(--muted);border-style:dashed;border-color:#3a3a40;background:transparent}
+  .session.s-none .session-dot{display:none}
+  .sess-btn:hover .session-top{background-color:color-mix(in srgb,currentColor 22%,transparent)}
+  .session.s-none:hover .session-top{color:var(--ink);border-color:var(--grey);background:transparent}
+  .sess-btn .sess-more{margin-left:0}
 </style>
 </head>
 <body>
