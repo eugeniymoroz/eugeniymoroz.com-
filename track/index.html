@@ -1026,6 +1026,49 @@
   .sess-btn:hover .session-top{background-color:color-mix(in srgb,currentColor 22%,transparent)}
   .session.s-none:hover .session-top{color:var(--ink);border-color:var(--grey);background:transparent}
   .sess-btn .sess-more{margin-left:0}
+
+  /* ---------- phone: tabs, counters and month picker live in a drawer on the left (15.11.2026) ---------- */
+  .drawer-tab,.m-drawer,.drawer-scrim{display:none}
+  @media (max-width:600px){
+    .drawer-tab{display:flex;align-items:center;justify-content:center;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:54;
+      width:22px;height:64px;padding:0;border:1px solid var(--line);border-left:0;border-radius:0 14px 14px 0;
+      background:rgba(24,24,27,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);cursor:pointer;
+      box-shadow:4px 0 18px rgba(0,0,0,.45)}
+    .drawer-tab svg{width:15px;height:15px}
+    .drawer-tab[aria-expanded="true"]{opacity:0;pointer-events:none}
+    .drawer-scrim{display:block;position:fixed;inset:0;z-index:57;background:rgba(0,0,0,.55);opacity:0;transition:opacity .28s var(--ease)}
+    .drawer-scrim[hidden]{display:none}
+    .drawer-scrim.on{opacity:1}
+    .m-drawer{display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:58;width:min(86vw,360px);
+      background:var(--surface);border-right:1px solid var(--line);border-radius:0 22px 22px 0;
+      padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;
+      transform:translateX(-104%);transition:transform .32s var(--ease);box-shadow:12px 0 40px rgba(0,0,0,.6)}
+    .m-drawer.open{transform:none}
+    .m-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;
+      font:600 11px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+    .m-drawer-close{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--ink);
+      display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .m-drawer-close svg{width:15px;height:15px}
+    .m-drawer-body .top-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+    .m-drawer-body .top-actions .saving{grid-column:1 / -1;order:9;text-align:center}
+    .m-drawer-body .top-actions .btn{border-radius:14px}
+    .m-drawer-body .kpis{margin-bottom:16px}
+    .m-drawer-body .monthbar{margin-bottom:0}
+    .m-drawer-body .monthbar .sort-select{flex:1}
+    body.drawer-open{overflow:hidden}
+  }
+
+  /* phone: compact Needs attention with a chevron (16.11.2026) */
+  .att-chev{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border-radius:999px;
+    border:1px solid var(--line);background:none;color:var(--ink);font:600 10.5px var(--display);letter-spacing:.1em;cursor:pointer}
+  .att-chev svg{width:15px;height:15px;transition:transform .25s var(--ease)}
+  .att-chev.open{padding:0 8px}
+  .att-chev.open svg{transform:rotate(180deg)}
+  .attention.att-compact{padding:12px 14px 6px}
+  .attention.att-compact .att-head{margin-bottom:6px}
+  .attention.att-compact .att-item{display:block;padding:8px 2px}
+  .attention.att-compact .att-item.att-more{display:none}
+  .attention.att-compact .att-k{display:block;margin-bottom:3px}
 </style>
 </head>
 <body>
@@ -1044,6 +1087,17 @@
   </form>
 </div>
 
+<button type="button" class="drawer-tab" id="drawerTab" aria-label="Open overview" aria-controls="mDrawer" aria-expanded="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+</button>
+<div class="drawer-scrim" id="drawerScrim" hidden></div>
+<aside class="m-drawer" id="mDrawer" aria-label="Overview" aria-hidden="true">
+  <div class="m-drawer-head"><span>Overview</span>
+    <button type="button" class="m-drawer-close" id="drawerClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button></div>
+  <div class="m-drawer-body" id="mDrawerBody"></div>
+</aside>
 <div class="wrap">
 
   <div class="topbar">
@@ -2542,12 +2596,18 @@
     if(!items.length){ box.hidden = true; box.innerHTML = ""; return; }
     items.sort(function(a,b){ return a.sort < b.sort ? -1 : 1; });
     var LBL = {over:"Overdue", "pay-late":"Payment late", pay:"Awaiting payment", session:"Session soon"};
-    var SHOW = 4, extra = items.length - SHOW;
-    box.innerHTML = '<div class="att-head"><span class="lbl">Needs attention</span><span class="att-count">'+items.length+'</span></div>'+
+    var phone = isMobileWidth();
+    var SHOW = phone ? 1 : 4, extra = items.length - SHOW;      // phone: compact — one item, chevron to expand
+    box.classList.toggle("att-compact", phone);
+    box.innerHTML = '<div class="att-head"><span class="lbl">Needs attention</span><span class="att-count">'+items.length+'</span>'+
+        (phone && extra>0 ? '<button class="att-chev'+(attOpen?' open':'')+'" id="attToggle" aria-expanded="'+attOpen+'" aria-label="'+(attOpen?'Show less':'Show all')+'">'+
+          (attOpen ? '' : '<span>+'+extra+'</span>')+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' : '')+
+      '</div>'+
       items.map(function(it, i){
         return '<button class="att-item att-'+it.k+(i>=SHOW && !attOpen ? ' att-more' : '')+'" data-id="'+esc(it.id)+'"><span class="att-k">'+LBL[it.k]+'</span><span class="att-t">'+it.html+'</span></button>';
       }).join("") +
-      (extra>0 ? '<button class="att-toggle" id="attToggle">'+(attOpen ? 'Show less' : '+ '+extra+' more')+'</button>' : '');
+      (extra>0 && !phone ? '<button class="att-toggle" id="attToggle">'+(attOpen ? 'Show less' : '+ '+extra+' more')+'</button>' : '');
     box.hidden = false;
   }
 
@@ -3614,6 +3674,48 @@
     });
   }
 })();
+
+  /* ---------- phone drawer: move tabs / counters / month picker into it and back ---------- */
+  (function(){
+    var drawer = document.getElementById("mDrawer"), body = document.getElementById("mDrawerBody"),
+        tab = document.getElementById("drawerTab"), scrim = document.getElementById("drawerScrim");
+    var parts = [document.querySelector(".top-actions"), document.getElementById("kpis"), document.querySelector(".monthbar")];
+    var marks = parts.map(function(el){ var m = document.createComment("drawer-slot"); el.parentNode.insertBefore(m, el); return m; });
+    var mq = window.matchMedia("(max-width:600px)"), inDrawer = false;
+    function place(){
+      if(mq.matches && !inDrawer){ parts.forEach(function(el){ body.appendChild(el); }); inDrawer = true; }
+      else if(!mq.matches && inDrawer){ parts.forEach(function(el,i){ marks[i].parentNode.insertBefore(el, marks[i].nextSibling); }); inDrawer = false; close(); }
+    }
+    function open(){
+      drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); tab.setAttribute("aria-expanded","true");
+      scrim.hidden = false; requestAnimationFrame(function(){ scrim.classList.add("on"); });
+      document.body.classList.add("drawer-open");
+    }
+    function close(){
+      drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); tab.setAttribute("aria-expanded","false");
+      scrim.classList.remove("on"); setTimeout(function(){ if(!drawer.classList.contains("open")) scrim.hidden = true; }, 300);
+      document.body.classList.remove("drawer-open");
+    }
+    tab.addEventListener("click", open);
+    scrim.addEventListener("click", close);
+    document.getElementById("drawerClose").addEventListener("click", close);
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape" && drawer.classList.contains("open")) close(); });
+    // a tab (Statistics, Earned, Sessions, Calendar) opens its panel on the page — close the drawer and show it
+    body.addEventListener("click", function(e){
+      if(!e.target.closest(".top-actions .btn")) return;
+      setTimeout(function(){ close(); window.scrollTo({top:0, behavior:"smooth"}); }, 60);
+    });
+    // swipe left on the drawer closes it
+    var sx = null;
+    drawer.addEventListener("touchstart", function(e){ sx = e.touches[0].clientX; }, {passive:true});
+    drawer.addEventListener("touchend", function(e){ if(sx!==null && e.changedTouches[0].clientX - sx < -50) close(); sx = null; }, {passive:true});
+    // swipe right from the left edge opens it
+    var ex = null;
+    document.addEventListener("touchstart", function(e){ ex = (mq.matches && e.touches[0].clientX < 18) ? e.touches[0].clientX : null; }, {passive:true});
+    document.addEventListener("touchend", function(e){ if(ex!==null && e.changedTouches[0].clientX - ex > 60) open(); ex = null; }, {passive:true});
+    (mq.addEventListener ? mq.addEventListener("change", place) : mq.addListener(place));
+    place();
+  })();
 </script>
 </body>
 </html>
