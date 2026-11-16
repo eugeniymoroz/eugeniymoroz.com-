@@ -1095,6 +1095,7 @@
   /* ---------- invoice setup modal ---------- */
   .inv-setup{max-width:640px}
   .inv-sec{display:flex;align-items:baseline;gap:12px;margin:18px 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .inv-sec{flex-wrap:wrap;row-gap:2px} .inv-sec span{white-space:nowrap}
   .inv-sec em{font-style:normal;letter-spacing:.08em;text-transform:none;font-size:11px;color:#5d5d63}
   .inv-tpls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
   .inv-tpls .chip.inv-new{border-style:dashed;color:var(--muted)}
@@ -1116,6 +1117,14 @@
   .tpl-quick span{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#5d5d63;margin-right:2px}
   .tpl-quick button{background:none;border:1px dashed var(--line);border-radius:999px;color:var(--muted);font:inherit;font-size:11px;padding:3px 9px;cursor:pointer}
   .tpl-quick button:hover{color:var(--white);border-color:var(--grey);border-style:solid}
+
+  .tpl-line{grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) auto 28px}
+  .tl-mv{display:flex;gap:2px}
+  .tl-mv button{width:22px;background:none;border:0;color:#55555b;font-size:13px;cursor:pointer;border-radius:6px}
+  .tl-mv button:hover{color:var(--white);background:rgba(255,255,255,.05)}
+  .tpl-line:first-child .tl-up,.tpl-line:last-child .tl-dn{visibility:hidden}
+  .inv-tpl-actions{flex-wrap:wrap}
+  @media (max-width:600px){ .tpl-line{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto 24px;gap:5px} .tl-mv button{width:18px} }
 </style>
 </head>
 <body>
@@ -1523,6 +1532,9 @@
       <div class="inv-tpl-actions">
         <button type="button" class="chip" id="tplAddLine">+ Line</button>
         <span class="inv-tpl-state" id="tplState"></span>
+        <button type="button" class="chip" id="tplLeft" title="Move template left" aria-label="Move template left">←</button>
+        <button type="button" class="chip" id="tplRight" title="Move template right" aria-label="Move template right">→</button>
+        <button type="button" class="chip" id="tplDup">Duplicate</button>
         <button type="button" class="chip inv-del" id="tplDelete">Delete</button>
         <button type="button" class="chip" id="tplSave">Save template</button>
       </div>
@@ -3353,7 +3365,7 @@
     document.getElementById("tplName").value = t.name || "";
     document.getElementById("tplLines").innerHTML = (t.lines.length ? t.lines : [["",""]]).map(function(l){
       return '<div class="tpl-line"><input class="tl-k" type="text" placeholder="Label" value="'+esc(l[0]||"")+'"><input class="tl-v" type="text" placeholder="Value" value="'+esc(l[1]||"")+'">'+
-        '<button type="button" class="tl-x" aria-label="Remove line">×</button></div>';
+        '<span class="tl-mv"><button type="button" class="tl-up" aria-label="Move line up">↑</button><button type="button" class="tl-dn" aria-label="Move line down">↓</button></span><button type="button" class="tl-x" aria-label="Remove line">×</button></div>';
     }).join("");
     setTplState("");
   }
@@ -3467,7 +3479,7 @@
     });
     function addTplLine(label){
       var d = document.createElement("div"); d.className = "tpl-line";
-      d.innerHTML = '<input class="tl-k" type="text" placeholder="Label"><input class="tl-v" type="text" placeholder="Value"><button type="button" class="tl-x" aria-label="Remove line">×</button>';
+      d.innerHTML = '<input class="tl-k" type="text" placeholder="Label"><input class="tl-v" type="text" placeholder="Value"><span class="tl-mv"><button type="button" class="tl-up" aria-label="Move line up">↑</button><button type="button" class="tl-dn" aria-label="Move line down">↓</button></span><button type="button" class="tl-x" aria-label="Remove line">×</button>';
       // reuse an empty row at the end if there is one
       var rows = document.querySelectorAll("#tplLines .tpl-line"), last = rows[rows.length-1];
       if(label && last && !last.querySelector(".tl-k").value && !last.querySelector(".tl-v").value) d = last;
@@ -3477,8 +3489,30 @@
     }
     document.getElementById("tplAddLine").addEventListener("click", function(){ addTplLine(""); });
     document.getElementById("tplQuick").addEventListener("click", function(e){ var b = e.target.closest("[data-l]"); if(b) addTplLine(b.dataset.l); });
+    function tplChanged(){ tplDirty = true; setTplState("Saving…"); clearTimeout(tplTimer); tplTimer = setTimeout(function(){ if(tplDirty) saveTpl(); }, 900); }
     document.getElementById("tplLines").addEventListener("click", function(e){
-      var x = e.target.closest(".tl-x"); if(!x) return; x.parentNode.remove(); tplDirty = true; setTplState("Edited");
+      var row = e.target.closest(".tpl-line"); if(!row) return;
+      if(e.target.closest(".tl-x")){ row.remove(); tplChanged(); }
+      else if(e.target.closest(".tl-up") && row.previousElementSibling){ row.parentNode.insertBefore(row, row.previousElementSibling); tplChanged(); }
+      else if(e.target.closest(".tl-dn") && row.nextElementSibling){ row.parentNode.insertBefore(row.nextElementSibling, row); tplChanged(); }
+    });
+    function moveTpl(dir){
+      if(!tplSel) return; var i = payTpls.indexOf(tplSel), j = i + dir; if(i<0 || j<0 || j>=payTpls.length) return;
+      payTpls.splice(i,1); payTpls.splice(j,0,tplSel);
+      payTpls.forEach(function(t, k){ t.sort = k; });
+      try{ localStorage.setItem(TPL_CACHE, JSON.stringify(payTpls)); }catch(e){}
+      renderTplChips();
+      if(sb) payTpls.forEach(function(t){ if(t.id && !/^def-/.test(t.id)) sb.from("payment_templates").upsert({id:t.id, name:t.name, lines:t.lines, sort:t.sort}).then(function(){}); });
+    }
+    document.getElementById("tplLeft").addEventListener("click", function(){ moveTpl(-1); });
+    document.getElementById("tplRight").addEventListener("click", function(){ moveTpl(1); });
+    document.getElementById("tplDup").addEventListener("click", function(){
+      if(!tplSel) return; if(tplDirty) saveTpl();
+      var v = readTplEditor(), i = payTpls.indexOf(tplSel);
+      var copy = {id:"", name:v.name + " (copy)", lines:v.lines.map(function(l){ return l.slice(); })};
+      payTpls.splice(i+1, 0, copy); payTpls.forEach(function(t, k){ t.sort = k; });
+      tplSel = copy; renderTplChips(); renderTplEditor(); saveTpl();
+      var n = document.getElementById("tplName"); n.focus(); n.select();
     });
     document.getElementById("tplSave").addEventListener("click", function(){ saveTpl(); });
     document.getElementById("tplDelete").addEventListener("click", function(){
