@@ -1091,6 +1091,31 @@
   .attention.att-compact .att-item{display:block;padding:8px 2px}
   .attention.att-compact .att-item.att-more{display:none}
   .attention.att-compact .att-k{display:block;margin-bottom:3px}
+
+  /* ---------- invoice setup modal ---------- */
+  .inv-setup{max-width:640px}
+  .inv-sec{display:flex;align-items:baseline;gap:12px;margin:18px 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .inv-sec em{font-style:normal;letter-spacing:.08em;text-transform:none;font-size:11px;color:#5d5d63}
+  .inv-tpls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .inv-tpls .chip.inv-new{border-style:dashed;color:var(--muted)}
+  .inv-tpl-box{border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--bg)}
+  .inv-tpl-name{width:100%;background:none;border:0;border-bottom:1px solid var(--line-soft);color:var(--white);font:500 15px var(--display);padding:4px 2px 10px;margin-bottom:8px}
+  .inv-tpl-name:focus{outline:none;border-bottom-color:var(--grey)}
+  .tpl-line{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) 28px;gap:8px;margin-bottom:6px}
+  .tpl-line input{background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:13px;padding:8px 10px;min-width:0}
+  .tpl-line .tl-k{color:var(--muted);font-size:12px}
+  .tpl-line input:focus{outline:none;border-color:var(--grey)}
+  .tl-x{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;border-radius:8px}
+  .tl-x:hover{color:var(--red)}
+  .inv-tpl-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .inv-tpl-actions .chip{padding:6px 12px;font-size:11px}
+  .inv-tpl-state{margin-left:auto;font-size:11px;color:var(--muted)}
+  .inv-del:hover{color:var(--red);border-color:var(--red)}
+
+  .tpl-quick{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:8px 0 2px}
+  .tpl-quick span{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#5d5d63;margin-right:2px}
+  .tpl-quick button{background:none;border:1px dashed var(--line);border-radius:999px;color:var(--muted);font:inherit;font-size:11px;padding:3px 9px;cursor:pointer}
+  .tpl-quick button:hover{color:var(--white);border-color:var(--grey);border-style:solid}
 </style>
 </head>
 <body>
@@ -1478,6 +1503,49 @@
 </div>
 
 <!-- Sessions of a project: edit several, apply on Save -->
+<div class="overlay" id="invOverlay">
+  <div class="modal inv-setup" role="dialog" aria-modal="true" aria-labelledby="invTitle">
+    <h2 id="invTitle">Invoice</h2>
+    <div class="inv-sec"><span>Payment template</span></div>
+    <div class="inv-tpls" id="invTpls"></div>
+    <div class="inv-tpl-box">
+      <input class="inv-tpl-name" id="tplName" type="text" placeholder="Template name, e.g. Card · EUR (Monobank)" autocomplete="off">
+      <div id="tplLines"></div>
+      <div class="tpl-quick" id="tplQuick">
+        <span>Add:</span>
+        <button type="button" data-l="IBAN">IBAN</button><button type="button" data-l="SWIFT / BIC">SWIFT / BIC</button>
+        <button type="button" data-l="Account number">Account №</button><button type="button" data-l="Routing (ABA)">Routing (ABA)</button>
+        <button type="button" data-l="Sort code">Sort code</button><button type="button" data-l="Bank">Bank</button>
+        <button type="button" data-l="Bank address">Bank address</button><button type="button" data-l="Beneficiary">Beneficiary</button>
+        <button type="button" data-l="Beneficiary address">Beneficiary address</button><button type="button" data-l="Intermediary bank">Intermediary bank</button>
+        <button type="button" data-l="Tax ID">Tax ID</button><button type="button" data-l="Reference">Reference</button>
+      </div>
+      <div class="inv-tpl-actions">
+        <button type="button" class="chip" id="tplAddLine">+ Line</button>
+        <span class="inv-tpl-state" id="tplState"></span>
+        <button type="button" class="chip inv-del" id="tplDelete">Delete</button>
+        <button type="button" class="chip" id="tplSave">Save template</button>
+      </div>
+    </div>
+    <div class="inv-sec"><span>Bill to</span><em>remembered for this client</em></div>
+    <div class="field"><label for="bCompany">Company / client</label><input id="bCompany" type="text" autocomplete="off"></div>
+    <div class="field-row">
+      <div class="field"><label for="bContact">Contact person</label><input id="bContact" type="text" autocomplete="off"></div>
+      <div class="field"><label for="bEmail">Email</label><input id="bEmail" type="email" autocomplete="off"></div>
+    </div>
+    <div class="field"><label for="bStreet">Street address</label><input id="bStreet" type="text" autocomplete="off"></div>
+    <div class="field-row">
+      <div class="field"><label for="bCity">City, ZIP</label><input id="bCity" type="text" autocomplete="off"></div>
+      <div class="field"><label for="bCountry">Country</label><input id="bCountry" type="text" autocomplete="off"></div>
+    </div>
+    <div class="field"><label for="bTax">VAT / Tax ID</label><input id="bTax" type="text" autocomplete="off" placeholder="optional"></div>
+    <div class="modal-actions">
+      <button class="btn" id="invCancel">Cancel</button>
+      <button class="btn btn-primary" id="invCreate">Create invoice</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="sessOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sessTitle" style="max-width:820px">
     <h2 id="sessTitle">Sessions</h2>
@@ -3227,6 +3295,167 @@
     return "EM-" + yr + "-" + String(max+1).padStart(3,"0");
   }
   function addDays(d, n){ var t=new Date(d+"T00:00:00"); t.setDate(t.getDate()+n); return localDateStr(t); }
+  /* ---------- invoice setup: payment templates + client billing details, before the invoice opens (16.11.2026) ----------
+     payment_templates (id, name, lines [[label,value]]) and client_billing (client_key, data) — both private Supabase tables */
+  var payTpls = null, tplSel = null, tplDirty = false, invProj = null;
+  var TPL_CACHE = "tracker:payTpls", BILL_CACHE = "tracker:billing";
+  function tplDefaults(){
+    var c = function(cur){ return {id:"def-card-"+cur, name:"Card · "+cur, isDefault:true,
+      lines:[["Method","Bank card · "+cur],["Card holder","Evgeniy Moroz"],["Card number",""],["Bank",""]]}; };
+    var bank = function(cur){ return {id:"def-bank-"+cur, name:"Bank transfer · "+cur, isDefault:true,
+      lines:[["Method","Bank transfer · "+cur],["Beneficiary","Evgeniy Moroz"],["Beneficiary address",""],["IBAN",""],["SWIFT / BIC",""],["Bank",""],["Bank address",""]]}; };
+    return [{id:"def-paypal", name:"PayPal", isDefault:true, lines:[["Method","PayPal"],["Account holder","Evgeniy Moroz"],["PayPal","eugeniymoroz@gmail.com"]]},
+      c("USD"), c("EUR"), c("UAH"), bank("USD"), bank("EUR"),
+      {id:"def-bank-UAH", name:"Bank transfer · UAH", isDefault:true,
+       lines:[["Method","Bank transfer · UAH"],["Recipient","Evgeniy Moroz"],["IBAN",""],["Tax ID (IPN)",""],["Bank",""],["Bank code (MFO)",""]]}];
+  }
+  function htmlToLines(html){
+    var d = document.createElement("div"); d.innerHTML = html||""; var out = [], k = null;
+    [].forEach.call(d.children, function(n){
+      if(n.classList.contains("k")) k = n.textContent.trim();
+      else if(n.classList.contains("v")){ var v = n.textContent.trim(); if(/^\[.*\]$/.test(v)) v = ""; out.push([k||"", v]); k = null; }
+    });
+    return out;
+  }
+  function linesToHtml(lines){
+    return lines.filter(function(l){ return (l[0]||"").trim() || (l[1]||"").trim(); }).map(function(l){
+      var v = (l[1]||"").trim();
+      return '<div class="k">'+esc(l[0]||"")+'</div><div class="v'+(v?'':' fill')+'">'+(v?esc(v):'[ '+esc(l[0]||"value")+' ]')+'</div>';
+    }).join("");
+  }
+  function loadTpls(){
+    try{ var c = JSON.parse(localStorage.getItem(TPL_CACHE)||"null"); if(c && c.length) payTpls = c; }catch(e){}
+    if(!payTpls) payTpls = tplDefaults();
+    if(!sb) return Promise.resolve();
+    return sb.from("payment_templates").select("id,name,lines,sort").order("sort").then(function(r){
+      if(r.error) return;
+      if(r.data && r.data.length){ payTpls = r.data; }
+      else {
+        // first run: start from the defaults, filled with whatever was already typed in the invoice itself
+        return sb.from("invoice_payment").select("variant,html").then(function(r2){
+          var have = {}; (r2.data||[]).forEach(function(x){ have[x.variant] = htmlToLines(x.html); });
+          payTpls = tplDefaults().map(function(t, i){
+            var key = t.id==="def-paypal" ? "paypal" : (t.id.indexOf("def-card-")===0 ? "card-" + t.id.slice(9) : "");
+            return {id:uid(), name:t.name, lines: (have[key] && have[key].length) ? have[key] : t.lines, sort:i};
+          });
+          payTpls.forEach(function(t){ sb.from("payment_templates").upsert({id:t.id, name:t.name, lines:t.lines, sort:t.sort}).then(function(){}); });
+        });
+      }
+    }).then(function(){ try{ localStorage.setItem(TPL_CACHE, JSON.stringify(payTpls)); }catch(e){} });
+  }
+  function renderTplChips(){
+    document.getElementById("invTpls").innerHTML = payTpls.map(function(t){
+      return '<button type="button" class="chip'+(tplSel && t.id===tplSel.id?' on':'')+'" data-tpl="'+esc(t.id)+'">'+esc(t.name)+'</button>';
+    }).join("") + '<button type="button" class="chip inv-new" data-tpl="__new">+ New template</button>';
+  }
+  function renderTplEditor(){
+    var t = tplSel || {name:"", lines:[]};
+    document.getElementById("tplName").value = t.name || "";
+    document.getElementById("tplLines").innerHTML = (t.lines.length ? t.lines : [["",""]]).map(function(l){
+      return '<div class="tpl-line"><input class="tl-k" type="text" placeholder="Label" value="'+esc(l[0]||"")+'"><input class="tl-v" type="text" placeholder="Value" value="'+esc(l[1]||"")+'">'+
+        '<button type="button" class="tl-x" aria-label="Remove line">×</button></div>';
+    }).join("");
+    setTplState("");
+  }
+  function readTplEditor(){
+    var lines = [].map.call(document.querySelectorAll("#tplLines .tpl-line"), function(r){
+      return [r.querySelector(".tl-k").value.trim(), r.querySelector(".tl-v").value.trim()]; }).filter(function(l){ return l[0]||l[1]; });
+    return {name: document.getElementById("tplName").value.trim() || "Untitled", lines: lines};
+  }
+  function setTplState(t){ document.getElementById("tplState").textContent = t; }
+  function saveTpl(){
+    if(!tplSel) return Promise.resolve();
+    var v = readTplEditor(); tplSel.name = v.name; tplSel.lines = v.lines;
+    if(!tplSel.id || /^def-/.test(tplSel.id)) tplSel.id = uid();
+    if(tplSel.sort===undefined) tplSel.sort = payTpls.indexOf(tplSel);
+    tplDirty = false;
+    try{ localStorage.setItem(TPL_CACHE, JSON.stringify(payTpls)); localStorage.setItem("tracker:payTplLast", tplSel.id); }catch(e){}
+    renderTplChips(); setTplState("Saved");
+    if(!sb) return Promise.resolve();
+    return sb.from("payment_templates").upsert({id:tplSel.id, name:tplSel.name, lines:tplSel.lines, sort:tplSel.sort, updated_at:new Date().toISOString()})
+      .then(function(r){ if(r.error) setTplState("Not saved — " + r.error.message); });
+  }
+  function pickTpl(id){
+    if(tplDirty && tplSel) saveTpl();
+    if(id==="__new"){ tplSel = {id:"", name:"", lines:[["Method",""],["",""]], sort:payTpls.length}; payTpls.push(tplSel); tplDirty = true; }
+    else tplSel = payTpls.find(function(t){ return t.id===id; }) || payTpls[0];
+    renderTplChips(); renderTplEditor();
+    if(id==="__new") document.getElementById("tplName").focus();
+  }
+  var BILL_FIELDS = {company:"bCompany", contact:"bContact", email:"bEmail", street:"bStreet", city:"bCity", country:"bCountry", tax:"bTax"};
+  function billKey(name){ return (name||"").trim().toLowerCase(); }
+  function fillBill(d){ Object.keys(BILL_FIELDS).forEach(function(k){ document.getElementById(BILL_FIELDS[k]).value = (d && d[k]) || ""; }); }
+  function readBill(){ var d = {}; Object.keys(BILL_FIELDS).forEach(function(k){ d[k] = document.getElementById(BILL_FIELDS[k]).value.trim(); }); return d; }
+  function openInvoiceSetup(p){
+    invProj = p; tplDirty = false;
+    document.getElementById("invTitle").textContent = "Invoice · " + (projName(p) || "Project");
+    var cur = (p.amountCur || "USD").toUpperCase();
+    function choose(){
+      var last = null; try{ last = localStorage.getItem("tracker:payTplLast"); }catch(e){}
+      tplSel = payTpls.find(function(t){ return t.id===last && (t.name.indexOf("·")<0 || t.name.indexOf(cur)>=0); })
+            || payTpls.find(function(t){ return t.name.indexOf(cur)>=0; })
+            || payTpls.find(function(t){ return t.id===last; }) || payTpls[0];
+      renderTplChips(); renderTplEditor();
+    }
+    loadTpls(); choose(); loadTpls().then(function(){ if(!tplDirty && document.getElementById("invOverlay").classList.contains("show")) choose(); });
+    // client billing: cache first, then the database
+    var key = billKey(p.client), cache = {};
+    try{ cache = JSON.parse(localStorage.getItem(BILL_CACHE)||"{}"); }catch(e){}
+    fillBill(cache[key] || {company: p.client || ""});
+    if(sb && key) sb.from("client_billing").select("data").eq("client_key", key).maybeSingle().then(function(r){
+      if(r && r.data && r.data.data && !document.getElementById("bStreet").value) fillBill(r.data.data);
+    });
+    showOverlay("invOverlay");
+  }
+  (function(){
+    var ov = document.getElementById("invOverlay");
+    document.getElementById("invTpls").addEventListener("click", function(e){ var b = e.target.closest("[data-tpl]"); if(b) pickTpl(b.dataset.tpl); });
+    ov.addEventListener("input", function(e){ if(e.target.closest(".inv-tpl-box")){ tplDirty = true; setTplState("Edited"); } });
+    function addTplLine(label){
+      var d = document.createElement("div"); d.className = "tpl-line";
+      d.innerHTML = '<input class="tl-k" type="text" placeholder="Label"><input class="tl-v" type="text" placeholder="Value"><button type="button" class="tl-x" aria-label="Remove line">×</button>';
+      // reuse an empty row at the end if there is one
+      var rows = document.querySelectorAll("#tplLines .tpl-line"), last = rows[rows.length-1];
+      if(label && last && !last.querySelector(".tl-k").value && !last.querySelector(".tl-v").value) d = last;
+      else document.getElementById("tplLines").appendChild(d);
+      if(label){ d.querySelector(".tl-k").value = label; d.querySelector(".tl-v").focus(); } else d.querySelector(".tl-k").focus();
+      tplDirty = true; setTplState("Edited");
+    }
+    document.getElementById("tplAddLine").addEventListener("click", function(){ addTplLine(""); });
+    document.getElementById("tplQuick").addEventListener("click", function(e){ var b = e.target.closest("[data-l]"); if(b) addTplLine(b.dataset.l); });
+    document.getElementById("tplLines").addEventListener("click", function(e){
+      var x = e.target.closest(".tl-x"); if(!x) return; x.parentNode.remove(); tplDirty = true; setTplState("Edited");
+    });
+    document.getElementById("tplSave").addEventListener("click", function(){ saveTpl(); });
+    document.getElementById("tplDelete").addEventListener("click", function(){
+      if(!tplSel) return;
+      if(!confirm('Delete the template "' + (tplSel.name||"Untitled") + '"?')) return;
+      var id = tplSel.id; payTpls = payTpls.filter(function(t){ return t !== tplSel; });
+      if(!payTpls.length) payTpls = tplDefaults();
+      try{ localStorage.setItem(TPL_CACHE, JSON.stringify(payTpls)); }catch(e){}
+      if(sb && id && !/^def-/.test(id)) sb.from("payment_templates").delete().eq("id", id).then(function(){});
+      tplSel = payTpls[0]; tplDirty = false; renderTplChips(); renderTplEditor();
+    });
+    document.getElementById("invCancel").addEventListener("click", function(){ if(tplDirty) saveTpl(); hideOverlay("invOverlay"); });
+    ov.addEventListener("click", function(e){ if(e.target===ov){ if(tplDirty) saveTpl(); hideOverlay("invOverlay"); } });
+    document.getElementById("invCreate").addEventListener("click", function(){
+      var p = invProj; if(!p) return;
+      var t = readTplEditor(), bill = readBill();
+      if(!p.invoiceNo){ p.invoiceNo = nextInvoiceNo(); save(); cloudUpsert(p); }
+      // hand the details to the invoice tab through localStorage (same site), not through the URL
+      try{ localStorage.setItem("invoice:handoff", JSON.stringify({t:Date.now(), no:p.invoiceNo, payName:t.name, payHtml:linesToHtml(t.lines), bill:bill})); }catch(e){}
+      openInvoice(p);
+      if(tplDirty) saveTpl();
+      try{ localStorage.setItem("tracker:payTplLast", tplSel && tplSel.id || ""); }catch(e){}
+      var key = billKey(p.client) || billKey(bill.company);
+      if(key){
+        try{ var c = JSON.parse(localStorage.getItem(BILL_CACHE)||"{}"); c[key] = bill; localStorage.setItem(BILL_CACHE, JSON.stringify(c)); }catch(e){}
+        if(sb) sb.from("client_billing").upsert({client_key:key, data:bill, updated_at:new Date().toISOString()}).then(function(){});
+      }
+      hideOverlay("invOverlay");
+    });
+  })();
+
   function openInvoice(p){
     // opens the standard invoice (invoice.html, same design as invoice/invoice-template.html)
     // filled from this card: number, project, type, amount, currency, client, director
@@ -3555,7 +3784,7 @@
       if(act==="pay"){ markPaid(p, !p.paid); renderAll(); save(); cloudUpsert(p); }
       else if(act==="edit"){ openEdit(p); }
       else if(act==="session-edit" || act==="sessions"){ openSessions(p); }
-      else if(act==="invoice"){ openInvoice(p); }
+      else if(act==="invoice"){ openInvoiceSetup(p); }
       else if(act==="del"){
         pendingDelete = p.id;
         document.getElementById("confirmText").textContent = "“"+(projName(p)||"Untitled")+"” will be removed permanently.";

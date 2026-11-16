@@ -394,7 +394,9 @@
     sb.from("invoice_payment").upsert({user_id: sbUser, variant: variant, html: html, updated_at: new Date().toISOString()})
       .then(function(r){ if(r.error) console.warn("payment sync:", r.error.message); });
   }
+  var payFromTracker = false;   // details came from the tracker's invoice window: don't overwrite the saved PayPal/Card copies
   function keepPay(){
+    if(payFromTracker) return;
     var html = $("payGrid").innerHTML, variant = variantOf(payMethod);
     payTouched = true;
     try{ localStorage.setItem(payStoreKey(payMethod), html); }catch(e){}
@@ -430,8 +432,26 @@
     var b = e.target.closest("button"); if(!b || b.dataset.m === payMethod) return;
     keepPay(); showPay(b.dataset.m);
   });
-  showPay(payMethod);
-  pullPay();
+  /* hand-off from the tracker (payment template + client billing), read once */
+  var hand = null;
+  try{ hand = JSON.parse(localStorage.getItem("invoice:handoff")||"null"); localStorage.removeItem("invoice:handoff"); }catch(e){}
+  if(hand && (Date.now() - hand.t < 5*60*1000) && (!q.get("no") || hand.no === q.get("no"))){
+    payFromTracker = true;
+    $("payGrid").innerHTML = hand.payHtml || "";
+    $("paySwitch").style.display = "none";
+    var b = hand.bill || {}, lines = [];
+    var esc2 = function(t){ return String(t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+    var cityLine = [b.city, b.country].filter(Boolean).join(", ");
+    [b.contact, b.street, cityLine, b.email, b.tax ? "VAT / Tax ID: " + b.tax : ""].forEach(function(x){ if(x) lines.push(esc2(x)); });
+    var company = b.company || q.get("client") || "";
+    if(company || lines.length){
+      $("billTo").innerHTML = (company ? '<span class="strong">'+esc2(company)+'</span>' : '<span class="strong fill">[ Client / Company name ]</span>') +
+        (lines.length ? '<br>' + lines.join('<br>') : '');
+    }
+  } else {
+    showPay(payMethod);
+    pullPay();
+  }
   $("payGrid").addEventListener("input", keepPay);
   $("payGrid").addEventListener("blur", keepPay);
 
@@ -448,7 +468,7 @@
   setText($("invCur"), cur + " (" + (SYM[cur]||cur) + ")");
   document.title = "Invoice " + (q.get("no")||"") + " — " + project;
 
-  if(q.get("client")){
+  if(q.get("client") && !payFromTracker){
     var strong = $("billTo").querySelector(".strong");
     setText(strong, q.get("client"));
   }
