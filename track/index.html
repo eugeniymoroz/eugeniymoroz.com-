@@ -880,7 +880,12 @@
     .wrap>.topbar{grid-area:top} .wrap>#weekStrip{grid-area:week} .wrap>#schedPanel{grid-area:sched} .wrap>#calPanel{grid-area:cal}
     .wrap>#ledger{grid-area:ledger} .wrap>#statsPanel{grid-area:stats} .wrap>#attention{grid-area:att} .wrap>#kpis{grid-area:kpis}
     .wrap>.monthbar{grid-area:month} .wrap>.searchbar{grid-area:search} .wrap>.filters{grid-area:filters} .wrap>#list{grid-area:list} .wrap>.footer{grid-area:footer}
-    .wrap>#kpis{grid-template-columns:1fr;gap:10px;align-self:start}
+    /* compact top row (16.11.2026): counters side by side, Needs attention only as tall as its items */
+    .wrap>#kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-self:start}
+    .wrap>#kpis .kpi{padding:12px 16px}
+    .wrap>#kpis .kpi .k{font-size:10px;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .wrap>#kpis .kpi .v{font-size:22px;margin-top:6px}
+    .wrap>#attention{align-self:start;padding:12px 16px 4px}
     /* nothing needs attention → the counters take the whole row again */
     .wrap:has(> #attention[hidden]){grid-template-areas:"top top" "week week" "sched sched" "cal cal" "ledger ledger" "stats stats" "kpis kpis" "month month" "search search" "filters filters" "list list" "footer footer"}
     .wrap:has(> #attention[hidden])>#kpis{grid-template-columns:repeat(3,1fr)}
@@ -1027,36 +1032,53 @@
   .session.s-none:hover .session-top{color:var(--ink);border-color:var(--grey);background:transparent}
   .sess-btn .sess-more{margin-left:0}
 
-  /* ---------- phone: tabs, counters and month picker live in a drawer on the left (15.11.2026) ---------- */
-  .drawer-tab,.m-drawer,.drawer-scrim{display:none}
+  /* ---------- side drawer on the left (phone 15.11, computer 16.11.2026) ---------- */
+  .drawer-tab{display:flex;align-items:center;justify-content:center;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:54;
+    width:22px;height:64px;padding:0;border:1px solid var(--line);border-left:0;border-radius:0 14px 14px 0;
+    background:rgba(24,24,27,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);cursor:pointer;
+    box-shadow:4px 0 18px rgba(0,0,0,.45);transition:width .2s var(--ease),background .2s var(--ease)}
+  .drawer-tab:hover{width:28px;background:rgba(36,36,40,.95)}
+  .drawer-tab svg{width:15px;height:15px}
+  .drawer-tab[aria-expanded="true"]{opacity:0;pointer-events:none}
+  .drawer-badge{position:absolute;top:-8px;left:6px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--red);color:#fff;
+    font:600 10px/18px var(--display);text-align:center;box-shadow:0 0 10px rgba(229,96,92,.5)}
+  .drawer-badge[hidden]{display:none}
+  body.drawer-desk.att-empty .drawer-tab{display:none}
+  .drawer-scrim{display:block;position:fixed;inset:0;z-index:57;background:rgba(0,0,0,.55);opacity:0;transition:opacity .28s var(--ease)}
+  .drawer-scrim[hidden]{display:none}
+  .drawer-scrim.on{opacity:1}
+  .m-drawer{display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:58;width:min(86vw,360px);
+    background:var(--surface);border-right:1px solid var(--line);border-radius:0 22px 22px 0;
+    padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;
+    transform:translateX(-104%);transition:transform .32s var(--ease);box-shadow:12px 0 40px rgba(0,0,0,.6)}
+  body.drawer-desk .m-drawer{width:min(40vw,520px);padding:24px 22px}
+  .m-drawer.open{transform:none}
+  .m-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;
+    font:600 11px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  .m-drawer-close{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .m-drawer-close svg{width:15px;height:15px}
+  .m-drawer-body .top-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+  .m-drawer-body .top-actions .saving{grid-column:1 / -1;order:9;text-align:center}
+  .m-drawer-body .top-actions .btn{border-radius:14px}
+  .m-drawer-body .kpis{margin-bottom:16px}
+  .m-drawer-body .monthbar{margin-bottom:0}
+  .m-drawer-body .monthbar .sort-select{flex:1}
+  .m-drawer-body .attention{margin:0;border:0;background:none;padding:0}
+  body.drawer-desk .m-drawer-body .attention .att-head .lbl,body.drawer-desk .m-drawer-body .attention .att-head .att-count{display:none}
+  .m-drawer-body .attention .att-head{margin:0 0 4px;min-height:0}
+  body:not(.drawer-desk) .m-drawer-body .attention{margin:0 0 16px;padding:14px 0 6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0}
   @media (max-width:600px){
-    .drawer-tab{display:flex;align-items:center;justify-content:center;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:54;
-      width:22px;height:64px;padding:0;border:1px solid var(--line);border-left:0;border-radius:0 14px 14px 0;
-      background:rgba(24,24,27,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);cursor:pointer;
-      box-shadow:4px 0 18px rgba(0,0,0,.45)}
-    .drawer-tab svg{width:15px;height:15px}
-    .drawer-tab[aria-expanded="true"]{opacity:0;pointer-events:none}
-    .drawer-scrim{display:block;position:fixed;inset:0;z-index:57;background:rgba(0,0,0,.55);opacity:0;transition:opacity .28s var(--ease)}
-    .drawer-scrim[hidden]{display:none}
-    .drawer-scrim.on{opacity:1}
-    .m-drawer{display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:58;width:min(86vw,360px);
-      background:var(--surface);border-right:1px solid var(--line);border-radius:0 22px 22px 0;
-      padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;
-      transform:translateX(-104%);transition:transform .32s var(--ease);box-shadow:12px 0 40px rgba(0,0,0,.6)}
-    .m-drawer.open{transform:none}
-    .m-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;
-      font:600 11px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-    .m-drawer-close{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--ink);
-      display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .m-drawer-close svg{width:15px;height:15px}
-    .m-drawer-body .top-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-    .m-drawer-body .top-actions .saving{grid-column:1 / -1;order:9;text-align:center}
-    .m-drawer-body .top-actions .btn{border-radius:14px}
-    .m-drawer-body .kpis{margin-bottom:16px}
-    .m-drawer-body .monthbar{margin-bottom:0}
-    .m-drawer-body .monthbar .sort-select{flex:1}
-    body.drawer-open{overflow:hidden}
+    .kpis.kpis-inline{gap:6px 16px;margin-top:12px;flex-wrap:wrap}
+    .kpis.kpis-inline .kpi .v{font-size:15px}
+    .kpis.kpis-inline .kpi .k{font-size:9px;letter-spacing:.12em}
   }
+  body.drawer-open{overflow:hidden}
+  /* computer: counters as one quiet line under the title */
+  .kpis.kpis-inline{display:flex;gap:22px;margin:14px 0 0;grid-template-columns:none}
+  .kpis.kpis-inline .kpi{display:flex;align-items:baseline;gap:8px;background:none;border:0;padding:0;border-radius:0}
+  .kpis.kpis-inline .kpi .v{order:-1;font-size:17px;margin:0}
+  .kpis.kpis-inline .kpi .k{font-size:10px;letter-spacing:.16em}
 
   /* phone: compact Needs attention with a chevron (16.11.2026) */
   .att-chev{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border-radius:999px;
@@ -1089,10 +1111,11 @@
 
 <button type="button" class="drawer-tab" id="drawerTab" aria-label="Open overview" aria-controls="mDrawer" aria-expanded="false">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+  <span class="drawer-badge" id="drawerBadge" hidden></span>
 </button>
 <div class="drawer-scrim" id="drawerScrim" hidden></div>
 <aside class="m-drawer" id="mDrawer" aria-label="Overview" aria-hidden="true">
-  <div class="m-drawer-head"><span>Overview</span>
+  <div class="m-drawer-head"><span id="drawerTitle">Overview</span>
     <button type="button" class="m-drawer-close" id="drawerClose" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
     </button></div>
@@ -1260,7 +1283,7 @@
   </div>
 
   <div class="kpis" id="kpis">
-    <div class="kpi"><div class="k">Total projects</div><div class="v" id="kCount">0</div></div>
+    <div class="kpi"><div class="k">Projects</div><div class="v" id="kCount">0</div></div>
     <div class="kpi"><div class="k">In progress</div><div class="v" id="kActive">0</div></div>
     <div class="kpi"><div class="k">Completed</div><div class="v" id="kDone">0</div></div>
   </div>
@@ -2593,10 +2616,13 @@
         }
       });
     });
+    var badge = document.getElementById("drawerBadge");
+    if(badge){ badge.textContent = items.length; badge.hidden = !items.length; }
+    document.body.classList.toggle("att-empty", !items.length);
     if(!items.length){ box.hidden = true; box.innerHTML = ""; return; }
     items.sort(function(a,b){ return a.sort < b.sort ? -1 : 1; });
     var LBL = {over:"Overdue", "pay-late":"Payment late", pay:"Awaiting payment", session:"Session soon"};
-    var phone = isMobileWidth();
+    var phone = isMobileWidth() || !!box.closest("#mDrawer");
     var SHOW = phone ? 1 : 4, extra = items.length - SHOW;      // phone: compact — one item, chevron to expand
     box.classList.toggle("att-compact", phone);
     box.innerHTML = '<div class="att-head"><span class="lbl">Needs attention</span><span class="att-count">'+items.length+'</span>'+
@@ -3675,16 +3701,30 @@
   }
 })();
 
-  /* ---------- phone drawer: move tabs / counters / month picker into it and back ---------- */
+  /* ---------- side drawer (left arrow) ----------
+     phone:    tabs + Needs attention + month picker live in the drawer; counters as a line under the title
+     computer: Needs attention lives in the drawer; counters sit compactly under the title (16.11.2026) */
   (function(){
     var drawer = document.getElementById("mDrawer"), body = document.getElementById("mDrawerBody"),
         tab = document.getElementById("drawerTab"), scrim = document.getElementById("drawerScrim");
-    var parts = [document.querySelector(".top-actions"), document.getElementById("kpis"), document.querySelector(".monthbar")];
-    var marks = parts.map(function(el){ var m = document.createComment("drawer-slot"); el.parentNode.insertBefore(m, el); return m; });
-    var mq = window.matchMedia("(max-width:600px)"), inDrawer = false;
+    var els = {acts:document.querySelector(".top-actions"), kpis:document.getElementById("kpis"),
+               month:document.querySelector(".monthbar"), att:document.getElementById("attention")};
+    var marks = {};
+    Object.keys(els).forEach(function(k){ var m = document.createComment("slot-"+k); els[k].parentNode.insertBefore(m, els[k]); marks[k] = m; });
+    var mq = window.matchMedia("(max-width:600px)"), mode = "";
+    function restore(){ Object.keys(els).forEach(function(k){ marks[k].parentNode.insertBefore(els[k], marks[k].nextSibling); }); }
     function place(){
-      if(mq.matches && !inDrawer){ parts.forEach(function(el){ body.appendChild(el); }); inDrawer = true; }
-      else if(!mq.matches && inDrawer){ parts.forEach(function(el,i){ marks[i].parentNode.insertBefore(el, marks[i].nextSibling); }); inDrawer = false; close(); }
+      var want = mq.matches ? "phone" : "desk";
+      if(want===mode) return;
+      restore(); mode = want;
+      document.body.classList.toggle("drawer-desk", want==="desk");
+      if(want==="phone"){ body.appendChild(els.acts); body.appendChild(els.att); body.appendChild(els.month); }
+      else { body.appendChild(els.att); }
+      document.querySelector(".brand").appendChild(els.kpis);
+      els.kpis.classList.add("kpis-inline");
+      document.getElementById("drawerTitle").textContent = want==="desk" ? "Needs attention" : "Overview";
+      close();
+      if(typeof renderAttention==="function") renderAttention();
     }
     function open(){
       drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); tab.setAttribute("aria-expanded","true");
@@ -3702,6 +3742,7 @@
     document.addEventListener("keydown", function(e){ if(e.key==="Escape" && drawer.classList.contains("open")) close(); });
     // a tab (Statistics, Earned, Sessions, Calendar) opens its panel on the page — close the drawer and show it
     body.addEventListener("click", function(e){
+      if(e.target.closest(".att-item")){ setTimeout(close, 60); return; }
       if(!e.target.closest(".top-actions .btn")) return;
       setTimeout(function(){ close(); window.scrollTo({top:0, behavior:"smooth"}); }, 60);
     });
@@ -3711,7 +3752,7 @@
     drawer.addEventListener("touchend", function(e){ if(sx!==null && e.changedTouches[0].clientX - sx < -50) close(); sx = null; }, {passive:true});
     // swipe right from the left edge opens it
     var ex = null;
-    document.addEventListener("touchstart", function(e){ ex = (mq.matches && e.touches[0].clientX < 18) ? e.touches[0].clientX : null; }, {passive:true});
+    document.addEventListener("touchstart", function(e){ ex = (e.touches[0].clientX < 18) ? e.touches[0].clientX : null; }, {passive:true});
     document.addEventListener("touchend", function(e){ if(ex!==null && e.changedTouches[0].clientX - ex > 60) open(); ex = null; }, {passive:true});
     (mq.addEventListener ? mq.addEventListener("change", place) : mq.addListener(place));
     place();
