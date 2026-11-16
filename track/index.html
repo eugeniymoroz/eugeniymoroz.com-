@@ -1527,8 +1527,8 @@
         <button type="button" class="chip" id="tplSave">Save template</button>
       </div>
     </div>
-    <div class="inv-sec"><span>Bill to</span><em>remembered for this client</em></div>
-    <div class="field"><label for="bCompany">Company / client</label><input id="bCompany" type="text" autocomplete="off"></div>
+    <div class="inv-sec"><span>Bill to</span><em>saved as you type · offered again for this client</em></div>
+    <div class="field"><label for="bCompany">Company / client</label><input id="bCompany" type="text" autocomplete="off" list="billList" placeholder="Start typing — saved clients appear"><datalist id="billList"></datalist></div>
     <div class="field-row">
       <div class="field"><label for="bContact">Contact person</label><input id="bContact" type="text" autocomplete="off"></div>
       <div class="field"><label for="bEmail">Email</label><input id="bEmail" type="email" autocomplete="off"></div>
@@ -3386,6 +3386,44 @@
   function billKey(name){ return (name||"").trim().toLowerCase(); }
   function fillBill(d){ Object.keys(BILL_FIELDS).forEach(function(k){ document.getElementById(BILL_FIELDS[k]).value = (d && d[k]) || ""; }); }
   function readBill(){ var d = {}; Object.keys(BILL_FIELDS).forEach(function(k){ d[k] = document.getElementById(BILL_FIELDS[k]).value.trim(); }); return d; }
+  // every billing card ever typed: {key: data}; offered again by company name
+  var billAll = {}, billTimer = null, tplTimer = null;
+  function loadBillAll(){
+    try{ billAll = JSON.parse(localStorage.getItem(BILL_CACHE)||"{}") || {}; }catch(e){ billAll = {}; }
+    renderBillList();
+    if(!sb) return Promise.resolve();
+    return sb.from("client_billing").select("client_key,data").then(function(r){
+      if(r.error || !r.data) return;
+      r.data.forEach(function(x){ billAll[x.client_key] = x.data || {}; });
+      try{ localStorage.setItem(BILL_CACHE, JSON.stringify(billAll)); }catch(e){}
+      renderBillList();
+    });
+  }
+  function renderBillList(){
+    var seen = {}, opts = [];
+    Object.keys(billAll).forEach(function(k){ var c = (billAll[k] && billAll[k].company) || ""; if(c && !seen[c.toLowerCase()]){ seen[c.toLowerCase()] = 1; opts.push(c); } });
+    opts.sort(function(a,b){ return a.localeCompare(b); });
+    document.getElementById("billList").innerHTML = opts.map(function(c){ return '<option value="'+esc(c)+'">'; }).join("");
+  }
+  function findBill(name){
+    var k = billKey(name); if(!k) return null;
+    if(billAll[k]) return billAll[k];
+    for(var x in billAll){ if(billKey(billAll[x] && billAll[x].company) === k) return billAll[x]; }
+    return null;
+  }
+  function billSaveKey(bill){ return billKey(invProj && invProj.client) || billKey(bill.company); }
+  function saveBill(){
+    var bill = readBill(), key = billSaveKey(bill); if(!key) return;
+    var has = Object.keys(bill).some(function(k){ return bill[k]; }); if(!has) return;
+    billAll[key] = bill;
+    var ck = billKey(bill.company); if(ck && ck !== key) billAll[ck] = bill;      // findable by the legal name too
+    try{ localStorage.setItem(BILL_CACHE, JSON.stringify(billAll)); }catch(e){}
+    renderBillList();
+    if(sb){
+      sb.from("client_billing").upsert({client_key:key, data:bill, updated_at:new Date().toISOString()}).then(function(){});
+      if(ck && ck !== key) sb.from("client_billing").upsert({client_key:ck, data:bill, updated_at:new Date().toISOString()}).then(function(){});
+    }
+  }
   function openInvoiceSetup(p){
     invProj = p; tplDirty = false;
     document.getElementById("invTitle").textContent = "Invoice · " + (projName(p) || "Project");
@@ -3399,18 +3437,34 @@
     }
     loadTpls(); choose(); loadTpls().then(function(){ if(!tplDirty && document.getElementById("invOverlay").classList.contains("show")) choose(); });
     // client billing: cache first, then the database
-    var key = billKey(p.client), cache = {};
-    try{ cache = JSON.parse(localStorage.getItem(BILL_CACHE)||"{}"); }catch(e){}
-    fillBill(cache[key] || {company: p.client || ""});
-    if(sb && key) sb.from("client_billing").select("data").eq("client_key", key).maybeSingle().then(function(r){
-      if(r && r.data && r.data.data && !document.getElementById("bStreet").value) fillBill(r.data.data);
+    loadBillAll();
+    fillBill(findBill(p.client) || {company: p.client || ""});
+    loadBillAll().then(function(){
+      var d = findBill(p.client);
+      if(d && !document.getElementById("invOverlay").dataset.billTouched) fillBill(d);
     });
+    document.getElementById("invOverlay").dataset.billTouched = "";
     showOverlay("invOverlay");
   }
   (function(){
     var ov = document.getElementById("invOverlay");
     document.getElementById("invTpls").addEventListener("click", function(e){ var b = e.target.closest("[data-tpl]"); if(b) pickTpl(b.dataset.tpl); });
-    ov.addEventListener("input", function(e){ if(e.target.closest(".inv-tpl-box")){ tplDirty = true; setTplState("Edited"); } });
+    ov.addEventListener("input", function(e){
+      if(e.target.closest(".inv-tpl-box")){
+        tplDirty = true; setTplState("Saving…");
+        clearTimeout(tplTimer); tplTimer = setTimeout(function(){ if(tplDirty) saveTpl(); }, 900);
+        return;
+      }
+      if(/^b[A-Z]/.test(e.target.id||"")){
+        ov.dataset.billTouched = "1";
+        if(e.target.id==="bCompany"){
+          var d = findBill(e.target.value);
+          // picked a saved client from the list → fill the rest of the card
+          if(d && billKey(d.company) === billKey(e.target.value)) fillBill(d);
+        }
+        clearTimeout(billTimer); billTimer = setTimeout(saveBill, 900);
+      }
+    });
     function addTplLine(label){
       var d = document.createElement("div"); d.className = "tpl-line";
       d.innerHTML = '<input class="tl-k" type="text" placeholder="Label"><input class="tl-v" type="text" placeholder="Value"><button type="button" class="tl-x" aria-label="Remove line">×</button>';
@@ -3436,8 +3490,9 @@
       if(sb && id && !/^def-/.test(id)) sb.from("payment_templates").delete().eq("id", id).then(function(){});
       tplSel = payTpls[0]; tplDirty = false; renderTplChips(); renderTplEditor();
     });
-    document.getElementById("invCancel").addEventListener("click", function(){ if(tplDirty) saveTpl(); hideOverlay("invOverlay"); });
-    ov.addEventListener("click", function(e){ if(e.target===ov){ if(tplDirty) saveTpl(); hideOverlay("invOverlay"); } });
+    function closeInv(){ if(tplDirty) saveTpl(); if(ov.dataset.billTouched){ clearTimeout(billTimer); saveBill(); } hideOverlay("invOverlay"); }
+    document.getElementById("invCancel").addEventListener("click", closeInv);
+    ov.addEventListener("click", function(e){ if(e.target===ov) closeInv(); });
     document.getElementById("invCreate").addEventListener("click", function(){
       var p = invProj; if(!p) return;
       var t = readTplEditor(), bill = readBill();
@@ -3447,11 +3502,7 @@
       openInvoice(p);
       if(tplDirty) saveTpl();
       try{ localStorage.setItem("tracker:payTplLast", tplSel && tplSel.id || ""); }catch(e){}
-      var key = billKey(p.client) || billKey(bill.company);
-      if(key){
-        try{ var c = JSON.parse(localStorage.getItem(BILL_CACHE)||"{}"); c[key] = bill; localStorage.setItem(BILL_CACHE, JSON.stringify(c)); }catch(e){}
-        if(sb) sb.from("client_billing").upsert({client_key:key, data:bill, updated_at:new Date().toISOString()}).then(function(){});
-      }
+      clearTimeout(billTimer); saveBill();
       hideOverlay("invOverlay");
     });
   })();
