@@ -1125,6 +1125,18 @@
   .tpl-line:first-child .tl-up,.tpl-line:last-child .tl-dn{visibility:hidden}
   .inv-tpl-actions{flex-wrap:wrap}
   @media (max-width:600px){ .tpl-line{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto 24px;gap:5px} .tl-mv button{width:18px} }
+
+  /* drawer feed */
+  .feed-sec{margin-bottom:18px}
+  .feed-h{display:flex;align-items:center;gap:10px;margin:0 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line);
+    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .feed-h .att-count{font-size:10px}
+  .feed-empty{font-size:12.5px;color:#5d5d63;padding:8px 2px}
+  .att-item.att-today .att-k{color:var(--violet)}
+  .att-item.att-due .att-k{color:var(--amber)}
+  .att-item.att-expected .att-k{color:var(--mist)}
+  .att-item.att-pay .att-k{color:var(--emerald)}
+  body.drawer-desk .m-drawer-body .attention .att-head{display:none}
 </style>
 </head>
 <body>
@@ -2672,50 +2684,67 @@
   var PAY_WAIT_DAYS = 14;   // a finished project counts as "waiting too long" after this
   function daysBetween(a, b){ return Math.round((new Date(b+"T00:00:00") - new Date(a+"T00:00:00"))/86400000); }
   var attOpen = false;
+  /* ---------- side feed (drawer): needs attention · sessions · payments — always current (19.11.2026) ---------- */
+  var SESS_AHEAD_DAYS = 30, DUE_SOON_DAYS = 7;
   function renderAttention(){
     var box = document.getElementById("attention"); if(!box) return;
     var today = todayStr(), items = [];
-    var weekAhead = new Date(); weekAhead.setDate(weekAhead.getDate()+7);
     var nowLocal = nowLocalInput();
-    var limitLocal = (function(d){ d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); })(weekAhead);
+    function localPlus(days){ var d = new Date(); d.setDate(d.getDate()+days); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+    var weekLocal = localPlus(7), aheadLocal = localPlus(SESS_AHEAD_DAYS);
+    var dueSoon = (function(d){ d.setDate(d.getDate()+DUE_SOON_DAYS); return d.toISOString().slice(0,10); })(new Date());
+    function money(p){ return revealed ? esc(moneyNative(p.amount, p.amountCur||"USD")) : maskFig(); }
     state.projects.forEach(function(p){
       var name = esc(projName(p)||"Untitled");
-      if(p.due && p.due < today && p.status!=="done" && !p.paid){
-        items.push({k:"over", sort:"0"+p.due, id:p.id, html:'<b>'+name+'</b> — deadline passed '+esc(fmtNumericDate(p.due))+' ('+daysBetween(p.due, today)+'d ago)'});
+      if(p.due && p.status!=="done" && !p.paid){
+        if(p.due < today)
+          items.push({g:"att", k:"over", urgent:1, sort:"0"+p.due, id:p.id, html:'<b>'+name+'</b> — deadline passed '+esc(fmtNumericDate(p.due))+' ('+daysBetween(p.due, today)+'d ago)'});
+        else if(p.due <= dueSoon){
+          var dd = daysBetween(today, p.due);
+          items.push({g:"att", k:"due", urgent:1, sort:"1"+p.due, id:p.id, html:'<b>'+name+'</b> — deadline '+(dd===0?'today':dd===1?'tomorrow':'in '+dd+'d')+' · '+esc(fmtNumericDate(p.due))});
+        }
       }
-      if(p.status==="done" && !p.paid && !p.expected){
+      if(!p.paid && p.status==="done" && !p.expected){
         var since = p.doneAt ? daysBetween(p.doneAt, today) : null;
         var late = since!=null && since >= PAY_WAIT_DAYS;
-        items.push({k: late?"pay-late":"pay", sort:(late?"1":"3")+(p.doneAt||""), id:p.id,
-          html:'<b>'+name+'</b> — finished'+(since!=null?' '+since+'d ago':'')+', not paid · '+(revealed?esc(moneyNative(p.amount,p.amountCur||"USD")):maskFig())+(p.client?' · '+esc(p.client):'')});
+        items.push({g: late ? "att" : "pay", k: late ? "pay-late" : "pay", urgent:1, sort:(late?"2":"5")+(p.doneAt||""), id:p.id,
+          html:'<b>'+name+'</b> — finished'+(since!=null?' '+since+'d ago':'')+', not paid · '+money(p)+(p.client?' · '+esc(p.client):'')});
+      }
+      if(!p.paid && p.expected){
+        items.push({g:"pay", k:"expected", sort:"6"+(p.doneAt||p.due||""), id:p.id,
+          html:'<b>'+name+'</b> — payment expected later · '+money(p)+(p.client?' · '+esc(p.client):'')});
       }
       sessionsOf(p.id).forEach(function(x){
-        if(sessUntil(x) >= nowLocal && x.startsAt <= limitLocal){
-          items.push({k:"session", sort:"2"+x.startsAt, id:p.id,
-            html:'<b>'+name+'</b> — '+(isRemote(x) ? 'remote day' : sessMode(x)+' session')+(x.note?' ('+esc(x.note)+')':'')+' '+esc(isRemote(x) ? new Date(x.startsAt.slice(0,10)+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",day:"numeric",month:"short"}) : fmtSessionDateTime(x.startsAt))+(clientTimeNote(x)?' · client '+esc(clientTimeNote(x)):'')});
+        if(sessUntil(x) >= nowLocal && x.startsAt <= aheadLocal){
+          var when = isRemote(x) ? new Date(x.startsAt.slice(0,10)+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",day:"numeric",month:"short"}) : fmtSessionDateTime(x.startsAt);
+          var isToday = x.startsAt.slice(0,10) === today;
+          items.push({g:"sess", k: isToday ? "today" : "session", urgent: x.startsAt <= weekLocal ? 1 : 0, sort:"3"+x.startsAt, id:p.id,
+            html:'<b>'+name+'</b> — '+(isRemote(x) ? 'remote day' : sessMode(x)+' session')+(x.note?' ('+esc(x.note)+')':'')+' · '+esc(when)+(clientTimeNote(x)?' · client '+esc(clientTimeNote(x)):'')});
         }
       });
     });
+    var urgentN = items.filter(function(i){ return i.urgent; }).length;
     var badge = document.getElementById("drawerBadge");
-    if(badge){ badge.textContent = items.length; badge.hidden = !items.length; }
+    if(badge){ badge.textContent = urgentN; badge.hidden = !urgentN; }
     document.body.classList.toggle("att-empty", !items.length);
-    if(!items.length){ box.hidden = true; box.innerHTML = ""; return; }
     items.sort(function(a,b){ return a.sort < b.sort ? -1 : 1; });
-    var LBL = {over:"Overdue", "pay-late":"Payment late", pay:"Awaiting payment", session:"Session soon"};
-    var phone = isMobileWidth() || !!box.closest("#mDrawer");
-    var SHOW = phone ? 1 : 4, extra = items.length - SHOW;      // phone: compact — one item, chevron to expand
-    box.classList.toggle("att-compact", phone);
-    box.innerHTML = '<div class="att-head"><span class="lbl">Needs attention</span><span class="att-count">'+items.length+'</span>'+
-        (phone && extra>0 ? '<button class="att-chev'+(attOpen?' open':'')+'" id="attToggle" aria-expanded="'+attOpen+'" aria-label="'+(attOpen?'Show less':'Show all')+'">'+
-          (attOpen ? '' : '<span>+'+extra+'</span>')+
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' : '')+
-      '</div>'+
-      items.map(function(it, i){
-        return '<button class="att-item att-'+it.k+(i>=SHOW && !attOpen ? ' att-more' : '')+'" data-id="'+esc(it.id)+'"><span class="att-k">'+LBL[it.k]+'</span><span class="att-t">'+it.html+'</span></button>';
-      }).join("") +
-      (extra>0 && !phone ? '<button class="att-toggle" id="attToggle">'+(attOpen ? 'Show less' : '+ '+extra+' more')+'</button>' : '');
+    var LBL = {over:"Overdue", due:"Deadline soon", "pay-late":"Payment late", pay:"Awaiting payment", expected:"Expected", session:"Session", today:"Today"};
+    var GROUPS = [["att","Needs attention"],["sess","Sessions · next "+SESS_AHEAD_DAYS+" days"],["pay","Payments"]];
+    var html = GROUPS.map(function(g){
+      var list = items.filter(function(i){ return i.g===g[0]; });
+      return '<div class="feed-sec"><div class="feed-h"><span>'+g[1]+'</span><span class="att-count">'+list.length+'</span></div>'+
+        (list.length ? list.map(function(it){
+          return '<button class="att-item att-'+it.k+'" data-id="'+esc(it.id)+'"><span class="att-k">'+LBL[it.k]+'</span><span class="att-t">'+it.html+'</span></button>';
+        }).join("") : '<div class="feed-empty">'+(g[0]==="att" ? 'All clear' : g[0]==="sess" ? 'No sessions booked' : 'Nothing to collect')+'</div>')+
+      '</div>';
+    }).join("");
+    box.classList.add("att-compact");
+    box.innerHTML = html;
     box.hidden = false;
   }
+  // keep the feed current: sessions drop off when they end, "today"/"tomorrow" roll over
+  setInterval(function(){ try{ renderAttention(); }catch(e){} }, 60000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ try{ renderAttention(); }catch(e){} } });
 
   /* ---------- add: modal on phones, inline on desktop ---------- */
   function addProject(){ quickAdd(); }
@@ -4036,7 +4065,7 @@
       else { body.appendChild(els.att); }
       document.querySelector(".brand").appendChild(els.kpis);
       els.kpis.classList.add("kpis-inline");
-      document.getElementById("drawerTitle").textContent = want==="desk" ? "Needs attention" : "Overview";
+      document.getElementById("drawerTitle").textContent = "Overview";
       close();
       if(typeof renderAttention==="function") renderAttention();
     }
